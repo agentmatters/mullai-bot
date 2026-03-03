@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Mullai.Abstractions/Mullai.Abstractions.csproj" />
+  <Project Path="Mullai.Agents/Mullai.Agents.csproj" />
+  <Project Path="Mullai.Host\Mullai.Host.csproj" />
+  <Project Path="Mullai.Providers/Mullai.Providers.csproj" />
+  <Project Path="Mullai.Tools/Mullai.Tools.csproj" />
+</Solution>

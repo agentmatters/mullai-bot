@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Mullai.Host</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.3" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.FileExtensions" Version="10.0.3" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.3" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.3" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Mullai.Agents\Mullai.Agents.csproj" />
+      <ProjectReference Include="..\Mullai.Providers\Mullai.Providers.csproj" />
+      <ProjectReference Include="..\Mullai.Tools\Mullai.Tools.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>
