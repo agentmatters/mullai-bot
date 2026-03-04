@@ -1,72 +1,95 @@
-﻿using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Mullai.Agents;
-using Mullai.Host.Logging;
-using Mullai.Providers.LLMProviders.OpenRouter;
-using Mullai.Tools.WeatherTool;
+﻿using Mullai.Agents;
 
 namespace Mullai.Host
 {
     class Program
     {
-        private static IConfiguration _config;
-        public static IServiceProvider _serviceProvider;
-
         static async Task Main(string[] args)
         {
-            // Initialize the configuration
-            InitialiseConfig();
+            // Initialize the configuration and build service provider
+            var serviceProvider = ServiceConfiguration.ConfigureServices();
 
-            var agentFactory = new AgentFactory(_serviceProvider);
-
+            var agentFactory = new AgentFactory(serviceProvider);
             var agent = agentFactory.GetAgent("Assistant");
             
-            // Invoke the agent and output the text result.
-            // Console.WriteLine(await agent.RunAsync("Tell me current time and weather in Seattle."));
+            // Create a persistent session for multi-turn conversation
+            var session = await agent.CreateSessionAsync();
+            
+            Console.WriteLine("Mullai Chat");
+            Console.WriteLine("Type your message and press Enter. Type 'exit' to quit.");
 
-            // Invoke the agent with streaming support.
-            await foreach (var update in agent.RunStreamingAsync("Tell me current time and weather in Seattle."))
+            while (true)
             {
-                Console.Write(update);
+                Console.Write("You: ");
+                var userInput = Console.ReadLine();
+
+                if (string.IsNullOrWhiteSpace(userInput))
+                    continue;
+
+                if (userInput.Equals("exit", StringComparison.OrdinalIgnoreCase))
+                    break;
+
+                Console.Write("Agent: ");
+                
+                // Use CancellationTokenSource to control the thinking animation
+                using var cts = new CancellationTokenSource();
+                var thinkingTask = ShowThinkingAsync(cts.Token);
+                
+                try
+                {
+                    var firstUpdate = true;
+                    // Stream the response from the agent
+                    await foreach (var update in agent.RunStreamingAsync(userInput, session))
+                    {
+                        // Cancel thinking animation on first update
+                        if (firstUpdate)
+                        {
+                            await cts.CancelAsync();
+                            try { await thinkingTask; }
+                            catch
+                            {
+                                // ignored
+                            }
+
+                            // Clear the "Thinking..." line
+                            Console.Write("\r" + new string(' ', 50) + "\r");
+                            firstUpdate = false;
+                        }
+                        Console.Write(update);
+                    }
+                }
+                finally
+                {
+                    await cts.CancelAsync();
+                    try { await thinkingTask; }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+                
+                Console.WriteLine("\n");
             }
+
+            Console.WriteLine("Goodbye!");
         }
 
-        static void InitialiseConfig()
+        static async Task ShowThinkingAsync(CancellationToken ct)
         {
-            _config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
-            
-            var serviceCollection = new ServiceCollection();
+            var dots = new[] { ".", "..", "..." };
+            int dotIndex = 0;
 
-            serviceCollection
-                .AddSingleton<IConfiguration>(_config)
-                .AddLogging(builder =>
+            try
+            {
+                while (!ct.IsCancellationRequested)
                 {
-                    builder
-                        .AddConsole()
-                        .SetMinimumLevel(LogLevel.Information);
-                })
-                .AddSingleton<LLMRequestLoggingHandler>()
-                .AddSingleton<HttpClient>(sp => {
-                    var loggingHandler = sp.GetService<LLMRequestLoggingHandler>();
-                    loggingHandler!.InnerHandler = new HttpClientHandler();
-                    return new HttpClient(loggingHandler);
-                })
-                .AddSingleton<IChatClient>(sp => 
-                {
-                    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
-                    var httpClient = sp.GetRequiredService<HttpClient>();
-        
-                    // Initialize your OpenRouter client using the factory
-                    return OpenRouter.GetOpenRouterChatClient(_config, loggerFactory, httpClient);
-                })
-                .AddWeatherTool();
-
-            _serviceProvider = serviceCollection.BuildServiceProvider();
+                    Console.Write($"\rThinking{dots[dotIndex++ % dots.Length]}   ");
+                    await Task.Delay(250, ct);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
     }
 }
