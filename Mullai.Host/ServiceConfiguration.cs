@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Mullai.Host.Logging;
 using Mullai.Providers.LLMProviders.OpenRouter;
 using Mullai.Tools.WeatherTool;
+using Mullai.Memory;
 
 namespace Mullai.Host
 {
@@ -25,7 +26,7 @@ namespace Mullai.Host
                 {
                     builder
                         .AddConsole()
-                        .SetMinimumLevel(LogLevel.None);
+                        .SetMinimumLevel(LogLevel.Trace);
                 })
                 .AddSingleton<LLMRequestLoggingHandler>()
                 .AddSingleton<HttpClient>(sp => {
@@ -41,7 +42,8 @@ namespace Mullai.Host
                     // Initialize your OpenRouter client using the factory
                     return OpenRouter.GetOpenRouterChatClient(config, loggerFactory, httpClient);
                 })
-                .AddWeatherTool();
+                .AddWeatherTool()
+                .AddUserMemory();
 
             return serviceCollection.BuildServiceProvider();
         }
