@@ -28,8 +28,6 @@ namespace Mullai.Host
 
                 if (userInput.Equals("exit", StringComparison.OrdinalIgnoreCase))
                     break;
-
-                Console.Write("Agent: ");
                 
                 // Use CancellationTokenSource to control the thinking animation
                 using var cts = new CancellationTokenSource();
@@ -45,7 +43,10 @@ namespace Mullai.Host
                         if (firstUpdate)
                         {
                             await cts.CancelAsync();
-                            try { await thinkingTask; }
+                            try
+                            {
+                                await thinkingTask;
+                            }
                             catch
                             {
                                 // ignored
@@ -53,6 +54,7 @@ namespace Mullai.Host
 
                             // Clear the "Thinking..." line
                             Console.Write("\r" + new string(' ', 50) + "\r");
+                            Console.Write("Agent: ");
                             firstUpdate = false;
                         }
                         Console.Write(update);
@@ -83,7 +85,7 @@ namespace Mullai.Host
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    Console.Write($"\rThinking{dots[dotIndex++ % dots.Length]}   ");
+                    Console.Write($"\rAgent: Thinking{dots[dotIndex++ % dots.Length]}   ");
                     await Task.Delay(250, ct);
                 }
             }
