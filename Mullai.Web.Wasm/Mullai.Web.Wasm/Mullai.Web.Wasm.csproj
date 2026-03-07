@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Markdig" Version="1.1.1" />
+        <ProjectReference Include="..\Mullai.Web.Wasm.Client\Mullai.Web.Wasm.Client.csproj" />
+        <ProjectReference Include="..\..\Mullai.Agents\Mullai.Agents.csproj" />
+        <ProjectReference Include="..\..\Mullai.Providers\Mullai.Providers.csproj" />
+        <ProjectReference Include="..\..\Mullai.Tools\Mullai.Tools.csproj" />
+        <ProjectReference Include="..\..\Mullai.Memory\Mullai.Memory.csproj" />
+        <ProjectReference Include="..\..\Mullai.Skills\Mullai.Skills.csproj" />
+        <ProjectReference Include="..\..\Mullai.Global.Config\Mullai.Global.Config.csproj" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.0" />
+    </ItemGroup>
+
+</Project>

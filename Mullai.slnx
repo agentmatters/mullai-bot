@@ -7,4 +7,6 @@
   <Project Path="Mullai.Providers/Mullai.Providers.csproj" />
   <Project Path="Mullai.Skills/Mullai.Skills.csproj" />
   <Project Path="Mullai.Tools/Mullai.Tools.csproj" />
+  <Project Path="Mullai.Web.Wasm/Mullai.Web.Wasm.Client/Mullai.Web.Wasm.Client.csproj" />
+  <Project Path="Mullai.Web.Wasm/Mullai.Web.Wasm/Mullai.Web.Wasm.csproj" />
 </Solution>
