@@ -50,29 +50,52 @@ namespace Mullai.Host
                 
                 try
                 {
-                    var firstUpdate = true;
-                    // Stream the response from the agent
-                    await foreach (var update in agent.RunStreamingAsync(userInput, session))
+                    bool enableStreaming = config.GetValue<bool>("EnableStreaming", true);
+                    
+                    if (enableStreaming)
                     {
-                        // Cancel thinking animation on first update
-                        if (firstUpdate)
+                        var firstUpdate = true;
+                        // Stream the response from the agent
+                        await foreach (var update in agent.RunStreamingAsync(userInput, session))
                         {
-                            await cts.CancelAsync();
-                            try
+                            // Cancel thinking animation on first update
+                            if (firstUpdate)
                             {
-                                await thinkingTask;
-                            }
-                            catch
-                            {
-                                // ignored
-                            }
+                                await cts.CancelAsync();
+                                try
+                                {
+                                    await thinkingTask;
+                                }
+                                catch
+                                {
+                                    // ignored
+                                }
 
-                            // Clear the "Thinking..." line
-                            Console.Write("\r" + new string(' ', 50) + "\r");
-                            Console.Write("Agent: ");
-                            firstUpdate = false;
+                                // Clear the "Thinking..." line
+                                Console.Write("\r" + new string(' ', 50) + "\r");
+                                Console.Write("Agent: ");
+                                firstUpdate = false;
+                            }
+                            Console.Write(update);
                         }
-                        Console.Write(update);
+                    }
+                    else
+                    {
+                        // Invoke the agent and output the text result.
+                        var response = await agent.RunAsync(userInput, session);
+                        await cts.CancelAsync();
+                        try
+                        {
+                            await thinkingTask;
+                        }
+                        catch
+                        {
+                            // ignored
+                        }
+
+                        // Clear the "Thinking..." line
+                        Console.Write("\r" + new string(' ', 50) + "\r");
+                        Console.Write($"Agent: {response}");
                     }
                 }
                 finally

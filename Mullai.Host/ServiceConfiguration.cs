@@ -8,6 +8,7 @@ using Mullai.Host.Telemetry;
 using Mullai.Providers.LLMProviders.OpenRouter;
 using Mullai.Tools.WeatherTool;
 using Mullai.Memory;
+using Mullai.Providers.LLMProviders.OllamaOpenAI;
 using Mullai.Skills;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
@@ -51,7 +52,8 @@ namespace Mullai.Host
                     var httpClient = sp.GetRequiredService<HttpClient>();
         
                     // Initialize your OpenRouter client using the factory
-                    return OpenRouter.GetOpenRouterChatClient(configuration, loggerFactory, httpClient);
+                    // return OpenRouter.GetOpenRouterChatClient(configuration, loggerFactory, httpClient);
+                    return OllamaOpenAI.GetOllamaOpenAIChatClient(configuration, loggerFactory, httpClient);
                 })
                 .AddWeatherTool()
                 .AddUserMemory()

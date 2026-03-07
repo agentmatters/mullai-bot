@@ -51,7 +51,7 @@ public class AgentFactory
                         },
                         Name = assistant.Name,
                         AIContextProviders = [
-                            userMemory,
+                            // userMemory,
                             _serviceProvider.GetRequiredService<FileAgentSkillsProvider>()
                         ],
                     },

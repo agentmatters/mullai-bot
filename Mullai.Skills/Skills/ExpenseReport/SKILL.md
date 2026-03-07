@@ -25,7 +25,7 @@ metadata:
 
 1. Collect receipts — must show vendor, date, amount, payment method.
 2. Categorize per table above.
-3. Use template: [assets/expense-report-template.md](assets/expense-report-template.md).
+3. Use template: [expense-report-template.md](assets/expense-report-template.md).
 4. For client/team meals: list attendee names and business purpose.
 5. Submit — auto-approved if <$500; manager if $500–$2,000; VP if >$2,000.
 6. Reimbursement: 10 business days via direct deposit.
@@ -37,4 +37,4 @@ metadata:
 - Foreign currency: convert to USD at transaction-date rate; note original currency and amount.
 - Mixed personal/business travel: only business portion reimbursable; provide comparison quotes.
 - Lost receipts (>$25): file Lost Receipt Affidavit from Finance. Max 2 per quarter.
-- For policy questions not covered above, consult the FAQ: [references/POLICY_FAQ.md](references/POLICY_FAQ.md). Answers should be based on what this document and the FAQ state.
+- For policy questions not covered above, consult the FAQ: [POLICY_FAQ.md](references/POLICY_FAQ.md). Answers should be based on what this document and the FAQ state.
