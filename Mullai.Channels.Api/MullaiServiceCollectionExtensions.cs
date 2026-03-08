@@ -8,6 +8,7 @@ using Mullai.Tools.CliTool;
 using Mullai.Tools.FileSystemTool;
 using Mullai.Tools.WeatherTool;
 using Mullai.Providers.LLMProviders.OpenRouter;
+using Mullai.Providers.LLMProviders.Gemini;
 using Mullai.Channels.Telegram;
 
 namespace Mullai.Channels.Api;
@@ -23,7 +24,7 @@ public static class MullaiServiceCollectionExtensions
                 var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
                 var httpClient = sp.GetRequiredService<HttpClient>();
     
-                return OllamaOpenAI.GetOllamaOpenAIChatClient(configuration, loggerFactory, httpClient);
+                return Gemini.GetGeminiChatClient(configuration, loggerFactory, httpClient);
             })
             .AddWeatherTool()
             .AddCliTool()

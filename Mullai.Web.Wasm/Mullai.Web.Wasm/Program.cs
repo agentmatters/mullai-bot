@@ -9,7 +9,7 @@ using Mullai.Memory;
 using Mullai.Skills;
 using Mullai.Providers.LLMProviders.OllamaOpenAI;
 using Mullai.Providers.LLMProviders.OpenRouter;
-
+using Mullai.Providers.LLMProviders.Gemini;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -25,7 +25,8 @@ builder.Services.AddSingleton<IChatClient>(sp =>
     var httpClient = sp.GetRequiredService<HttpClient>();
     var config = sp.GetRequiredService<IConfiguration>();
 
-    return OpenRouter.GetOpenRouterChatClient(config, loggerFactory, httpClient);
+    return Gemini.GetGeminiChatClient(config, loggerFactory, httpClient);
+    // return OpenRouter.GetOpenRouterChatClient(config, loggerFactory, httpClient);
     // return OllamaOpenAI.GetOllamaOpenAIChatClient(config, loggerFactory, httpClient);
 });
 
