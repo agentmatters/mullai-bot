@@ -29,7 +29,7 @@ namespace Mullai.Host
                 {
                     builder
                         .AddConsole()
-                        .SetMinimumLevel(LogLevel.Error)
+                        .SetMinimumLevel(LogLevel.Information)
                         .AddOpenTelemetry(options =>
                         {
                             options.SetResourceBuilder(

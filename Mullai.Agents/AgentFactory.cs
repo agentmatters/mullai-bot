@@ -9,6 +9,7 @@ using Mullai.Memory.UserMemory;
 using Mullai.Skills;
 using Mullai.Tools.CliTool;
 using Mullai.Tools.FileSystemTool;
+using Mullai.Middleware.Middlewares;
 
 namespace Mullai.Agents;
 
@@ -61,6 +62,7 @@ public class AgentFactory
                     },
                      _serviceProvider.GetRequiredService<ILoggerFactory>())
                     .AsBuilder()
+                    .Use(new FunctionCallingMiddleware(_serviceProvider.GetRequiredService<ILogger<FunctionCallingMiddleware>>()).InvokeAsync)
                     .UseOpenTelemetry(
                         sourceName: OpenTelemetrySettings.ServiceName, 
                         configure: (cfg) => cfg.EnableSensitiveData = true)

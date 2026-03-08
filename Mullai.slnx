@@ -4,6 +4,7 @@
   <Project Path="Mullai.Global.Config/Mullai.Global.Config.csproj" />
   <Project Path="Mullai.Host\Mullai.Host.csproj" />
   <Project Path="Mullai.Memory/Mullai.Memory.csproj" />
+  <Project Path="Mullai.Middleware/Mullai.Middleware.csproj" />
   <Project Path="Mullai.Providers/Mullai.Providers.csproj" />
   <Project Path="Mullai.Skills/Mullai.Skills.csproj" />
   <Project Path="Mullai.Tools/Mullai.Tools.csproj" />
