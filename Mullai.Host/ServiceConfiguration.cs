@@ -9,6 +9,7 @@ using Mullai.Providers.LLMProviders.OpenRouter;
 using Mullai.Providers.LLMProviders.Gemini;
 using Mullai.Tools.WeatherTool;
 using Mullai.Memory;
+using Mullai.Providers.LLMProviders.Mistral;
 using Mullai.Skills;
 using Mullai.Tools.CliTool;
 using Mullai.Tools.FileSystemTool;
@@ -29,7 +30,7 @@ namespace Mullai.Host
                 {
                     builder
                         .AddConsole()
-                        .SetMinimumLevel(LogLevel.Information)
+                        .SetMinimumLevel(LogLevel.Trace)
                         .AddOpenTelemetry(options =>
                         {
                             options.SetResourceBuilder(
@@ -55,7 +56,8 @@ namespace Mullai.Host
         
                     // Initialize your OpenRouter client using the factory
                     // return OpenRouter.GetOpenRouterChatClient(configuration, loggerFactory, httpClient);
-                    return Gemini.GetGeminiChatClient(configuration, loggerFactory, httpClient);
+                    // return Gemini.GetGeminiChatClient(configuration, loggerFactory, httpClient);
+                    return Mistral.GetMistralChatClient(configuration, loggerFactory, httpClient);
                 })
                 .AddWeatherTool()
                 .AddCliTool()
