@@ -4,7 +4,7 @@ using Mullai.Agents;
 using Mullai.Global.ServiceConfiguration;
 using Mullai.OpenTelemetry.OpenTelemetry;
 
-namespace Mullai.Host
+namespace Mullai.Console
 {
     class Program
     {
@@ -29,13 +29,13 @@ namespace Mullai.Host
             // Create a persistent session for multi-turn conversation
             var session = await agent.CreateSessionAsync();
             
-            Console.WriteLine("Mullai Chat");
-            Console.WriteLine("Type your message and press Enter. Type 'exit' to quit.");
+            System.Console.WriteLine("Mullai Chat");
+            System.Console.WriteLine("Type your message and press Enter. Type 'exit' to quit.");
 
             while (true)
             {
-                Console.Write("You: ");
-                var userInput = Console.ReadLine();
+                System.Console.Write("You: ");
+                var userInput = System.Console.ReadLine();
 
                 if (string.IsNullOrWhiteSpace(userInput))
                     continue;
@@ -71,11 +71,11 @@ namespace Mullai.Host
                                 }
 
                                 // Clear the "Thinking..." line
-                                Console.Write("\r" + new string(' ', 50) + "\r");
-                                Console.Write("Agent: ");
+                                System.Console.Write("\r" + new string(' ', 50) + "\r");
+                                System.Console.Write("Agent: ");
                                 firstUpdate = false;
                             }
-                            Console.Write(update);
+                            System.Console.Write(update);
                         }
                     }
                     else
@@ -93,8 +93,8 @@ namespace Mullai.Host
                         }
 
                         // Clear the "Thinking..." line
-                        Console.Write("\r" + new string(' ', 50) + "\r");
-                        Console.Write($"Agent: {response}");
+                        System.Console.Write("\r" + new string(' ', 50) + "\r");
+                        System.Console.Write($"Agent: {response}");
                     }
                 }
                 finally
@@ -107,10 +107,10 @@ namespace Mullai.Host
                     }
                 }
                 
-                Console.WriteLine("\n");
+                System.Console.WriteLine("\n");
             }
 
-            Console.WriteLine("Goodbye!");
+            System.Console.WriteLine("Goodbye!");
         }
 
         static async Task ShowThinkingAsync(CancellationToken ct)
@@ -122,7 +122,7 @@ namespace Mullai.Host
             {
                 while (!ct.IsCancellationRequested)
                 {
-                    Console.Write($"\rAgent: Thinking{dots[dotIndex++ % dots.Length]}   ");
+                    System.Console.Write($"\rAgent: Thinking{dots[dotIndex++ % dots.Length]}   ");
                     await Task.Delay(250, ct);
                 }
             }

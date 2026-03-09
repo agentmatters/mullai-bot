@@ -4,8 +4,8 @@
   <Project Path="Mullai.Channels.Api/Mullai.Channels.Api.csproj" />
   <Project Path="Mullai.Channels.Core/Mullai.Channels.Core.csproj" />
   <Project Path="Mullai.Channels.Telegram/Mullai.Channels.Telegram.csproj" />
+  <Project Path="Mullai.Console\Mullai.Console.csproj" />
   <Project Path="Mullai.Global.ServiceConfiguration/Mullai.Global.ServiceConfiguration.csproj" />
-  <Project Path="Mullai.Host\Mullai.Host.csproj" />
   <Project Path="Mullai.Logging/Mullai.Logging.csproj" />
   <Project Path="Mullai.Memory/Mullai.Memory.csproj" />
   <Project Path="Mullai.Middleware/Mullai.Middleware.csproj" />
