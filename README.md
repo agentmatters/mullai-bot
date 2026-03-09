@@ -23,14 +23,15 @@ Whether you want to interact with agents via a robust Console Application or a m
 
 ## 🚀 Features
 
+- **Multi-Provider with Automatic Fallback**: `MullaiChatClient` wraps multiple LLM providers (Gemini, Groq, Cerebras, Mistral, OpenRouter, Ollama) in priority order. If one fails, the next is tried automatically — no restarts, no downtime.
+- **`models.json` — Centralized Model Catalog**: All provider and model metadata (priority, capabilities, pricing, context window, enabled flag) lives in a single `models.json` file. Switch providers or models by editing JSON — no code changes needed.
 - **Extensible Agent Architecture**: Define distinct agent personalities (e.g., "Assistant", "Joker") with customized instructions and toolsets.
 - **Rich Tool Ecosystem**: Equip your agents with built-in tools like `WeatherTool`, `CliTool`, and `FileSystemTool`, allowing them to interact with the external world.
-- **Middleware Pipeline**: robust interception of agent interactions via `FunctionCallingMiddleware`, `PIIMiddleware`, and `GuardrailMiddleware`.
+- **Middleware Pipeline**: Robust interception of agent interactions via `FunctionCallingMiddleware`, `PIIMiddleware`, and `GuardrailMiddleware`.
 - **Memory & Skills**: Persistent `UserInfoMemory` and dynamic skill providers (`FileAgentSkillsProvider`) to give agents context and advanced capabilities.
-- **Multi-Provider Support**: Seamlessly switch between different LLM providers (OpenAI, Ollama, OpenRouter) using standard abstraction layers.
-- **Observability Built-in**: Out-of-the-box OpenTelemetry logging, metrics, and distributed tracing.
+- **Observability Built-in**: Full OpenTelemetry integration — distributed traces (parent + per-attempt spans), structured logs at every fallback step, and metrics — all tagged with provider name and model ID.
 - **Frontend Choices**: 
-  - `Mullai.Host` - A fast, interactive CLI host with streaming responses.
+  - `Mullai.Console` - A fast, interactive CLI host with streaming responses.
   - `Mullai.Web.Wasm` - A modern Blazor WebAssembly web application for a rich user interface.
 
 ## 🏗 Project Architecture
@@ -45,13 +46,20 @@ graph TD;
     Agents --> Skills[Mullai.Skills];
     Agents --> Middleware[Mullai.Middleware];
     
-    Host[Mullai.Host] --> Agents;
+    Host[Mullai.Console] --> Agents;
     Host --> Providers[Mullai.Providers];
-    Host --> Config[Mullai.Global.Config];
+    Host --> Config[Mullai.Global.ServiceConfiguration];
     
     Web[Mullai.Web.Wasm] --> Agents;
     Web --> Providers;
     Web --> Config;
+
+    Providers --> MullaiChatClient[MullaiChatClient];
+    MullaiChatClient --> Gemini[Gemini];
+    MullaiChatClient --> Groq[Groq];
+    MullaiChatClient --> Cerebras[Cerebras];
+    MullaiChatClient --> Mistral[Mistral];
+    MullaiChatClient --> More[...];
 ```
 
 ### Core Components
@@ -59,8 +67,60 @@ graph TD;
 - **`Mullai.Agents`**: Central core containing the `AgentFactory` and agent definitions.
 - **`Mullai.Tools`**: Exposes capabilities like CLI execution and File System access to the LLM.
 - **`Mullai.Middleware`**: Intercepts requests and responses to enforce guardrails, scrub PII, and handle function calling.
-- **`Mullai.Providers`**: Pluggable LLM backends.
+- **`Mullai.Providers`**: Pluggable LLM backends unified under `MullaiChatClient` with priority-based fallback.
 - **`Mullai.Memory` & `Mullai.Skills`**: Manages conversational history, user context, and dynamic capabilities.
+- **`Mullai.Telemetry`**: OpenTelemetry configuration shared across all components.
+
+## ⚙️ Provider Configuration
+
+### `models.json` — Model Catalog
+
+Model and provider metadata is defined in `Mullai.Global.ServiceConfiguration/models.json`. Only API keys live in `appsettings.json`.
+
+```json
+{
+  "MullaiProviders": {
+    "Providers": [
+      {
+        "Name": "Gemini",
+        "Priority": 1,
+        "Enabled": true,
+        "Models": [
+          {
+            "ModelId": "gemini-2.5-flash",
+            "ModelName": "Gemini 2.5 Flash",
+            "Priority": 1,
+            "Enabled": true,
+            "Capabilities": ["chat", "vision", "tool_use"],
+            "Pricing": { "InputPer1kTokens": 0.00015, "OutputPer1kTokens": 0.0006 },
+            "ContextWindow": 1048576
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Common operations — no code required:**
+| Task | How |
+|---|---|
+| Disable a provider | Set `"Enabled": false` on the provider |
+| Disable a model | Set `"Enabled": false` on the model |
+| Change fallback order | Change `Priority` (lower = tried first) |
+| Add a model | Add an object to the provider's `Models` array |
+
+### `appsettings.json` — API Keys Only
+
+```json
+"Gemini":    { "ApiKey": "" },
+"Groq":      { "ApiKey": "" },
+"Cerebras":  { "ApiKey": "" },
+"Mistral":   { "ApiKey": "" },
+"OpenRouter": { "ApiKey": "" }
+```
+
+Providers with a missing or empty API key are silently skipped at startup — they won't crash the application.
 
 ## 🛠 Getting Started
 
@@ -68,28 +128,33 @@ graph TD;
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - (Optional) Docker for running the OpenTelemetry observability stack.
-- An API Key (OpenAI / OpenRouter) or a local LLM instance (like Ollama).
+- An API key for at least one supported provider (Gemini, Groq, Cerebras, Mistral, OpenRouter) or a local Ollama instance.
 
 ### Setup and Run
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/Mullai.git
+   git clone https://github.com/agentmatters/themullai.git
    cd Mullai
    ```
 
-2. **Configure AppSettings:**
-   Update the `appsettings.json` in `Mullai.Host` or `Mullai.Web.Wasm` with your preferred LLM provider credentials.
-
-3. **Run the Console Host:**
-   Dive right into a terminal session with the Assistant:
+2. **Configure API keys:**
+   Copy `appsettings.sample.json` to `appsettings.json` in `Mullai.Global.ServiceConfiguration` and fill in your API keys.
    ```bash
-   cd Mullai.Host
+   cp Mullai.Global.ServiceConfiguration/appsettings.sample.json \
+      Mullai.Global.ServiceConfiguration/appsettings.json
+   ```
+
+3. **(Optional) Adjust provider priority:**
+   Edit `Mullai.Global.ServiceConfiguration/models.json` to enable/disable providers or change their order.
+
+4. **Run the Console Host:**
+   ```bash
+   cd Mullai.Console
    dotnet run
    ```
 
-4. **Run the Blazor Web App:**
-   Experience the agent via a modern web interface:
+5. **Run the Blazor Web App:**
    ```bash
    cd Mullai.Web.Wasm/Mullai.Web.Wasm
    dotnet run
@@ -97,11 +162,14 @@ graph TD;
 
 ## 📊 Observability
 
-Mullai includes an OpenTelemetry stack defined in the `docker/` folder. This allows you to collect logs, metrics, and distributed traces to monitor your agent workflows in production using Jaeger and Prometheus.
+Mullai includes an OpenTelemetry stack defined in the `docker/` folder (Jaeger + Prometheus). `MullaiChatClient` emits:
+
+- **Distributed traces** — a parent span per request and a child span per provider attempt, both tagged with `mullai.provider`, `mullai.model`, `mullai.attempt`, `mullai.duration_ms`, and `mullai.success`.
+- **Structured logs** — `Information` on startup and each attempt, `Warning` on fallback, `Error` when all providers fail.
 
 ## 🤝 Contributing
 
-Contributions are welcome! Whether it's adding new tools, middlewares, or improving the blazor UI:
+Contributions are welcome! Whether it's adding new tools, middlewares, or improving the Blazor UI:
 1. Fork the repository.
 2. Create your feature branch (`git checkout -b feature/NewTool`).
 3. Commit your changes (`git commit -m 'Add some NewTool'`).
