@@ -18,6 +18,11 @@
 
 ---
 
+> **⚠️ Note: Active Research & Development**
+> Mullai is currently in **active research and development**. While we strive for stability, you may encounter bugs, incomplete features, or breaking changes. We appreciate your patience and welcome contributions to help improve the project!
+
+---
+
 Mullai is a powerful and flexible AI Agent advanced AI assistant built entirely on **.NET**. It provides a robust foundation for creating intelligent, multi-turn conversational AI agents that are equipped with a rich set of **tools, memory, and skills**. Leveraging `Microsoft.Extensions.AI` and `Microsoft.Agents.AI`, Mullai empowers developers to build sophisticated AI assistants with a highly scalable and observable architecture.
 
 Whether you're looking to develop interactive console applications or modern Blazor WebAssembly UIs, Mullai offers the modularity and extensibility needed to bring your AI agent ideas to life.
@@ -27,17 +32,17 @@ Whether you're looking to develop interactive console applications or modern Bla
 Mullai is designed for resilience, flexibility, and developer-friendliness:
 
 *   **⚡ Multi-Provider with Automatic Fallback**: The `MullaiChatClient` seamlessly integrates multiple Large Language Model (LLM) providers (Gemini, Groq, Cerebras, Mistral, OpenRouter, Ollama, and more). Providers are prioritized, and if one fails, the next in line is automatically tried – ensuring high availability without restarts or downtime.
-*   **📚 `models.json` — Centralized Model Catalog**: Manage all LLM provider and model metadata (priority, capabilities, pricing, context window, enabled status) from a single `Mullai.Global.ServiceConfiguration/models.json` file. Effortlessly switch providers or models by editing JSON, eliminating the need for code changes.
-*   **🧩 Extensible Agent Architecture**: Define distinct AI agent personalities and behaviors. Each agent can be customized with specific instructions, toolsets, and conversational styles (e.g., "Assistant", "Joker").
+*   **📄 `models.json` — Centralized Model Catalog**: Manage all LLM provider and model metadata (priority, capabilities, pricing, context window, enabled status) from a single `Mullai.Global.ServiceConfiguration/models.json` file. Effortlessly switch providers or models by editing JSON, eliminating the need for code changes.
+*   **🤖 Extensible Agent Architecture**: Define distinct AI agent personalities and behaviors. Each agent can be customized with specific instructions, toolsets, and conversational styles (e.g., "Assistant", "Joker").
 *   **🔧 Rich Tool Ecosystem**: Empower your agents to interact with the external world using powerful built-in tools like `WeatherTool`, `CliTool` (for command-line execution), and `FileSystemTool` (for file operations). The advanced AI assistant is designed for easy creation of custom tools.
 *   **🛡️ Robust Middleware Pipeline**: Intercept and process agent interactions at various stages using a flexible middleware pipeline. Implement critical functionalities such as `FunctionCallingMiddleware` (to enable tool use), `PIIMiddleware` (for sensitive data handling), and `GuardrailMiddleware` (to enforce safety and policy compliance).
 *   **🧠 Memory & Skills Management**: Provide agents with persistent `UserInfoMemory` to retain user context across conversations and dynamic `FileAgentSkillsProvider` to equip them with advanced, context-aware capabilities.
 *   **📊 Observability Built-in**: Gain deep insights into your AI agents' operations with full OpenTelemetry integration. This includes distributed traces (parent and per-attempt spans), detailed structured logs for every fallback step, and metrics – all automatically tagged with provider name, model ID, attempt number, and duration.
-*   **🖥️ Versatile Frontend Choices**:
+*   **🌐 Versatile Frontend Choices**:
     *   **`Mullai.Console`**: A fast, interactive command-line interface (CLI) host with streaming responses, perfect for development and quick testing.
     *   **`Mullai.Web.Wasm`**: A modern Blazor WebAssembly web application, offering a rich and responsive user interface for broader deployment.
 
-## 🏗 Project Architecture
+## 🌐 Project Architecture
 
 Mullai is built with a modular and decoupled architecture, promoting maintainability and extensibility.
 
@@ -162,7 +167,7 @@ Your sensitive API keys are stored separately in `Mullai.Global.ServiceConfigura
 ```
 Providers with a missing or empty API key in `appsettings.json` are **silently skipped** at startup and will not crash the application.
 
-## 🛠 Getting Started
+## 🛠️ Getting Started
 
 Follow these steps to get Mullai up and running quickly.
 
@@ -216,15 +221,15 @@ Mullai provides deep observability out-of-the-box, essential for understanding a
 
 We welcome contributions from the community! Whether you want to add new LLM providers, create innovative tools or middleware, improve the existing Blazor UI, or enhance documentation, your efforts are highly appreciated.
 
-To contribute:
+Please review our **[Contributing Guidelines](CONTRIBUTING.md)** for detailed information on:
+- Code of Conduct
+- How to report bugs or suggest enhancements
+- Development best practices for C# and .NET
+- GitHub workflow, including branching strategy and commit message format
+- Adding new features like LLM providers, tools, middleware, and agent personalities
+- Security considerations and licensing
 
-1.  Fork the repository.
-2.  Create your feature branch (`git checkout -b feature/your-new-feature`).
-3.  Commit your changes (`git commit -m 'Add a brief description of your feature'`).
-4.  Push to the branch (`git push origin feature/your-new-feature`).
-5.  Open a Pull Request, describing your changes and their benefits.
-
-Please ensure your code adheres to the project's coding standards and includes appropriate tests.
+---
 
 ## 📄 License
 

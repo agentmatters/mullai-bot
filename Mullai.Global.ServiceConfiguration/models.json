@@ -4,7 +4,7 @@
             {
                 "Name": "Gemini",
                 "Priority": 3,
-                "Enabled": true,
+                "Enabled": false,
                 "Models": [
                     {
                         "ModelId": "gemini-2.5-flash",
