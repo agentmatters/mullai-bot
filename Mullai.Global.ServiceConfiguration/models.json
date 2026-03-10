@@ -3,7 +3,7 @@
         "Providers": [
             {
                 "Name": "Gemini",
-                "Priority": 1,
+                "Priority": 3,
                 "Enabled": true,
                 "Models": [
                     {
@@ -58,10 +58,10 @@
             {
                 "Name": "Groq",
                 "Priority": 2,
-                "Enabled": true,
+                "Enabled": false,
                 "Models": [
                     {
-                        "ModelId": "llama-3.3-70b-versatile",
+                        "ModelId": "openai/gpt-oss-120b",
                         "ModelName": "LLaMA 3.3 70B Versatile",
                         "Priority": 1,
                         "Enabled": true,
@@ -108,8 +108,8 @@
             },
             {
                 "Name": "Cerebras",
-                "Priority": 3,
-                "Enabled": true,
+                "Priority": 1,
+                "Enabled": false,
                 "Models": [
                     {
                         "ModelId": "gpt-oss-120b",
