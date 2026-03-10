@@ -61,7 +61,7 @@
                 "Enabled": false,
                 "Models": [
                     {
-                        "ModelId": "openai/gpt-oss-120b",
+                        "ModelId": "llama-3.3-70b-versatile",
                         "ModelName": "LLaMA 3.3 70B Versatile",
                         "Priority": 1,
                         "Enabled": true,
