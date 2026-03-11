@@ -1,4 +1,4 @@
-# [32m[1m[3m🌸 Mullai — advanced AI assistant with TUI[0m
+# Mullai — Advanced AI Assistant with TUI
 
 <p align="center">
     <picture>
@@ -18,40 +18,40 @@
 
 ---
 
-> **⚠️ Note: Active Research & Development**
+> **Note: Active Research & Development**
 > Mullai is currently in **active research and development**. While we strive for stability, you may encounter bugs, incomplete features, or breaking changes. We appreciate your patience and welcome contributions to help improve the project!
 
 ---
 
 Mullai is a powerful and flexible AI Agent framework built entirely on **.NET**. It provides a robust foundation for creating intelligent, multi-turn conversational AI agents that are equipped with a rich set of **tools, memory, and skills**. Leveraging `Microsoft.Extensions.AI` and `Microsoft.Agents.AI`, Mullai empowers developers to build sophisticated AI assistants with a highly scalable and observable architecture.
 
-## ✨ **New! Text-Based User Interface (TUI)**
+## New: Text-Based User Interface (TUI)
 
 Mullai now includes a **rich Text-Based User Interface (TUI)** for seamless interaction with your AI agents directly in the terminal. The TUI provides:
 
-- **Interactive Chat Interface**: Engage in conversations with your AI agent in real-time.
+- **Interactive Chat**: Engage in conversations with your AI agent in real-time.
 - **Tool Call Observability**: Monitor tool calls and their execution status.
 - **Multi-Panel Layout**: View chat history, current conversation, and status information simultaneously.
-- **Streaming Responses**: Experience real-time response streaming for a smooth conversational flow.
+- **Streaming Responses**: Experience responses in real-time as they are generated.
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 Mullai is designed for resilience, flexibility, and developer-friendliness:
 
-*   **⚡ Multi-Provider with Automatic Fallback**: The `MullaiChatClient` seamlessly integrates multiple Large Language Model (LLM) providers (Gemini, Groq, Cerebras, Mistral, OpenRouter, Ollama, and more). Providers are prioritized, and if one fails, the next in line is automatically tried – ensuring high availability without restarts or downtime.
-*   **[34m📊 `models.json` — Centralized Model Catalog[0m**: Manage all LLM provider and model metadata (priority, capabilities, pricing, context window, enabled status) from a single `Mullai.Global.ServiceConfiguration/models.json` file. Effortlessly switch providers or models by editing JSON, eliminating the need for code changes.
-*   **[35m🤖 Extensible Agent Architecture[0m**: Define distinct AI agent personalities and behaviors. Each agent can be customized with specific instructions, toolsets, and conversational styles (e.g., "Assistant", "Joker").
-*   **[32m🔧 Rich Tool Ecosystem[0m**: Empower your agents to interact with the external world using powerful built-in tools like `WeatherTool`, `CliTool` (for command-line execution), and `FileSystemTool` (for file operations). The framework is designed for easy creation of custom tools.
-*   **[33m🛡️ Robust Middleware Pipeline[0m**: Intercept and process agent interactions at various stages using a flexible middleware pipeline. Implement critical functionalities such as `FunctionCallingMiddleware` (to enable tool use), `PIIMiddleware` (for sensitive data handling), and `GuardrailMiddleware` (to enforce safety and policy compliance).
-*   **[36m🧠 Memory & Skills Management[0m**: Provide agents with persistent `UserInfoMemory` to retain user context across conversations and dynamic `FileAgentSkillsProvider` to equip them with advanced, context-aware capabilities.
-*   **[37m🔍 Observability Built-in[0m**: Gain deep insights into your AI agents' operations with full OpenTelemetry integration. This includes distributed traces (parent and per-attempt spans), detailed structured logs for every fallback step, and metrics – all automatically tagged with provider name, model ID, attempt number, and duration.
-*   **[31m🎮 Versatile Frontend Choices[0m**:
+*   **Multi-Provider with Automatic Fallback**: The `MullaiChatClient` seamlessly integrates multiple Large Language Model (LLM) providers (Gemini, Groq, Cerebras, Mistral, OpenRouter, Ollama, and more). Providers are prioritized, and if one fails, the next in line is automatically tried – ensuring high availability without restarts or downtime.
+*   **`models.json` — Centralized Model Catalog**: Manage all LLM provider and model metadata (priority, capabilities, pricing, context window, enabled status) from a single `Mullai.Global.ServiceConfiguration/models.json` file. Effortlessly switch providers or models by editing JSON, eliminating the need for code changes.
+*   **Extensible Agent Architecture**: Define distinct AI agent personalities and behaviors. Each agent can be customized with specific instructions, toolsets, and conversational styles (e.g., "Assistant", "Joker").
+*   **Rich Tool Ecosystem**: Empower your agents to interact with the external world using powerful built-in tools like `WeatherTool`, `CliTool` (for command-line execution), and `FileSystemTool` (for file operations). The framework is designed for easy creation of custom tools.
+*   **Robust Middleware Pipeline**: Intercept and process agent interactions at various stages using a flexible middleware pipeline. Implement critical functionalities such as `FunctionCallingMiddleware` (to enable tool use), `PIIMiddleware` (for sensitive data handling), and `GuardrailMiddleware` (to enforce safety and policy compliance).
+*   **Memory & Skills Management**: Provide agents with persistent `UserInfoMemory` to retain user context across conversations and dynamic `FileAgentSkillsProvider` to equip them with advanced, context-aware capabilities.
+*   **Observability Built-in**: Gain deep insights into your AI agents' operations with full OpenTelemetry integration. This includes distributed traces (parent and per-attempt spans), detailed structured logs for every fallback step, and metrics – all automatically tagged with provider name, model ID, attempt number, and duration.
+*   **Versatile Frontend Choices**:
     *   **`Mullai.Console`**: A fast, interactive **Text-Based User Interface (TUI)** with streaming responses, perfect for development and quick testing.
     *   **`Mullai.Web.Wasm`**: A modern Blazor WebAssembly web application, offering a rich and responsive user interface for broader deployment.
 
-## [34m🎮 Text-Based User Interface (TUI)[0m
+## Text-Based User Interface (TUI)
 
 The new TUI provides a seamless way to interact with Mullai agents directly from your terminal. Key features include:
 
@@ -73,7 +73,7 @@ The new TUI provides a seamless way to interact with Mullai agents directly from
    - View responses and tool call status in real-time.
    - Navigate through chat history and status information.
 
-## [36m📊 Project Architecture[0m
+## Project Architecture
 
 Mullai is built with a modular and decoupled architecture, promoting maintainability and extensibility.
 
@@ -126,7 +126,7 @@ graph TD;
 *   **`Mullai.Telemetry`**: Implements shared OpenTelemetry configuration for distributed tracing, metrics, and structured logging across the entire framework.
 *   **`Mullai.Tools`**: Contains external capabilities that agents can invoke, allowing them to interact with the operating system, file system, and other services (e.g., weather data).
 
-## ⚙️ Provider Configuration
+## Provider Configuration
 
 Mullai separates LLM model configuration from sensitive API keys for enhanced flexibility and security.
 
@@ -200,7 +200,7 @@ Your sensitive API keys are stored separately in `Mullai.Global.ServiceConfigura
 ```
 Providers with a missing or empty API key in `appsettings.json` are **silently skipped** at startup and will not crash the application.
 
-## [32m🚀 Getting Started[0m
+## Getting Started
 
 Follow these steps to get Mullai up and running quickly.
 
@@ -240,7 +240,7 @@ Follow these steps to get Mullai up and running quickly.
     dotnet run
     ```
 
-## [33m📈 Observability[0m
+## Observability
 
 Mullai provides deep observability out-of-the-box, essential for understanding and debugging complex AI agent behaviors. The `docker/observability` folder contains a `docker-compose.yml` to spin up a local OpenTelemetry stack (Jaeger for tracing, Prometheus for metrics).
 
@@ -250,7 +250,7 @@ Mullai provides deep observability out-of-the-box, essential for understanding a
 *   **Structured Logs**: Detailed logs are emitted at various levels (`Information` for startup and successful attempts, `Warning` for fallback scenarios, `Error` when all providers fail), providing granular insight into the agent's decision-making process.
 *   **Metrics**: Essential performance metrics are automatically collected, giving you a quantitative view of your agents' health and performance.
 
-## [35m🤝 Contributing[0m
+## Contributing
 
 We welcome contributions from the community! Whether you want to add new LLM providers, create innovative tools or middleware, improve the existing Blazor UI, enhance the TUI, or improve documentation, your efforts are highly appreciated.
 
@@ -264,6 +264,6 @@ Please review our **[Contributing Guidelines](CONTRIBUTING.md)** for detailed in
 
 ---
 
-## [34m📜 License[0m
+## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
