@@ -1,5 +1,6 @@
 using Terminal.Gui.App;
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 using Mullai.Agents;
 using Mullai.TUI.TUI.State;
 using Mullai.TUI.TUI.Views;
@@ -57,12 +58,26 @@ public class ChatController
         {
             await foreach (var update in _agent.RunStreamingAsync(userInput, _session))
             {
-                var text = update?.ToString() ?? string.Empty;
-                if (!string.IsNullOrEmpty(text))
+
+                foreach (var item in update.Contents)
                 {
-                    var captured = text;
-                    _app.Invoke(() => _state.AppendToken(captured));
+                    if (item is TextReasoningContent reasoningContent)
+                    {
+                        // Console.Write($"\e[97m{reasoningContent.Text}\e[0m");
+                        _app.Invoke(() => _state.AppendToken($"\e[97m{reasoningContent.Text}\e[0m"));
+                    }
+                    else if (item is TextContent textContent)
+                    {
+                        _app.Invoke(() => _state.AppendToken(textContent.Text));
+                    }
                 }
+
+                // var text = update?.ToString() ?? string.Empty;
+                // if (!string.IsNullOrEmpty(text))
+                // {
+                //     var captured = text;
+                //     _app.Invoke(() => _state.AppendToken(captured));
+                // }
             }
         }
         catch (Exception ex)
