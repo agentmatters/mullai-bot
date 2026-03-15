@@ -7,34 +7,16 @@ namespace Mullai.CLI.Controllers;
 public class ConfigController
 {
     private readonly ICredentialStorage _credentialStorage;
-    private readonly string _modelsJsonPath;
 
     public ConfigController(ICredentialStorage credentialStorage)
     {
         _credentialStorage = credentialStorage;
-        _modelsJsonPath = Path.Combine(AppContext.BaseDirectory, "models.json");
     }
 
     public List<MullaiProviderDescriptor> LoadProviders()
     {
-        if (!File.Exists(_modelsJsonPath)) return new List<MullaiProviderDescriptor>();
-
-        try
-        {
-            var json = File.ReadAllText(_modelsJsonPath);
-            using var doc = JsonDocument.Parse(json);
-            if (doc.RootElement.TryGetProperty("MullaiProviders", out var providersElement))
-            {
-                var config = JsonSerializer.Deserialize<MullaiProvidersConfig>(providersElement, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                return config?.Providers ?? new List<MullaiProviderDescriptor>();
-            }
-        }
-        catch
-        {
-            // Ignore
-        }
-
-        return new List<MullaiProviderDescriptor>();
+        var config = Mullai.Providers.MullaiChatClientFactory.GetHardcodedConfig();
+        return config.Providers;
     }
 
     public bool IsProviderEnabled(string providerName, bool defaultValue) => 

@@ -51,7 +51,7 @@ public static class MullaiChatClientFactory
         return new MullaiChatClient(clients, logger);
     }
 
-    private static MullaiProvidersConfig GetHardcodedConfig()
+    public static MullaiProvidersConfig GetHardcodedConfig()
     {
         return new MullaiProvidersConfig
         {
