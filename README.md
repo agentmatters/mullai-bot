@@ -44,6 +44,28 @@ Mullai now includes a **rich Console Application** (powered by Spectre.Console) 
 
 ---
 
+## Quick Install (Binary)
+
+### macOS / Linux (Bash)
+Run the following in your terminal:
+```bash
+curl -sSL https://raw.githubusercontent.com/agentmatters/mullai-bot/main/scripts/install.sh | bash
+```
+
+### Windows (PowerShell)
+Run the following in PowerShell (as Administrator if you want to update System PATH, though User PATH is default):
+```powershell
+irm https://raw.githubusercontent.com/agentmatters/mullai-bot/main/scripts/install.ps1 | iex
+```
+
+This will:
+1. Detect your Operating System and Architecture.
+2. Download the latest `Mullai` binary.
+3. Install it to `~/.mullai/bin` (or `$HOME\.mullai\bin` on Windows).
+4. Add the installation directory to your `PATH`.
+
+---
+
 ## Key Features
 
 Mullai is designed for resilience, flexibility, and developer-friendliness:
@@ -206,28 +228,6 @@ Your sensitive API keys are stored separately in `src/Mullai.Global.ServiceConfi
 }
 ```
 Providers with a missing or empty API key in `appsettings.json` are **silently skipped** at startup and will not crash the application.
-
-## Quick Install (Binary)
-
-### macOS / Linux (Bash)
-Run the following in your terminal:
-```bash
-curl -sSL https://raw.githubusercontent.com/agentmatters/mullai-bot/main/scripts/install.sh | bash
-```
-
-### Windows (PowerShell)
-Run the following in PowerShell (as Administrator if you want to update System PATH, though User PATH is default):
-```powershell
-irm https://raw.githubusercontent.com/agentmatters/mullai-bot/main/scripts/install.ps1 | iex
-```
-
-This will:
-1. Detect your Operating System and Architecture.
-2. Download the latest `Mullai` binary.
-3. Install it to `~/.mullai/bin` (or `$HOME\.mullai\bin` on Windows).
-4. Add the installation directory to your `PATH`.
-
----
 
 ## Getting Started
 
