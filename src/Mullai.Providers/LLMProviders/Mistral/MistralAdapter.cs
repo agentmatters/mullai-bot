@@ -16,7 +16,7 @@ public class MistralAdapter : IProviderAdapter<MistralChatRequest, MistralChatRe
         var request = new MistralChatRequest
         {
             Model = options?.ModelId ?? "mistral-medium-latest",
-            Messages = messages.Select(m => MapToMistralMessage(m)).ToList(),
+            Messages = messages.SelectMany(m => MapToMistralMessages(m)).ToList(),
             Temperature = (float?)(options?.Temperature),
             TopP = (float?)(options?.TopP),
             MaxTokens = options?.MaxOutputTokens,
@@ -77,34 +77,37 @@ public class MistralAdapter : IProviderAdapter<MistralChatRequest, MistralChatRe
                 request.ToolChoice = "none";
             }
             
-            // request.ParallelToolCalls = options.AllowMultipleToolCalls;
+            request.ParallelToolCalls = options.AllowMultipleToolCalls;
         }
 
         return request;
     }
 
-    private MistralChatMessage MapToMistralMessage(ChatMessage m)
+    private IEnumerable<MistralChatMessage> MapToMistralMessages(ChatMessage m)
     {
         var role = m.Role.ToString().ToLowerInvariant();
-        var message = new MistralChatMessage(role, m.Text);
 
         if (m.Role == ChatRole.Tool)
         {
-            // For tool messages, Mistral expects ToolCallId and Content (result)
-            var toolResult = m.Contents.OfType<FunctionResultContent>().FirstOrDefault();
-            if (toolResult != null)
+            // For tool messages, Mistral expects one message per tool result.
+            // Each contains ToolCallId and Content (result)
+            foreach (var toolResult in m.Contents.OfType<FunctionResultContent>())
             {
-                message.ToolCallId = toolResult.CallId;
-                message.Content = toolResult.Result?.ToString();
+                yield return new MistralChatMessage(role, toolResult.Result?.ToString())
+                {
+                    ToolCallId = toolResult.CallId
+                };
             }
         }
         else if (m.Role == ChatRole.Assistant)
         {
+            var assistantMsg = new MistralChatMessage(role, m.Text);
+            
             // For assistant messages, they might contain tool calls
             var toolCalls = m.Contents.OfType<FunctionCallContent>().ToList();
             if (toolCalls.Any())
             {
-                message.ToolCalls = toolCalls.Select(tc => new MistralToolCall
+                assistantMsg.ToolCalls = toolCalls.Select(tc => new MistralToolCall
                 {
                     Id = tc.CallId,
                     Function = new MistralFunctionCall
@@ -114,9 +117,13 @@ public class MistralAdapter : IProviderAdapter<MistralChatRequest, MistralChatRe
                     }
                 }).ToList();
             }
+            
+            yield return assistantMsg;
         }
-
-        return message;
+        else
+        {
+            yield return new MistralChatMessage(role, m.Text);
+        }
     }
 
     public ChatResponse MapResponse(MistralChatResponse response)
@@ -134,7 +141,7 @@ public class MistralAdapter : IProviderAdapter<MistralChatRequest, MistralChatRe
             {
                 var arguments = tc.Function.Arguments switch
                 {
-                    string s => JsonSerializer.Deserialize<Dictionary<string, object?>>(s),
+                    string s when !string.IsNullOrWhiteSpace(s) => JsonSerializer.Deserialize<Dictionary<string, object?>>(s),
                     JsonElement e => e.Deserialize<Dictionary<string, object?>>(),
                     _ => tc.Function.Arguments as Dictionary<string, object?>
                 };
@@ -185,12 +192,12 @@ public class MistralAdapter : IProviderAdapter<MistralChatRequest, MistralChatRe
             {
                 var arguments = tc.Function.Arguments switch
                 {
-                    string s => JsonSerializer.Deserialize<Dictionary<string, object?>>(s),
+                    string s when !string.IsNullOrWhiteSpace(s) => JsonSerializer.Deserialize<Dictionary<string, object?>>(s),
     
-                    JsonElement e when e.ValueKind == JsonValueKind.String => 
+                    JsonElement e when e.ValueKind == JsonValueKind.String && !string.IsNullOrWhiteSpace(e.GetString()) => 
                         JsonSerializer.Deserialize<Dictionary<string, object?>>(e.GetString()!),
         
-                    JsonElement e => e.Deserialize<Dictionary<string, object?>>(),
+                    JsonElement e when e.ValueKind == JsonValueKind.Object => e.Deserialize<Dictionary<string, object?>>(),
     
                     _ => tc.Function.Arguments as Dictionary<string, object?>
                 };

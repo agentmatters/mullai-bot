@@ -55,10 +55,10 @@ public class MistralConsolidator : Mullai.Providers.Common.Http.IMessageConsolid
         }
 
         // 3. Ensure validation rules (similar to Mistral.SDK logic)
-        // - Tool messages must be followed by an assistant message if there's anything next.
+        // - Tool messages must be followed by an assistant message if there's anything next that isn't another tool message.
         for (int i = 0; i < result.Count; i++)
         {
-            if (result[i].Role == ChatRole.Tool && i + 1 < result.Count && result[i + 1].Role != ChatRole.Assistant)
+            if (result[i].Role == ChatRole.Tool && i + 1 < result.Count && result[i+1].Role != ChatRole.Tool && result[i + 1].Role != ChatRole.Assistant)
             {
                 result.Insert(i + 1, new ChatMessage(ChatRole.Assistant, EmptyMessage));
             }

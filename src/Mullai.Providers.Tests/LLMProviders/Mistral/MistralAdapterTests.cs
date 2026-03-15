@@ -127,4 +127,35 @@ public class MistralAdapterTests
         result.Role.Should().Be(ChatRole.Assistant);
         result.ResponseId.Should().Be("stream-id");
     }
+
+    [Fact]
+    public void MapRequest_MultipleToolResults_MapsToMultipleMistralMessages()
+    {
+        // Arrange
+        var messages = new List<ChatMessage>
+        {
+            new ChatMessage(ChatRole.Tool, (string?)null)
+            {
+                Contents = 
+                {
+                    new FunctionResultContent("call_1", "result_1"),
+                    new FunctionResultContent("call_2", "result_2")
+                }
+            }
+        };
+        var options = new ChatOptions { ModelId = "mistral-large-latest" };
+
+        // Act
+        var request = _adapter.MapRequest(messages, options, isStreaming: false);
+
+        // Assert
+        request.Messages.Should().HaveCount(2);
+        request.Messages[0].Role.Should().Be("tool");
+        request.Messages[0].ToolCallId.Should().Be("call_1");
+        request.Messages[0].Content.Should().Be("result_1");
+        
+        request.Messages[1].Role.Should().Be("tool");
+        request.Messages[1].ToolCallId.Should().Be("call_2");
+        request.Messages[1].Content.Should().Be("result_2");
+    }
 }
