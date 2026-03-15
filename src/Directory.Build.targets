@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <LocalAgentsAIPath>$(MSBuildThisFileDirectory)../../agent-framework/dotnet/src/Microsoft.Agents.AI/Microsoft.Agents.AI.csproj</LocalAgentsAIPath>
-    <UseLocalAgentsAI Condition="Exists('$(LocalAgentsAIPath)')">true</UseLocalAgentsAI>
+    <UseLocalAgentsAI Condition="Exists('$(LocalAgentsAIPath)')">false</UseLocalAgentsAI>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(UseLocalAgentsAI)' == 'true'">
