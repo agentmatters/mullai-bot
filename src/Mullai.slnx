@@ -1,5 +1,4 @@
 <Solution>
-  <Project Path="../../agent-framework/dotnet/src/Microsoft.Agents.AI/Microsoft.Agents.AI.csproj" />
   <Project Path="Mullai.Abstractions/Mullai.Abstractions.csproj" />
   <Project Path="Mullai.Agents/Mullai.Agents.csproj" />
   <Project Path="Mullai.Channels.Api/Mullai.Channels.Api.csproj" />
