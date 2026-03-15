@@ -18,11 +18,9 @@ namespace Mullai.TUI.TUI.Views;
 public class MainWindow : Window
 {
     public ChatView ChatView { get; }
-    public RightPanelView RightPanel { get; }
     public StatusBarView StatusBar { get; }
 
     private readonly IApplication _app;
-    private const int RightPanelWidth = 100;
 
     public MainWindow(ChatState state, IApplication app)
     {
@@ -39,15 +37,7 @@ public class MainWindow : Window
         {
             X = 0,
             Y = Pos.Bottom(menuBar),
-            Width = Dim.Fill() - RightPanelWidth,
-            Height = Dim.Fill() - 1,
-        };
-
-        RightPanel = new RightPanelView(state)
-        {
-            X = Pos.Right(ChatView),
-            Y = Pos.Bottom(menuBar),
-            Width = RightPanelWidth,
+            Width = Dim.Fill(),
             Height = Dim.Fill() - 1,
         };
 
@@ -58,7 +48,7 @@ public class MainWindow : Window
             Width = Dim.Fill(),
         };
 
-        Add(menuBar, ChatView, RightPanel, StatusBar);
+        Add(menuBar, ChatView, StatusBar);
     }
 
     private MenuBar BuildMenuBar()

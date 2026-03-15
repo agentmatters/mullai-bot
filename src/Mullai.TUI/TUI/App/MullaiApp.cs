@@ -42,9 +42,6 @@ public class MullaiApp
             _ = Task.Run(() => controller.HandleMessageAsync(userInput, window));
         };
 
-        // Seed the right panel with static session info
-        window.RightPanel.SetStaticInfo(["Agent: Assistant", string.Empty]);
-
         // Defer initial focus to the first UI iteration so layout is complete
         app.AddTimeout(TimeSpan.FromMilliseconds(50), () =>
         {

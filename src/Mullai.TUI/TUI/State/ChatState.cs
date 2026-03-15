@@ -3,7 +3,7 @@ using Mullai.Abstractions.Observability;
 namespace Mullai.TUI.TUI.State;
 
 /// <summary>A single message in the conversation.</summary>
-public record ChatMessage(string Content, bool IsUser);
+public record ChatMessage(string Content, bool IsUser, DateTimeOffset Timestamp);
 
 /// <summary>
 /// Shared, observable state for the chat session.
@@ -19,6 +19,17 @@ public class ChatState
     public IReadOnlyList<ChatMessage> Messages => _messages;
     public IReadOnlyList<ToolCallObservation> ToolCalls => _toolCalls;
 
+    /// <summary>A unified sequence of messages and tool calls sorted by time.</summary>
+    public IEnumerable<object> ChronologicalEntries =>
+        _messages.Cast<object>()
+            .Concat(_toolCalls.Cast<object>())
+            .OrderBy(e => e switch
+            {
+                ChatMessage m => m.Timestamp,
+                ToolCallObservation t => t.StartedAt,
+                _ => DateTimeOffset.MinValue
+            });
+
     public bool IsThinking { get; private set; }
     public string StreamingBuffer { get; private set; } = string.Empty;
 
@@ -26,7 +37,7 @@ public class ChatState
 
     public void AddUserMessage(string text)
     {
-        _messages.Add(new ChatMessage(text, IsUser: true));
+        _messages.Add(new ChatMessage(text, IsUser: true, Timestamp: DateTimeOffset.Now));
         Notify();
     }
 
@@ -46,7 +57,7 @@ public class ChatState
     public void CommitAgentResponse()
     {
         if (!string.IsNullOrEmpty(StreamingBuffer))
-            _messages.Add(new ChatMessage(StreamingBuffer, IsUser: false));
+            _messages.Add(new ChatMessage(StreamingBuffer, IsUser: false, Timestamp: DateTimeOffset.Now));
 
         StreamingBuffer = string.Empty;
         IsThinking = false;
@@ -57,7 +68,7 @@ public class ChatState
     {
         IsThinking = false;
         StreamingBuffer = string.Empty;
-        _messages.Add(new ChatMessage($"⚠ {error}", IsUser: false));
+        _messages.Add(new ChatMessage($"⚠ {error}", IsUser: false, Timestamp: DateTimeOffset.Now));
         Notify();
     }
 

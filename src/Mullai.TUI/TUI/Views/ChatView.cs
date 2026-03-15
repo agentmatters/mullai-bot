@@ -74,7 +74,7 @@ public class ChatView : View
 
     private void OnStateChanged()
     {
-        _historyView.UpdateMessages(_state.Messages, _state.StreamingBuffer, _state.IsThinking);
+        _historyView.UpdateMessages(_state.ChronologicalEntries, _state.StreamingBuffer, _state.IsThinking);
 
         _inputLabel.Text = _state.IsThinking ? "…    " : "You: ";
         _inputField.Enabled = !_state.IsThinking;
