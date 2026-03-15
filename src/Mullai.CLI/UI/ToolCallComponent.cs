@@ -15,7 +15,7 @@ public class ToolCallComponent : IRenderableComponent
 
     public IRenderable Render()
     {
-        var table = new Table().Border(TableBorder.Rounded).BorderStyle("grey").Expand();
+        var table = new Table().Border(TableBorder.Rounded).BorderStyle("grey");
         table.AddColumn(new TableColumn("[cyan]Tool Call[/]").Centered());
         table.AddRow($"[yellow]Tool:[/] {_observation.ToolName}");
         

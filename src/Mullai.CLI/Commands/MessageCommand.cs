@@ -25,15 +25,24 @@ public class MessageCommand : ICommand
 
         // Render user message panel
         var userMessage = new ChatMessage(_input, true, turnStart);
-        AnsiConsole.Write(new ChatMessageComponent(userMessage).Render());
-        AnsiConsole.WriteLine();
+        // Create a helper to provide the turn-specific renderable
+        Func<IRenderable> renderTurn = () => new Rows(
+            RenderTurnHistory(turnStart),
+            new Rule().RuleStyle("grey"),
+            RenderStatsPanel()
+        );
 
         // Handle agent response with live display
-        await AnsiConsole.Live(new Markup("[grey]Mullai is thinking...[/]"))
-            .AutoClear(false)
+        await AnsiConsole.Live(renderTurn())
+            .Overflow(VerticalOverflow.Crop)
+            .Cropping(VerticalOverflowCropping.Top)
+            .AutoClear(true)
             .StartAsync(async ctx =>
             {
-                Action updateHandler = () => ctx.UpdateTarget(RenderTurnEntries(turnStart));
+                Action updateHandler = () => {
+                    ctx.UpdateTarget(renderTurn());
+                    ctx.Refresh();
+                };
                 _state.StateChanged += updateHandler;
                 
                 try 
@@ -43,14 +52,17 @@ public class MessageCommand : ICommand
                 finally
                 {
                     _state.StateChanged -= updateHandler;
-                    ctx.UpdateTarget(RenderTurnEntries(turnStart));
+                    ctx.UpdateTarget(renderTurn());
+                    ctx.Refresh();
                 }
             });
         
+        // Final persistent render to terminal
+        AnsiConsole.Write(renderTurn());
         AnsiConsole.WriteLine();
     }
 
-    private IRenderable RenderTurnEntries(DateTimeOffset turnStart)
+    private IRenderable RenderTurnHistory(DateTimeOffset turnStart)
     {
         var entries = _state.ChronologicalEntries.Where(e => e switch {
             ChatMessage m => !m.IsUser && m.Timestamp > turnStart,
@@ -68,10 +80,32 @@ public class MessageCommand : ICommand
             return new Markup(string.Empty);
         }
 
-        return new Rows(entries.Select(e => e switch {
+        var content = entries.Select(e => e switch {
             ChatMessage m => new ChatMessageComponent(m).Render(),
             Mullai.Abstractions.Observability.ToolCallObservation t => new ToolCallComponent(t).Render(),
             _ => new Markup(string.Empty)
-        }));
+        }).ToList();
+
+        return new Rows(content);
+    }
+
+    private IRenderable RenderStatsPanel()
+    {
+        var grid = new Grid();
+        grid.AddColumn(new GridColumn().NoWrap());
+        grid.AddColumn(new GridColumn().Padding(2, 0));
+        grid.AddColumn(new GridColumn().Padding(2, 0));
+
+        grid.AddRow(
+            new Markup($"[bold cyan]Model:[/] GPT-4o"),
+            new Markup($"[bold cyan]Provider:[/] OpenAI"),
+            new Markup($"[bold cyan]Stats:[/] [green]1250 tks[/] | [yellow]450ms[/]")
+        );
+
+        return grid;
+        // return new Panel(grid)
+        //     .Header("[bold yellow] Live Stats [/]")
+        //     .BorderColor(Color.Grey)
+        //     .RoundedBorder();
     }
 }

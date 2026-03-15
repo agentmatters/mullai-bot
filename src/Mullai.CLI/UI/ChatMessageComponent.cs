@@ -18,9 +18,8 @@ public class ChatMessageComponent : IRenderableComponent
         var content = _message.IsUser ? _message.Content : ProcessHighlights(_message.Content);
         return new Panel(content)
             .Header(_message.IsUser ? "[green]You[/]" : "[blue]Mullai[/]", _message.IsUser ? Justify.Right : Justify.Left)
-            .Border(BoxBorder.Rounded)
-            .BorderStyle(_message.IsUser ? "green" : "blue")
-            .Expand();
+            .Border(_message.IsUser ? BoxBorder.Rounded : BoxBorder.None)
+            .BorderStyle(_message.IsUser ? "green" : "blue");
     }
 
     private string ProcessHighlights(string text)
