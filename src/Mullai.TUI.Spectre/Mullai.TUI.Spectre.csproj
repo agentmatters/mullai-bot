@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -23,7 +23,6 @@
       <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
       <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
       <PackageReference Include="Spectre.Console" />
-      <PackageReference Include="Terminal.Gui" />
     </ItemGroup>
 
     <ItemGroup>
@@ -34,6 +33,7 @@
       <ProjectReference Include="..\Mullai.Tools\Mullai.Tools.csproj" />
       <ProjectReference Include="..\Mullai.Memory\Mullai.Memory.csproj" />
       <ProjectReference Include="..\Mullai.Skills\Mullai.Skills.csproj" />
+      <ProjectReference Include="..\Mullai.TUI\Mullai.TUI.csproj" />
     </ItemGroup>
 
     <ItemGroup>

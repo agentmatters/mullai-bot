@@ -98,8 +98,8 @@ public class ChatState
     /// <summary>Append a completed tool call observation. Called from ChatController's pump loop.</summary>
     public void AddToolCall(ToolCallObservation observation)
     {
-        // _toolCalls.Add(observation);
-        // Notify();
+        _toolCalls.Add(observation);
+        Notify();
     }
 
     public void Notify() => StateChanged?.Invoke();
