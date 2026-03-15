@@ -1,7 +1,7 @@
 using System.Threading.Channels;
 using Mullai.Abstractions.Observability;
 
-namespace Mullai.TUI.TUI.State;
+namespace Mullai.CLI.State;
 
 /// <summary>
 /// Singleton channel that decouples <c>FunctionCallingMiddleware</c> from the TUI.

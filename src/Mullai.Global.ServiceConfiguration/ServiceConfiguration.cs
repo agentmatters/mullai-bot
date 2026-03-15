@@ -9,6 +9,7 @@ using Mullai.Memory;
 using Mullai.Middleware.Middlewares;
 using Mullai.OpenTelemetry.OpenTelemetry;
 using Mullai.Providers;
+using Mullai.Abstractions.Configuration;
 using Mullai.Skills;
 using Mullai.Tools.CliTool;
 using Mullai.Tools.FileSystemTool;
@@ -59,15 +60,17 @@ namespace Mullai.Global.ServiceConfiguration
                     loggingHandler!.InnerHandler = new HttpClientHandler();
                     return new HttpClient(loggingHandler);
                 })
+                .AddSingleton<ICredentialStorage, FileCredentialStorage>()
                 .AddSingleton<IChatClient>(sp => 
                 {
                     var httpClient = sp.GetRequiredService<HttpClient>();
                     var logger = sp.GetRequiredService<ILogger<MullaiChatClient>>();
+                    var credentialStorage = sp.GetRequiredService<ICredentialStorage>();
 
                     var modelsJsonPath = Path.Combine(
                         AppContext.BaseDirectory, "models.json");
 
-                    return MullaiChatClientFactory.Create(modelsJsonPath, configuration, httpClient, logger);
+                    return MullaiChatClientFactory.Create(modelsJsonPath, configuration, credentialStorage, httpClient, logger);
                 })
                 .AddSingleton<AgentFactory>()
                 .AddSingleton<FunctionCallingMiddleware>()

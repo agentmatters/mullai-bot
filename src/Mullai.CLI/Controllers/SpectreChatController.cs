@@ -1,8 +1,8 @@
 using Microsoft.Agents.AI;
 using Mullai.Agents;
-using Mullai.TUI.TUI.State;
+using Mullai.CLI.State;
 
-namespace Mullai.TUI.Spectre.Controllers;
+namespace Mullai.CLI.Controllers;
 
 public class SpectreChatController
 {

@@ -1,6 +1,6 @@
 using Mullai.Abstractions.Observability;
 
-namespace Mullai.TUI.TUI.State;
+namespace Mullai.CLI.State;
 
 /// <summary>A single message in the conversation.</summary>
 public class ChatMessage

@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Mullai.Global.ServiceConfiguration;
-using Mullai.TUI.Spectre;
+using Mullai.CLI;
 
-namespace Mullai.TUI.Spectre;
+namespace Mullai.CLI;
 
 class Program
 {

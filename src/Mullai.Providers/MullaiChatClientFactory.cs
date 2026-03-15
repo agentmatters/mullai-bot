@@ -8,12 +8,13 @@ using Mullai.Providers.LLMProviders.Mistral;
 using Mullai.Providers.LLMProviders.OllamaOpenAI;
 using Mullai.Providers.LLMProviders.OpenRouter;
 using Mullai.Providers.Models;
+using Mullai.Abstractions.Configuration;
 using System.Text.Json;
 
 namespace Mullai.Providers;
 
 /// <summary>
-/// Reads models.json, cross-references API keys from appsettings,
+/// Reads models.json, cross-references API keys from appsettings or secure storage,
 /// and builds a priority-ordered <see cref="MullaiChatClient"/>.
 /// </summary>
 public static class MullaiChatClientFactory
@@ -30,16 +31,18 @@ public static class MullaiChatClientFactory
     /// </summary>
     /// <param name="modelsJsonPath">Absolute path to models.json.</param>
     /// <param name="configuration">appsettings configuration (for API keys).</param>
+    /// <param name="credentialStorage">Secure storage for API keys.</param>
     /// <param name="httpClient">Shared HttpClient for OpenAI-compatible providers.</param>
     /// <param name="logger">Logger injected into MullaiChatClient for structured tracing.</param>
     public static MullaiChatClient Create(
         string modelsJsonPath,
         IConfiguration configuration,
+        ICredentialStorage credentialStorage,
         HttpClient httpClient,
         ILogger<MullaiChatClient> logger)
     {
         var config = LoadModelsConfig(modelsJsonPath);
-        var clients = BuildOrderedClients(config, configuration, httpClient);
+        var clients = BuildOrderedClients(config, configuration, credentialStorage, httpClient);
 
         if (clients.Count == 0)
             throw new InvalidOperationException(
@@ -69,25 +72,26 @@ public static class MullaiChatClientFactory
     private static List<(string Label, IChatClient Client)> BuildOrderedClients(
         MullaiProvidersConfig config,
         IConfiguration configuration,
+        ICredentialStorage credentialStorage,
         HttpClient httpClient)
     {
         var result = new List<(string, IChatClient)>();
 
         var enabledProviders = config.Providers
-            .Where(p => p.Enabled)
+            .Where(p => p.Enabled && credentialStorage.IsProviderEnabled(p.Name, true))
             .OrderBy(p => p.Priority);
 
         foreach (var provider in enabledProviders)
         {
             var enabledModels = provider.Models
-                .Where(m => m.Enabled)
+                .Where(m => m.Enabled && credentialStorage.IsModelEnabled(provider.Name, m.ModelId, true))
                 .OrderBy(m => m.Priority);
 
             foreach (var model in enabledModels)
             {
                 var label = $"{provider.Name}/{model.ModelId}";
 
-                var client = TryCreateClient(provider.Name, model.ModelId, configuration, httpClient);
+                var client = TryCreateClient(provider.Name, model.ModelId, configuration, credentialStorage, httpClient);
                 if (client is null)
                     continue; // skip if API key missing / provider not configured
 
@@ -99,25 +103,38 @@ public static class MullaiChatClientFactory
     }
 
     /// <summary>
-    /// Returns null (and skips) when the necessary API key is absent from configuration,
+    /// Returns null (and skips) when the necessary API key is absent from configuration or storage,
     /// so a missing key for an optional provider doesn't crash startup.
     /// </summary>
     private static IChatClient? TryCreateClient(
         string providerName,
         string modelId,
         IConfiguration configuration,
+        ICredentialStorage credentialStorage,
         HttpClient httpClient)
     {
+        // Check secure storage first, then appsettings
+        var apiKey = credentialStorage.GetApiKey(providerName);
+        
+        // If we found a key in storage, we need to inject it into a temporary IConfiguration 
+        // because the provider factory methods expect IConfiguration.
+        // Alternatively, we can update the providers to take the key directly.
+        // For now, let's stick to the IConfiguration but overlay the storage key.
+        
+        var effectiveConfig = apiKey != null 
+            ? OverlayApiKey(configuration, providerName, apiKey) 
+            : configuration;
+
         try
         {
             return providerName switch
             {
-                "Gemini"      => Gemini.GetGeminiChatClient(configuration, httpClient, modelId),
-                "Groq"        => Groq.GetGroqChatClient(configuration, httpClient, modelId),
-                "Cerebras"    => Cerebras.GetCerebrasChatClient(configuration, httpClient, modelId),
-                "Mistral"     => Mistral.GetMistralChatClient(configuration, httpClient, modelId),
-                "OpenRouter"  => OpenRouter.GetOpenRouterChatClient(configuration, httpClient, modelId),
-                "OllamaOpenAI"=> OllamaOpenAI.GetOllamaOpenAIChatClient(configuration, httpClient, modelId),
+                "Gemini"      => Gemini.GetGeminiChatClient(effectiveConfig, httpClient, modelId),
+                "Groq"        => Groq.GetGroqChatClient(effectiveConfig, httpClient, modelId),
+                "Cerebras"    => Cerebras.GetCerebrasChatClient(effectiveConfig, httpClient, modelId),
+                "Mistral"     => Mistral.GetMistralChatClient(effectiveConfig, httpClient, modelId),
+                "OpenRouter"  => OpenRouter.GetOpenRouterChatClient(effectiveConfig, httpClient, modelId),
+                "OllamaOpenAI"=> OllamaOpenAI.GetOllamaOpenAIChatClient(effectiveConfig, httpClient, modelId),
                 _ => null
             };
         }
@@ -126,5 +143,18 @@ public static class MullaiChatClientFactory
             // Missing API key or misconfiguration — skip this provider/model
             return null;
         }
+    }
+
+    private static IConfiguration OverlayApiKey(IConfiguration original, string providerName, string apiKey)
+    {
+        var dict = new Dictionary<string, string?>
+        {
+            [$"{providerName}:ApiKey"] = apiKey
+        };
+        
+        return new ConfigurationBuilder()
+            .AddConfiguration(original)
+            .AddInMemoryCollection(dict)
+            .Build();
     }
 }

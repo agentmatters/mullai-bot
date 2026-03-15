@@ -1,19 +1,21 @@
 using Microsoft.Extensions.DependencyInjection;
 using Mullai.Agents;
-using Mullai.TUI.Spectre.Controllers;
-using Mullai.TUI.TUI.State;
+using Mullai.Abstractions.Configuration;
 using Mullai.Abstractions.Observability;
+using Mullai.CLI.Controllers;
+using Mullai.CLI.State;
 using Mullai.Middleware.Middlewares;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 
-namespace Mullai.TUI.Spectre;
+namespace Mullai.CLI;
 
 public class MullaiSpectreApp
 {
     private readonly IServiceProvider _services;
     private readonly ChatState _state;
     private readonly SpectreChatController _controller;
+    private readonly ConfigController _configController;
 
     public MullaiSpectreApp(IServiceProvider services)
     {
@@ -21,6 +23,8 @@ public class MullaiSpectreApp
         _state = new ChatState();
         var agentFactory = _services.GetRequiredService<AgentFactory>();
         _controller = new SpectreChatController(agentFactory, _state);
+        var credentialStorage = _services.GetRequiredService<ICredentialStorage>();
+        _configController = new ConfigController(credentialStorage);
 
         // Wire the FunctionCallingMiddleware to emit tool call observations
         // into the singleton channel.
@@ -33,7 +37,10 @@ public class MullaiSpectreApp
         await _controller.InitialiseAsync();
 
         AnsiConsole.Clear();
-        AnsiConsole.Write(new Rule("[yellow]Mullai - AI Chat Console[/]").RuleStyle("grey").Justify(Justify.Left));
+        AnsiConsole
+            .Write(new Rule("[yellow]Mullai - AI Chat Console[/]")
+                .RuleStyle("grey")
+                .Justify(Justify.Left));
         AnsiConsole.MarkupLine("[grey]Type [bold white]/quit[/] to exit.[/]");
         AnsiConsole.WriteLine();
 
@@ -46,6 +53,22 @@ public class MullaiSpectreApp
 
             if (string.IsNullOrWhiteSpace(input)) continue;
             if (input.Equals("/quit", StringComparison.OrdinalIgnoreCase)) break;
+
+            if (input.Equals("/config", StringComparison.OrdinalIgnoreCase))
+            {
+                _configController.ShowConfiguration();
+                
+                // After exiting config, we might need to re-initialize if keys changed.
+                // However, MullaiChatClient is a singleton.
+                // We should probably inform the user that changes might require restart,
+                // or implement a way to refresh the client.
+                // For now, let's just clear the screen and continue.
+                AnsiConsole.Clear();
+                AnsiConsole.Write(new Rule("[yellow]Mullai - AI Chat Console[/]").RuleStyle("grey").Justify(Justify.Left));
+                AnsiConsole.MarkupLine("[grey]Type [bold white]/quit[/] to exit.[/]");
+                AnsiConsole.WriteLine();
+                continue;
+            }
 
             // Capture the exact moment the turn starts (before adding user message to state)
             var turnStart = DateTimeOffset.Now;
