@@ -10,6 +10,7 @@ public class OpenTelemetrySettings
 
     public static void Initialize(IConfiguration configuration)
     {
+#if DEBUG
         var otlpEndpoint = configuration["OpenTelemetry:OTEL_EXPORTER_OTLP_ENDPOINT"];
         var serviceName = configuration["OpenTelemetry:ServiceName"];
         var serviceVersion = configuration["OpenTelemetry:ServiceVersion"];
@@ -33,6 +34,7 @@ public class OpenTelemetrySettings
         // Assign values after validation passes
         OtlpEndpoint = otlpEndpoint;
         ServiceName = serviceName;
-        ServiceVersion = serviceVersion;
+        ServiceVersion = serviceVersion;  
+#endif
     }
 }

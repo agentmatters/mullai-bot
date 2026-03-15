@@ -39,9 +39,10 @@ namespace Mullai.Global.ServiceConfiguration
                 .AddSingleton<IConfiguration>(configuration)
                 .AddLogging(builder =>
                 {
+#if DEBUG
                     builder
                         .AddConsole()
-                        .SetMinimumLevel(LogLevel.None)
+                        .SetMinimumLevel(LogLevel.Information)
                         .AddOpenTelemetry(options =>
                         {
                             options.SetResourceBuilder(
@@ -53,6 +54,9 @@ namespace Mullai.Global.ServiceConfiguration
                             options.IncludeScopes = true;
                             options.IncludeFormattedMessage = true;
                         });
+#else
+                    builder.SetMinimumLevel(LogLevel.None);
+#endif
                 })
                 .AddSingleton<LLMRequestLoggingHandler>()
                 .AddSingleton<HttpClient>(sp => {
@@ -67,10 +71,7 @@ namespace Mullai.Global.ServiceConfiguration
                     var logger = sp.GetRequiredService<ILogger<MullaiChatClient>>();
                     var credentialStorage = sp.GetRequiredService<ICredentialStorage>();
 
-                    var modelsJsonPath = Path.Combine(
-                        AppContext.BaseDirectory, "models.json");
-
-                    return MullaiChatClientFactory.Create(modelsJsonPath, configuration, credentialStorage, httpClient, logger);
+                    return MullaiChatClientFactory.Create(configuration, credentialStorage, httpClient, logger);
                 })
                 .AddSingleton<AgentFactory>()
                 .AddSingleton<FunctionCallingMiddleware>()
