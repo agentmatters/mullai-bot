@@ -24,13 +24,14 @@
 
 ---
 
-<p align="center">
-    <picture>
-        <img src="https://raw.githubusercontent.com/agentmatters/mullai-bot/refs/heads/main/docs/assets/mullai_demo.png" alt="Mullai Demo" width="500">
-    </picture>
-</p>
 
 Mullai is a powerful and flexible AI Agent framework built entirely on **.NET**. It provides a robust foundation for creating intelligent, multi-turn conversational AI agents that are equipped with a rich set of **tools, memory, and skills**. Leveraging `Microsoft.Extensions.AI` and `Microsoft.Agents.AI`, Mullai empowers developers to build sophisticated AI assistants with a highly scalable and observable architecture.
+
+<p align="center">
+    <picture>
+        <img src="https://raw.githubusercontent.com/agentmatters/mullai-bot/refs/heads/main/docs/assets/mullai_demo.png" alt="Mullai Demo" width="800">
+    </picture>
+</p>
 
 ## New: Rich Console Application
 
