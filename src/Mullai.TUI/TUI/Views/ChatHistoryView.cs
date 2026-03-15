@@ -1,5 +1,3 @@
-using System.Drawing;
-using Terminal.Gui;
 using Mullai.TUI.TUI.State;
 using Terminal.Gui.Views;
 using Mullai.Abstractions.Observability;
@@ -72,22 +70,15 @@ public class ChatHistoryView : TextView
         // }
     }
     
-    // protected override bool OnMouseEvent (Mouse mouse)
-    // {
-    //     if (mouse.Flags.HasFlag (MouseFlags.RightButtonClicked))
-    //     {
-    //         // if (IsForegroundPoint (mouse.Position!.Value.X, mouse.Position!.Value.Y))
-    //         // {
-    //         //     ClickedInForeground ();
-    //         // }
-    //         // else if (IsBackgroundPoint (mouse.Position!.Value.X, mouse.Position!.Value.Y))
-    //         // {
-    //         //     ClickedInBackground ();
-    //         // }
-    //     }
-    //
-    //     // mouse.Handled = true;
-    //
-    //     return mouse.Handled;
-    // }
+    protected override bool OnMouseEvent(Mouse mouse)
+    {
+        if (mouse.Flags.HasFlag(MouseFlags.RightButtonClicked))
+        {
+            mouse.Handled = true;
+            Copy();
+            return false;
+        }
+        
+        return base.OnMouseEvent(mouse);
+    }
 }
