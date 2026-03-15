@@ -1,10 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>0.0.1</Version>
-    <Company>AgentMatters</Company>
-    <Description>Mullai - Your AI Assistant</Description>
-    <Copyright>Copyright © 2026</Copyright>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
