@@ -26,7 +26,7 @@
 
 <p align="center">
     <picture>
-        <img src="https://raw.githubusercontent.com/agentmatters/mullai-bot/refs/heads/main/docs/assets/mullai-demo.png" alt="Mullai Logo" width="500">
+        <img src="https://raw.githubusercontent.com/agentmatters/mullai-bot/refs/heads/main/docs/assets/mullai_demo.png" alt="Mullai Demo" width="500">
     </picture>
 </p>
 
