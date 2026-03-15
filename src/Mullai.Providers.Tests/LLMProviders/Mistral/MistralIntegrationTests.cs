@@ -14,15 +14,15 @@ public class MistralIntegrationTests
     public MistralIntegrationTests()
     {
         _configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true)
-            .AddJsonFile("appsettings.Test.json", optional: true)
+            // .AddJsonFile("appsettings.json", optional: true)
+            // .AddJsonFile("appsettings.Test.json", optional: true)
             .AddEnvironmentVariables()
             .Build();
 
         _apiKey = _configuration["Mistral:ApiKey"];
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetResponseAsync_WithRealAPI_ReturnsValidResponse()
     {
         Skip.If(string.IsNullOrEmpty(_apiKey), "Missing API Key");
@@ -50,7 +50,7 @@ public class MistralIntegrationTests
         Console.WriteLine($"Response: {response.Messages[0].Text}");
     }
 
-    [Fact]
+    [SkippableFact]
     public async Task GetStreamingResponseAsync_WithRealAPI_ReturnsValidStream()
     {
         Skip.If(string.IsNullOrEmpty(_apiKey), "Missing API Key");
