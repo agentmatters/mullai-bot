@@ -14,6 +14,8 @@
   <a href="https://github.com/agentmatters/mullai-bot/stargazers"><img src="https://img.shields.io/github/stars/agentmatters/mullai-bot?style=for-the-badge&logoSize=auto" alt="GitHub stars"></a>
   <a href="https://github.com/agentmatters/mullai-bot/actions/workflows/dotnet.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/agentmatters/mullai-bot/dotnet.yml?branch=main&style=for-the-badge" alt="CI status"></a>
   <a href="https://github.com/agentmatters/mullai-bot/releases/latest"><img src="https://img.shields.io/github/v/release/agentmatters/mullai-bot?include_prereleases&style=for-the-badge" alt="Mullai Release"></a>
+</p>
+<p align="center">
   <a href="https://discord.gg/YhDYt4g6Ja"><img src="https://img.shields.io/discord/1482586210517123084?label=Discord&logo=discord&logoColor=white&color=5865F2&style=for-the-badge" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
