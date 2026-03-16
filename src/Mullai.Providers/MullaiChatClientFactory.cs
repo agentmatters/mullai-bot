@@ -42,12 +42,6 @@ public static class MullaiChatClientFactory
         var config = GetHardcodedConfig();
         var clients = BuildOrderedClients(config, configuration, credentialStorage, httpClient);
 
-        if (clients.Count == 0)
-            throw new InvalidOperationException(
-                "No enabled providers/models found in models.json. " +
-                "Check that at least one provider and model have Enabled=true " +
-                "and the corresponding API key is set in appsettings.");
-
         return new MullaiChatClient(clients, logger);
     }
 
@@ -60,7 +54,7 @@ public static class MullaiChatClientFactory
                 {
                     Name = "Gemini",
                     Priority = 3,
-                    Enabled = false,
+                    Enabled = true,
                     Models = [
                         new MullaiModelDescriptor
                         {
@@ -98,7 +92,7 @@ public static class MullaiChatClientFactory
                 {
                     Name = "Groq",
                     Priority = 2,
-                    Enabled = false,
+                    Enabled = true,
                     Models = [
                         new MullaiModelDescriptor
                         {
@@ -202,7 +196,7 @@ public static class MullaiChatClientFactory
                 {
                     Name = "OpenRouter",
                     Priority = 5,
-                    Enabled = false,
+                    Enabled = true,
                     Models = [
                         new MullaiModelDescriptor
                         {

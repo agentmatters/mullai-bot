@@ -24,16 +24,13 @@ public class MullaiChatClient : IChatClient
         IReadOnlyList<(string Label, IChatClient Client)> clients,
         ILogger<MullaiChatClient> logger)
     {
-        if (clients == null || clients.Count == 0)
-            throw new ArgumentException("At least one client must be provided.", nameof(clients));
-
-        _clients = clients;
+        _clients = clients ?? Array.Empty<(string, IChatClient)>();
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _metadata = new ChatClientMetadata("MullaiChatClient");
     }
 
     public ChatClientMetadata Metadata => _metadata;
-    public string ActiveLabel => _clients.Count > 0 ? _clients[0].Label : "Unknown/Unknown";
+    public string ActiveLabel => _clients.Count > 0 ? _clients[0].Label : "No Providers Configured";
 
     // ── GetResponseAsync ───────────────────────────────────────────────────
     public async Task<ChatResponse> GetResponseAsync(
@@ -48,6 +45,12 @@ public class MullaiChatClient : IChatClient
             ActivityKind.Client);
 
         parentActivity?.SetTag("mullai.client.provider_count", _clients.Count);
+
+        if (_clients.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "No AI providers are configured. Please use the /config command to set up at least one provider and API key.");
+        }
 
         _logger.LogInformation(
             "MullaiChatClient starting GetResponseAsync with {ProviderCount} provider(s): [{Providers}]",
@@ -146,6 +149,12 @@ public class MullaiChatClient : IChatClient
 
         parentActivity?.SetTag("mullai.client.provider_count", _clients.Count);
         parentActivity?.SetTag("mullai.streaming", true);
+
+        if (_clients.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "No AI providers are configured. Please use the /config command to set up at least one provider and API key.");
+        }
 
         _logger.LogInformation(
             "MullaiChatClient starting GetStreamingResponseAsync with {ProviderCount} provider(s): [{Providers}]",
