@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <Version>0.0.1.1</Version>
+    <Version>0.0.1.2</Version>
     <Company>AgentMatters</Company>
     <Description>Mullai - Your AI Assistant</Description>
     <Copyright>Copyright © 2026</Copyright>
