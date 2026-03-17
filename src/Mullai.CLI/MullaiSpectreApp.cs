@@ -26,18 +26,17 @@ public class MullaiSpectreApp
         var agentFactory = _services.GetRequiredService<AgentFactory>();
         var chatClient = _services.GetRequiredService<Microsoft.Extensions.AI.IChatClient>();
         var configuration = _services.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>();
-        var credentialStorage = _services.GetRequiredService<ICredentialStorage>();
+        var configManager = _services.GetRequiredService<IMullaiConfigurationManager>();
         var httpClient = _services.GetRequiredService<HttpClient>();
 
         _controller = new ChatOrchestrator(
             agentFactory, 
             _state, 
-            chatClient, 
             configuration, 
-            credentialStorage, 
+            configManager, 
             httpClient);
 
-        _configController = new ConfigController(credentialStorage, httpClient);
+        _configController = new ConfigController(configManager, httpClient);
         _commandProcessor = new CommandProcessor(_controller, _configController, _state);
 
         // Wire the FunctionCallingMiddleware to emit tool call observations

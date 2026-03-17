@@ -12,7 +12,7 @@ public class ChannelManager
     private readonly IEnumerable<IChannelAdapter> _channelAdapters;
     private readonly AgentFactory _agentFactory;
     private readonly ILogger<ChannelManager> _logger;
-    private readonly ConcurrentDictionary<string, AIAgent> _agents;
+    private readonly ConcurrentDictionary<string, MullaiAgent> _agents;
     private readonly ConcurrentDictionary<string, AgentSession> _sessions;
 
     public ChannelManager(
@@ -23,7 +23,7 @@ public class ChannelManager
         _channelAdapters = channelAdapters ?? throw new ArgumentNullException(nameof(channelAdapters));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _agents = new ConcurrentDictionary<string, AIAgent>();
+        _agents = new ConcurrentDictionary<string, MullaiAgent>();
         _sessions = new ConcurrentDictionary<string, AgentSession>();
 
         InitializeAdapters();

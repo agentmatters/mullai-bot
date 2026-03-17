@@ -24,22 +24,19 @@ public class AgentFactory
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
     
-    public AIAgent GetAgent(string agentName)
+    public MullaiAgent GetAgent(string agentName)
     {
-        
         AIAgent agent;
         var chatClient = _serviceProvider.GetRequiredService<IChatClient>();
         
         switch (agentName)
         {
             case "Joker":
-
                 var joker = new Joker();
                 agent = chatClient.AsAIAgent(joker.Instructions, joker.Name);
                 break;
             
             case "Assistant":
-
                 var assistant = new Assistant();
                 agent = chatClient.AsAIAgent(
                     new ChatClientAgentOptions()
@@ -52,16 +49,14 @@ public class AgentFactory
                                 .. _serviceProvider.GetRequiredService<CliTool>().AsAITools(),
                                 .. _serviceProvider.GetRequiredService<FileSystemTool>().AsAITools(),
                             ],
-                            AllowMultipleToolCalls =  true
+                            AllowMultipleToolCalls = true
                         },
                         Name = assistant.Name,
                         AIContextProviders = [
-                            // userMemory,
-                            // _serviceProvider.GetRequiredService<FileAgentSkillsProvider>(),
                             _serviceProvider.GetRequiredService<CurrentFolderContext>(),
                         ],
                     },
-                     _serviceProvider.GetRequiredService<ILoggerFactory>())
+                    _serviceProvider.GetRequiredService<ILoggerFactory>())
                     .AsBuilder()
                     .Use(_serviceProvider.GetRequiredService<FunctionCallingMiddleware>().InvokeAsync)
                     .UseOpenTelemetry(
@@ -76,6 +71,6 @@ public class AgentFactory
                 break;
         }
 
-        return agent;
+        return new MullaiAgent(agent, chatClient);
     }
 }

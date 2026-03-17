@@ -1,4 +1,4 @@
-namespace Mullai.Providers.Models;
+namespace Mullai.Abstractions.Models;
 
 public class MullaiModelDescriptor
 {

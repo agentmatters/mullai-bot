@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using Mullai.Providers.Common;
-using Mullai.Providers.Models;
+using Mullai.Abstractions.Models;
 
 namespace Mullai.Providers.LLMProviders.OpenRouter;
 
@@ -54,4 +54,26 @@ public class OpenRouterModelAdapter : IModelMetadataAdapter
         }
         return 0;
     }
+}
+
+internal class OpenRouterModelsResponse
+{
+    public List<OpenRouterModelData>? Data { get; set; }
+}
+
+internal class OpenRouterModelData
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public int ContextLength { get; set; }
+    public OpenRouterPricingData? Pricing { get; set; }
+}
+
+internal class OpenRouterPricingData
+{
+    public string? Prompt { get; set; }
+    public string? Completion { get; set; }
+    public string? Request { get; set; }
+    public string? Image { get; set; }
 }

@@ -1,18 +1,18 @@
 using Mullai.Abstractions.Configuration;
-using Mullai.Providers.Models;
+using Mullai.Abstractions.Models;
 using System.Text.Json;
 
 namespace Mullai.CLI.Controllers;
 
 public class ConfigController
 {
-    private readonly ICredentialStorage _credentialStorage;
+    private readonly IMullaiConfigurationManager _configManager;
     private readonly HttpClient _httpClient;
     private MullaiProvidersConfig? _config;
 
-    public ConfigController(ICredentialStorage credentialStorage, HttpClient httpClient)
+    public ConfigController(IMullaiConfigurationManager configManager, HttpClient httpClient)
     {
-        _credentialStorage = credentialStorage;
+        _configManager = configManager;
         _httpClient = httpClient;
     }
 
@@ -20,7 +20,7 @@ public class ConfigController
     {
         if (_config == null)
         {
-            _config = Mullai.Providers.MullaiChatClientFactory.LoadConfig();
+            _config = _configManager.GetProvidersConfig();
         }
         return _config.Providers;
     }
@@ -29,35 +29,41 @@ public class ConfigController
     {
         if (_config != null)
         {
-            Mullai.Providers.MullaiChatClientFactory.SaveConfig(_config);
+            _configManager.SaveProvidersConfig(_config);
         }
     }
 
     public bool IsProviderEnabled(string providerName, bool defaultValue) => 
-        _credentialStorage.IsProviderEnabled(providerName, defaultValue);
+        _configManager.IsProviderEnabled(providerName, defaultValue);
 
     public void SetProviderEnabled(string providerName, bool enabled) => 
-        _credentialStorage.SetProviderEnabled(providerName, enabled);
+        _configManager.SetProviderEnabled(providerName, enabled);
 
     public bool IsModelEnabled(string providerName, string modelId, bool defaultValue) => 
-        _credentialStorage.IsModelEnabled(providerName, modelId, defaultValue);
+        _configManager.IsModelEnabled(providerName, modelId, defaultValue);
 
     public void SetModelEnabled(string providerName, string modelId, bool enabled) => 
-        _credentialStorage.SetModelEnabled(providerName, modelId, enabled);
+        _configManager.SetModelEnabled(providerName, modelId, enabled);
 
     public string? GetApiKey(string providerName) => 
-        _credentialStorage.GetApiKey(providerName);
+        _configManager.GetApiKey(providerName);
 
     public void SaveApiKey(string providerName, string key) => 
-        _credentialStorage.SaveApiKey(providerName, key);
+        _configManager.SaveApiKey(providerName, key);
 
     public void DeleteApiKey(string providerName) => 
-        _credentialStorage.DeleteApiKey(providerName);
+        _configManager.DeleteApiKey(providerName);
 
     public async Task<List<MullaiModelDescriptor>> GetModelsAsync(string providerName)
     {
-        var apiKey = _credentialStorage.GetApiKey(providerName);
+        var apiKey = _configManager.GetApiKey(providerName);
         return await Mullai.Providers.MullaiChatClientFactory.GetModelsForProviderAsync(providerName, _httpClient, apiKey);
     }
+
+    public List<CustomProviderDescriptor> GetCustomProviders() => _configManager.GetCustomProviders();
+
+    public void SaveCustomProvider(CustomProviderDescriptor provider) => _configManager.AddCustomProvider(provider);
+
+    public void RemoveCustomProvider(string name) => _configManager.RemoveCustomProvider(name);
 }
 

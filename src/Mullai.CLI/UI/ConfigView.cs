@@ -1,5 +1,5 @@
 using Mullai.Abstractions.Configuration;
-using Mullai.Providers.Models;
+using Mullai.Abstractions.Models;
 using Spectre.Console;
 
 namespace Mullai.CLI.UI;
@@ -69,6 +69,12 @@ public class ConfigView
 
             if (actionChoice == "Enable/Disable Providers")
             {
+                if (providers.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[yellow]No providers available to configure.[/]");
+                    Thread.Sleep(1000);
+                    continue;
+                }
                 var providerChoices = providers.Select(p => new ProviderChoice(p.Name, _controller.IsProviderEnabled(p.Name, p.Enabled))).ToList();
                 var prompt = new MultiSelectionPrompt<ProviderChoice>()
                     .Title("Toggle [green]Providers[/]:")
@@ -88,6 +94,12 @@ public class ConfigView
             }
             else if (actionChoice == "Enable/Disable Specific Models")
             {
+                if (providers.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[yellow]No providers available.[/]");
+                    Thread.Sleep(1000);
+                    continue;
+                }
                 var choice = AnsiConsole.Prompt(
                     new SelectionPrompt<string>()
                         .Title("Select a [green]Provider[/] to manage models:")
@@ -154,10 +166,38 @@ public class ConfigView
                     Thread.Sleep(500);
                 }
             }
+            else if (actionChoice == "Disable All Models")
+            {
+                if (AnsiConsole.Confirm("Are you sure you want to disable [red]ALL[/] models for all providers?"))
+                {
+                    foreach (var p in providers)
+                    {
+                        foreach (var m in p.Models)
+                        {
+                            _controller.SetModelEnabled(p.Name, m.ModelId, false);
+                        }
+                    }
+                    
+                    var customProviders = _controller.GetCustomProviders();
+                    foreach (var cp in customProviders)
+                    {
+                        cp.Enabled = false;
+                        _controller.SaveCustomProvider(cp);
+                    }
 
-
+                    _controller.SaveProviders();
+                    AnsiConsole.MarkupLine("[green]All models have been disabled![/]");
+                    Thread.Sleep(1000);
+                }
+            }
             else if (actionChoice == "Refresh/Fetch Models from Provider")
             {
+                if (providers.Count == 0)
+                {
+                    AnsiConsole.MarkupLine("[yellow]No providers available.[/]");
+                    Thread.Sleep(1000);
+                    continue;
+                }
                 var choice = AnsiConsole.Prompt(
                     new SelectionPrompt<string>()
                         .Title("Select a [green]Provider[/] to refresh models:")
@@ -212,6 +252,12 @@ public class ConfigView
             AnsiConsole.Write(new Rule("[yellow]Manage API Keys[/]").RuleStyle("grey"));
             
             var providers = _controller.LoadProviders();
+            if (providers.Count == 0)
+            {
+                AnsiConsole.MarkupLine("[yellow]No providers available.[/]");
+                Thread.Sleep(1000);
+                break;
+            }
             var choice = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()
                     .Title("Select a [green]Provider[/] to manage keys:")

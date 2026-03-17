@@ -1,7 +1,11 @@
 using System.Diagnostics;
+using System.Text;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Mullai.OpenTelemetry.OpenTelemetry;
+using Mullai.Abstractions.Configuration;
+using Mullai.Providers.Common.Models;
+using System.Text.Json;
 
 namespace Mullai.Providers;
 
@@ -10,7 +14,7 @@ namespace Mullai.Providers;
 /// automatically falls back to the next on failure, and instruments every
 /// invocation with OpenTelemetry traces and structured log events.
 /// </summary>
-public class MullaiChatClient : IChatClient
+public class MullaiChatClient : IMullaiChatClient
 {
     // ── OpenTelemetry Activity source ──────────────────────────────────────
     internal static readonly ActivitySource ActivitySource =
@@ -68,9 +72,11 @@ public class MullaiChatClient : IChatClient
         }
 
         _logger.LogInformation(
-            "MullaiChatClient starting GetResponseAsync with {ProviderCount} provider(s): [{Providers}]",
+            "MullaiChatClient starting GetResponseAsync with {ProviderCount} provider(s). Instructions: {HasInstructions}, Tools: {ToolCount}, Messages: {MessageCount}",
             _clients.Count,
-            string.Join(", ", _clients.Select(c => c.Label)));
+            !string.IsNullOrEmpty(options?.Instructions),
+            options?.Tools?.Count ?? 0,
+            messageList.Count);
 
         Exception? lastException = null;
         int attemptIndex = 0;
@@ -172,9 +178,11 @@ public class MullaiChatClient : IChatClient
         }
 
         _logger.LogInformation(
-            "MullaiChatClient starting GetStreamingResponseAsync with {ProviderCount} provider(s): [{Providers}]",
+            "MullaiChatClient starting GetStreamingResponseAsync with {ProviderCount} provider(s). Instructions: {HasInstructions}, Tools: {ToolCount}, Messages: {MessageCount}",
             _clients.Count,
-            string.Join(", ", _clients.Select(c => c.Label)));
+            !string.IsNullOrEmpty(options?.Instructions),
+            options?.Tools?.Count ?? 0,
+            messageList.Count);
 
         Exception? lastException = null;
         int attemptIndex = 0;

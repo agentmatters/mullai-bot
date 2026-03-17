@@ -1,4 +1,4 @@
-using Mullai.Providers.Models;
+using Mullai.Abstractions.Models;
 
 namespace Mullai.Providers.Common;
 

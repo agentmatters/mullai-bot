@@ -64,14 +64,15 @@ namespace Mullai.Global.ServiceConfiguration
                     loggingHandler!.InnerHandler = new HttpClientHandler();
                     return new HttpClient(loggingHandler);
                 })
-                .AddSingleton<ICredentialStorage, FileCredentialStorage>()
+                .AddSingleton<IMullaiConfigurationManager, MullaiConfigurationManager>()
+                .AddSingleton<ICredentialStorage>(sp => sp.GetRequiredService<IMullaiConfigurationManager>())
                 .AddSingleton<IChatClient>(sp => 
                 {
                     var httpClient = sp.GetRequiredService<HttpClient>();
                     var logger = sp.GetRequiredService<ILogger<MullaiChatClient>>();
-                    var credentialStorage = sp.GetRequiredService<ICredentialStorage>();
+                    var configManager = sp.GetRequiredService<IMullaiConfigurationManager>();
 
-                    return MullaiChatClientFactory.Create(configuration, credentialStorage, httpClient, logger);
+                    return MullaiChatClientFactory.Create(configuration, configManager, httpClient, logger);
                 })
                 .AddSingleton<AgentFactory>()
                 .AddSingleton<FunctionCallingMiddleware>()

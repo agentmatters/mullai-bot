@@ -10,56 +10,49 @@ public class ChatOrchestrator
 {
     private readonly AgentFactory _agentFactory;
     private readonly ChatState _state;
-    private readonly Microsoft.Extensions.AI.IChatClient _chatClient;
     private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
-    private readonly ICredentialStorage _credentialStorage;
+    private readonly IMullaiConfigurationManager _configManager;
     private readonly HttpClient _httpClient;
-    private AIAgent? _agent;
+    private MullaiAgent? _agent;
     private AgentSession? _session;
 
     public ChatOrchestrator(
         AgentFactory agentFactory, 
         ChatState state, 
-        Microsoft.Extensions.AI.IChatClient chatClient,
         Microsoft.Extensions.Configuration.IConfiguration configuration,
-        ICredentialStorage credentialStorage,
+        IMullaiConfigurationManager configManager,
         HttpClient httpClient)
     {
         _agentFactory = agentFactory;
         _state = state;
-        _chatClient = chatClient;
         _configuration = configuration;
-        _credentialStorage = credentialStorage;
+        _configManager = configManager;
         _httpClient = httpClient;
     }
 
     public void RefreshClients()
     {
-        if (_chatClient is Mullai.Providers.MullaiChatClient mullaiClient)
+        _agent?.RefreshClients(() => 
         {
-            var config = Mullai.Providers.MullaiChatClientFactory.LoadConfig();
-            var newClients = Mullai.Providers.MullaiChatClientFactory.BuildOrderedClients(
-                config, 
-                _configuration, 
-                _credentialStorage, 
-                _httpClient);
-            
-            mullaiClient.UpdateClients(newClients);
-        }
+            var chatClient = _agent?.ChatClient;
+            if (chatClient is Mullai.Providers.MullaiChatClient mullaiClient)
+            {
+                var config = _configManager.GetProvidersConfig();
+                var customProviders = _configManager.GetCustomProviders();
+                var newClients = Mullai.Providers.MullaiChatClientFactory.BuildOrderedClients(
+                    config, 
+                    customProviders,
+                    _configuration, 
+                    _configManager, 
+                    _httpClient);
+                
+                mullaiClient.UpdateClients(newClients);
+            }
+        });
     }
 
-    public string ModelName => GetLabelPart(1);
-    public string ProviderName => GetLabelPart(0);
-
-    private string GetLabelPart(int index)
-    {
-        if (_chatClient is Mullai.Providers.MullaiChatClient mullaiClient)
-        {
-            var parts = mullaiClient.ActiveLabel.Split('/');
-            return parts.Length > index ? parts[index] : "Unknown";
-        }
-        return "Unknown";
-    }
+    public string ModelName => _agent?.ModelName ?? "Unknown";
+    public string ProviderName => _agent?.ProviderName ?? "Unknown";
 
     public async Task InitialiseAsync()
     {

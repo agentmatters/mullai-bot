@@ -32,21 +32,12 @@ public static class OpenRouter
         string? modelId = null
     )
     {
-        var apiKey = configuration["OpenRouter:ApiKey"];
-        if (string.IsNullOrWhiteSpace(apiKey))
-            throw new InvalidOperationException("OpenRouter:ApiKey is missing from configuration.");
-
-        var endpoint = configuration["OpenRouter:Endpoint"] ?? "https://openrouter.ai/api/v1/chat/completions";
-        
-        return new OpenRouterChatClient(httpClient, new Uri(endpoint))
-        {
-            OnBeforeRequest = req =>
-            {
-                req.Headers.Add("Authorization", $"Bearer {apiKey}");
-                req.Headers.Add("HTTP-Referer", "https://github.com/agentmatters/mullai");
-                req.Headers.Add("X-Title", "Mullai Bot");
-            }
-        };
+        return OpenAICompatibleProvider.CreateChatClient(
+            "OpenRouter",
+            "https://openrouter.ai/api/v1",
+            configuration,
+            httpClient,
+            modelIdOverride: modelId);
     }
 
     [Obsolete("Use GetOpenRouterChatClient(configuration, httpClient, modelId) instead.")]

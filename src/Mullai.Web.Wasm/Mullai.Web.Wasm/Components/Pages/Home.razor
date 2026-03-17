@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @rendermode InteractiveServer
 @using Microsoft.Agents.AI
 @using Mullai.Agents
@@ -200,7 +200,7 @@
 </style>
 
 @code {
-    private AIAgent _agent = null!;
+    private MullaiAgent _agent = null!;
     private AgentSession _session = null!;
     private string currentInput = "";
     private bool isThinking = false;
