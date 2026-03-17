@@ -7,6 +7,7 @@ $ErrorActionPreference = "Stop"
 # Configuration
 $REPO = "agentmatters/mullai-bot"
 $VERSION = $args[0]
+$VERSION_SUFFIX = ""
 
 # Fetch latest version if not provided
 if (-not $VERSION) {
@@ -28,6 +29,10 @@ if (-not $VERSION) {
                 $VERSION = $allReleases[0].tag_name
             } elseif ($allReleases.tag_name) { # Handle single release object if only one exists
                 $VERSION = $allReleases.tag_name
+            }
+
+            if ($VERSION -and $VERSION -notlike "*-preview") {
+                $VERSION_SUFFIX = "-preview"
             }
         } catch {
             Write-Host "Error: Could not fetch any version from GitHub." -ForegroundColor Red
@@ -60,8 +65,8 @@ if ($ARCH_NAME -eq "arm64") {
 }
 
 # Construct Download URL
-# Pattern: Mullai_v0.0.1_win_arm64.exe
-$DOWNLOAD_URL = "https://github.com/agentmatters/mullai-bot/releases/download/$VERSION/Mullai_${VERSION}_${OS}_${ARCH}.exe"
+# Pattern: Mullai_v0.0.1-preview_win_arm64.exe
+$DOWNLOAD_URL = "https://github.com/agentmatters/mullai-bot/releases/download/$VERSION/Mullai_${VERSION}${VERSION_SUFFIX}_${OS}_${ARCH}.exe"
 
 Write-Host "Installing Mullai $VERSION for $OS-$ARCH..." -ForegroundColor Cyan
 

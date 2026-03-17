@@ -9,6 +9,7 @@ set -e
 # Configuration
 REPO="agentmatters/mullai-bot"
 VERSION=${1:-""}
+VERSION_SUFFIX=""
 
 # Fetch latest version if not provided
 if [ -z "$VERSION" ]; then
@@ -21,6 +22,9 @@ if [ -z "$VERSION" ]; then
     if [ -z "$VERSION" ] || [[ "$LATEST_JSON" == *"Not Found"* ]]; then
         echo "No stable release found. Checking all releases (including pre-releases)..."
         VERSION=$(curl -s "https://api.github.com/repos/$REPO/releases" | grep -m 1 '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        if [ -n "$VERSION" ] && [[ ! "$VERSION" == *"-preview" ]]; then
+            VERSION_SUFFIX="-preview"
+        fi
     fi
 
     if [ -z "$VERSION" ]; then
@@ -56,9 +60,8 @@ else
 fi
 
 # Construct Download URL
-# Pattern: Mullai_v0.0.1_linux_arm64
-# Note: Releasing version specific name as per user's request: Mullai_v0.0.1_linux_arm64
-DOWNLOAD_URL="https://github.com/agentmatters/mullai-bot/releases/download/${VERSION}/Mullai_${VERSION}_${OS}_${ARCH}"
+# Pattern: Mullai_v0.0.1-preview_linux_arm64
+DOWNLOAD_URL="https://github.com/agentmatters/mullai-bot/releases/download/${VERSION}/Mullai_${VERSION}${VERSION_SUFFIX}_${OS}_${ARCH}"
 
 echo "Installing Mullai ${VERSION} for ${OS}-${ARCH}..."
 
