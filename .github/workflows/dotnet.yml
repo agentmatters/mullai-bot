@@ -57,9 +57,9 @@ jobs:
       shell: bash
       run: |
         if [[ $GITHUB_REF == refs/tags/* ]]; then
-          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "VERSION=${GITHUB_REF#refs/tags/}-preview" >> $GITHUB_OUTPUT
         else
-          echo "VERSION=v0.0.1" >> $GITHUB_OUTPUT
+          echo "VERSION=v0.0.1-preview" >> $GITHUB_OUTPUT
         fi
 
     - name: Restore dependencies
@@ -74,6 +74,7 @@ jobs:
           --self-contained true \
           -p:PublishSingleFile=true \
           -p:IncludeNativeLibrariesForSelfExtract=true \
+          -p:VersionSuffix=preview \
           -o publish
 
     - name: Rename and Prepare
@@ -107,5 +108,6 @@ jobs:
       with:
         files: artifacts/*
         generate_release_notes: true
+        prerelease: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
