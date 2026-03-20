@@ -16,6 +16,19 @@ using Mullai.Tools.FileSystemTool;
 using Mullai.Tools.WordTool;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
+using Mullai.Abstractions.Orchestration;
+using Mullai.Orchestration;
+using Mullai.Abstractions.Messaging;
+using Mullai.Abstractions.Persistence;
+using Mullai.Abstractions.Execution;
+using Mullai.Execution.Messaging;
+using Mullai.Execution.Persistence;
+using Mullai.Execution.Scheduling;
+using Mullai.Execution.Workers;
+using Mullai.Execution.Actors;
+
+using Mullai.Abstractions.Clients;
+using Mullai.Execution.Clients;
 
 namespace Mullai.Global.ServiceConfiguration
 {
@@ -76,6 +89,16 @@ namespace Mullai.Global.ServiceConfiguration
                     return MullaiChatClientFactory.Create(configuration, configManager, httpClient, logger);
                 })
                 .AddSingleton<AgentFactory>()
+                .AddSingleton<IConversationManager, ConversationManager>()
+                .AddSingleton<IPlanner, Planner>()
+                .AddSingleton<IAgentRouter, AgentRouter>()
+                .AddSingleton<IWorkflowEngine, WorkflowEngine>()
+                .AddSingleton<IEventBus, InternalEventBus>()
+                .AddSingleton<IStateStore, SqliteStateStore>()
+                .AddSingleton<IScheduler, MullaiScheduler>()
+                .AddSingleton<IActorManager, ActorManager>()
+                .AddSingleton<IMullaiClient, MullaiClient>()
+                .AddHostedService<AgentWorker>()
                 .AddSingleton<FunctionCallingMiddleware>()
                 .AddWeatherTool()
                 .AddCliTool()

@@ -1,0 +1,267 @@
+@using Mullai.Abstractions.Models
+@using Mullai.Web.Wasm.Services
+@inject WebConfigController Config
+
+<div class="settings-content">
+    <div class="settings-grid">
+        <section class="panel">
+            <div class="panel-title">API Keys</div>
+            <div class="panel-subtitle">Store keys securely on this machine to unlock providers.</div>
+
+            @if (_providers == null)
+            {
+                <div class="panel-muted">Loading providers…</div>
+            }
+            else
+            {
+                @foreach (var provider in _providers)
+                {
+                    var hasKey = !string.IsNullOrEmpty(Config.GetApiKey(provider.Name));
+                    var isEditing = _editingProvider == provider.Name;
+                    <div class="provider-card">
+                        <div class="provider-card-row">
+                            <div class="provider-info">
+                                <div class="provider-name">@provider.Name</div>
+                                <div class="provider-meta">@(!hasKey ? "Key missing" : "Key configured")</div>
+                            </div>
+                            <div class="provider-actions">
+                                <button class="pill-button" @onclick="() => StartEditKey(provider.Name)">@(isEditing ? "Editing" : "Edit key")</button>
+                                <button class="pill-button danger" disabled="@(!hasKey)" @onclick="() => DeleteKey(provider.Name)">Delete</button>
+                            </div>
+                        </div>
+                        @if (isEditing)
+                        {
+                            <div class="key-editor">
+                                <input type="password" placeholder="Paste API key" @bind="_keyInputs[provider.Name]" />
+                                <button class="primary-button" @onclick="() => SaveKey(provider.Name)">Save key</button>
+                                <button class="pill-button" @onclick="CancelEditKey">Cancel</button>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </section>
+
+        <section class="panel">
+            <div class="panel-title">Providers</div>
+            <div class="panel-subtitle">Enable or disable providers and refresh model catalogs.</div>
+
+            @if (_providers == null)
+            {
+                <div class="panel-muted">Loading providers…</div>
+            }
+            else
+            {
+                @foreach (var provider in _providers)
+                {
+                    var isEnabled = Config.IsProviderEnabled(provider.Name, provider.Enabled);
+                    <div class="provider-row">
+                        <label class="switch">
+                            <input type="checkbox" checked="@isEnabled" @onchange="(e => ToggleProvider(provider.Name, e))" />
+                            <span class="slider"></span>
+                        </label>
+                        <div class="provider-info">
+                            <div class="provider-name">@provider.Name</div>
+                            <div class="provider-meta">@provider.Models.Count model(s)</div>
+                        </div>
+                        <button class="pill-button" @onclick="() => RefreshModels(provider.Name)">Refresh models</button>
+                    </div>
+                }
+            }
+        </section>
+
+        <section class="panel panel-wide models-panel">
+            <div class="panel-title">Models</div>
+            <div class="panel-subtitle">Fine‑tune which models are eligible for orchestration.</div>
+
+            <div class="model-toolbar">
+                <select @bind="_selectedProvider" @bind:after="OnProviderChanged">
+                    <option value="">Select provider</option>
+                    @if (_providers != null)
+                    {
+                        @foreach (var provider in _providers)
+                        {
+                            <option value="@provider.Name">@provider.Name</option>
+                        }
+                    }
+                </select>
+                <input type="text" placeholder="Search models" @bind="_modelSearch" @bind:event="oninput" />
+                <label class="checkbox-pill">
+                    <input type="checkbox" @bind="_showEnabledOnly" />
+                    Show enabled only
+                </label>
+            </div>
+
+            <div class="model-scroll">
+                @if (string.IsNullOrEmpty(_selectedProvider))
+                {
+                    <div class="panel-muted">Pick a provider to view models.</div>
+                }
+                else if (_filteredModels.Count == 0)
+                {
+                    <div class="panel-muted">No models found. Try refreshing.</div>
+                }
+                else
+                {
+                    <div class="model-list">
+                        @foreach (var model in _filteredModels)
+                        {
+                            var isEnabled = Config.IsModelEnabled(_selectedProvider, model.ModelId, model.Enabled);
+                            <div class="model-row">
+                                <label class="switch">
+                                    <input type="checkbox" checked="@isEnabled" @onchange="(e => ToggleModel(_selectedProvider, model.ModelId, e))" />
+                                    <span class="slider"></span>
+                                </label>
+                                <div class="model-info">
+                                    <div class="model-name">@model.ModelName</div>
+                                    <div class="model-meta">ctx @model.ContextWindow:N0 • @GetPricing(model)</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_statusMessage))
+    {
+        <div class="status-banner @(_statusIsError ? "error" : "success")">@_statusMessage</div>
+    }
+</div>
+
+@code {
+    private List<MullaiProviderDescriptor>? _providers;
+    private string? _selectedProvider;
+    private string _modelSearch = string.Empty;
+    private bool _showEnabledOnly;
+    private string? _statusMessage;
+    private bool _statusIsError;
+    private readonly Dictionary<string, string> _keyInputs = new();
+    private string? _editingProvider;
+
+    protected override void OnInitialized()
+    {
+        _providers = Config.LoadProviders();
+        if (_providers.Count > 0)
+        {
+            _selectedProvider = _providers[0].Name;
+        }
+    }
+
+    private void StartEditKey(string providerName)
+    {
+        _editingProvider = providerName;
+        _keyInputs[providerName] = string.Empty;
+    }
+
+    private void CancelEditKey()
+    {
+        _editingProvider = null;
+    }
+
+    private void SaveKey(string providerName)
+    {
+        if (_keyInputs.TryGetValue(providerName, out var key) && !string.IsNullOrWhiteSpace(key))
+        {
+            Config.SaveApiKey(providerName, key.Trim());
+            _keyInputs[providerName] = string.Empty;
+            _editingProvider = null;
+            SetStatus($"Saved API key for {providerName}.");
+        }
+    }
+
+    private void DeleteKey(string providerName)
+    {
+        Config.DeleteApiKey(providerName);
+        SetStatus($"Deleted API key for {providerName}.");
+    }
+
+    private void ToggleProvider(string providerName, ChangeEventArgs args)
+    {
+        var enabled = args.Value is bool b && b;
+        Config.SetProviderEnabled(providerName, enabled);
+        SetStatus($"{providerName} {(enabled ? "enabled" : "disabled")}.");
+    }
+
+    private async Task RefreshModels(string providerName)
+    {
+        try
+        {
+            var models = await Config.GetModelsAsync(providerName);
+            var provider = _providers?.FirstOrDefault(p => p.Name == providerName);
+            if (provider != null)
+            {
+                provider.Models = models;
+                Config.SaveProviders();
+                _selectedProvider = providerName;
+                SetStatus($"Fetched {models.Count} models for {providerName}.");
+            }
+        }
+        catch (Exception ex)
+        {
+            SetStatus($"Failed to refresh models: {ex.Message}", true);
+        }
+    }
+
+    private void ToggleModel(string providerName, string modelId, ChangeEventArgs args)
+    {
+        var enabled = args.Value is bool b && b;
+        Config.SetModelEnabled(providerName, modelId, enabled);
+        SetStatus($"{modelId} {(enabled ? "enabled" : "disabled")}.");
+    }
+
+    private void OnProviderChanged()
+    {
+        _modelSearch = string.Empty;
+    }
+
+    private List<MullaiModelDescriptor> _filteredModels
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_selectedProvider) || _providers == null)
+            {
+                return new List<MullaiModelDescriptor>();
+            }
+
+            var provider = _providers.FirstOrDefault(p => p.Name == _selectedProvider);
+            if (provider == null)
+            {
+                return new List<MullaiModelDescriptor>();
+            }
+
+            IEnumerable<MullaiModelDescriptor> models = provider.Models;
+
+            if (!string.IsNullOrWhiteSpace(_modelSearch))
+            {
+                models = models.Where(m => m.ModelName.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase)
+                                        || m.ModelId.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (_showEnabledOnly)
+            {
+                models = models.Where(m => Config.IsModelEnabled(_selectedProvider, m.ModelId, m.Enabled));
+            }
+
+            return models.ToList();
+        }
+    }
+
+    private string GetPricing(MullaiModelDescriptor model)
+    {
+        if (model.Pricing == null)
+        {
+            return "free";
+        }
+
+        return $"${model.Pricing.InputPer1kTokens:F6}/${model.Pricing.OutputPer1kTokens:F6}";
+    }
+
+    private void SetStatus(string message, bool isError = false)
+    {
+        _statusMessage = message;
+        _statusIsError = isError;
+        StateHasChanged();
+    }
+}

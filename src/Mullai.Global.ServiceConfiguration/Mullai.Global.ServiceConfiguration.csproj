@@ -16,6 +16,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Mullai.Agents\Mullai.Agents.csproj" />
+      <ProjectReference Include="..\Mullai.Orchestration\Mullai.Orchestration.csproj" />
+      <ProjectReference Include="..\Mullai.Execution\Mullai.Execution.csproj" />
       <ProjectReference Include="..\Mullai.Logging\Mullai.Logging.csproj" />
       <ProjectReference Include="..\Mullai.Memory\Mullai.Memory.csproj" />
       <ProjectReference Include="..\Mullai.Middleware\Mullai.Middleware.csproj" />

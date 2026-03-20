@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.mullai.web</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/share/dotnet/dotnet</string>
+        <string>Mullai.Web.Wasm.dll</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/{{USER}}/ .mullai/service/web</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/{{USER}}/.mullai/logs/web.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/{{USER}}/.mullai/logs/web.error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>ASPNETCORE_ENVIRONMENT</key>
+        <string>Production</string>
+        <key>ASPNETCORE_URLS</key>
+        <string>http://localhost:5024</string>
+    </dict>
+</dict>
+</plist>

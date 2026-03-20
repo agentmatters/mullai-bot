@@ -1,18 +1,22 @@
 using Mullai.Channels.Api;
 using Mullai.Channels.Core;
 using Microsoft.AspNetCore.Mvc;
+using Mullai.Channels.Api.Hubs;
+using Mullai.Channels.Api.Messaging;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddOpenApi();
+builder.Services.AddSignalR();
 
 var config = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
-    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    // .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .Build();
 
 builder.Services.AddMullaiAgentServices(config);
+builder.Services.AddHostedService<EventBusForwarder>();
 
 var app = builder.Build();
 
@@ -51,5 +55,7 @@ app.MapPost("/api/webhooks/{channelId}", async (string channelId, [FromBody] obj
     }
 })
 .WithName("ProcessChannelWebhook");
+
+app.MapHub<FabricHub>("/hubs/fabric");
 
 app.Run();

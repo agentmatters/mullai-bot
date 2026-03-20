@@ -5,6 +5,7 @@
   <Project Path="Mullai.Channels.Core/Mullai.Channels.Core.csproj" />
   <Project Path="Mullai.Channels.Telegram/Mullai.Channels.Telegram.csproj" />
   <Project Path="Mullai.CLI\Mullai.CLI.csproj" />
+  <Project Path="Mullai.Execution/Mullai.Execution.csproj" />
   <Project Path="Mullai.Global.ServiceConfiguration/Mullai.Global.ServiceConfiguration.csproj" />
   <Project Path="Mullai.Logging/Mullai.Logging.csproj" />
   <Project Path="Mullai.Memory/Mullai.Memory.csproj" />
@@ -16,5 +17,6 @@
   <Project Path="Mullai.Web.Wasm/Mullai.Web.Wasm.Client/Mullai.Web.Wasm.Client.csproj" />
   <Project Path="Mullai.Web.Wasm/Mullai.Web.Wasm/Mullai.Web.Wasm.csproj" />
   <Project Path="Mullai.Tools.Tests/Mullai.Tools.Tests.csproj" />
+  <Project Path="Mullai.Orchestration/Mullai.Orchestration.csproj" />
   <Project Path="Mullai.Providers.Tests/Mullai.Providers.Tests.csproj" />
 </Solution>

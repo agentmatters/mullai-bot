@@ -1,9 +1,6 @@
-using Mullai.Abstractions.Agents;
-
 namespace Mullai.Agents.Agents;
 
-
-public class Assistant : IMullaiAgent
+public class Assistant
 {
     public string Name { get; set; } = "Assistant";
 

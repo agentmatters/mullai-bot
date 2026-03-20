@@ -27,6 +27,7 @@
         @if (State.Messages.Count == 0 && !State.IsThinking)
         {
             <Markup Content="Welcome! Type a message below to start chatting." Foreground="@Color.Grey" />
+            <Markup Content="Type /mode <chat|agent|team> to switch execution paths." Foreground="@Color.Grey58" />
             <Markup Content="Type /config to manage settings, /quit to exit." Foreground="@Color.Grey58" />
         }
         else
@@ -35,8 +36,12 @@
             {
                 @if (entry is ChatMessage message)
                 {
-                    <Padder @key="GetKey(entry)" Padding="@(new Padding(0, 1, 0, 0))">
-                        <Markup Content="@(message.IsUser ? "You" : "Mullai")" Foreground="@(message.IsUser ? Color.Green : Color.Blue)" />
+                    var sourceId = message.Metadata.GetValueOrDefault("SourceId")?.ToString() ?? "Mullai";
+                    var isSubTask = sourceId.Contains("-sub") || sourceId.Length < 8; // Heuristic for sub-tasks or short IDs
+                    
+                    <Padder @key="GetKey(entry)" Padding="@(new Padding(isSubTask ? 2 : 0, 1, 0, 0))">
+                        <Markup Content="@(message.IsUser ? "You" : sourceId)" 
+                                Foreground="@(message.IsUser ? Color.Green : (isSubTask ? Color.Yellow : Color.Blue))" />
                         <Markup Content=" " />
                         @if (message.IsUser)
                         {
@@ -65,6 +70,20 @@
             }
         }
 
+        @if (State.CurrentGraph.Nodes.Count > 0)
+        {
+            <Padder Padding="@(new Padding(0, 1, 0, 0))">
+                <Panel Title="@($"Execution Plan: {Orchestrator.CurrentMode}")" BorderColor="@Color.Grey37">
+                    <Rows>
+                        @foreach (var node in State.GetRootTasks())
+                        {
+                            @RenderTaskNode(node, 0)
+                        }
+                    </Rows>
+                </Panel>
+            </Padder>
+        }
+
         @if (State.IsThinking)
         {
             <Padder Padding="@(new Padding(0, 1, 0, 1))">
@@ -77,18 +96,32 @@
     </Rows>
 </Padder>
 
+@if (State.Progress > 0 && State.Progress < 1)
+{
+    <Padder Padding="@(new Padding(0, 1, 0, 0))">
+        <Markup Content="@GetProgressBarMarkup()" />
+    </Padder>
+}
+
 <Padder Padding="@(new Padding(0, 1, 0, 0))">
     <Columns>
         <Markup Content="@($"Model: {Orchestrator.ModelName}")" Foreground="@Color.Cyan1" />
         <Markup Content="  " />
         <Markup Content="@($"Provider: {Orchestrator.ProviderName}")" Foreground="@Color.Cyan1" />
+        <Markup Content="  " />
+        <Markup Content="@($"Mode: {Orchestrator.CurrentMode}")" Foreground="@Color.Yellow" />
+        <Markup Content="  " />
+        @if (State.Progress > 0)
+        {
+            <Markup Content="@($"Progress: {(State.Progress * 100):0}%")" Foreground="@Color.Green" />
+        }
     </Columns>
 </Padder>
 
 <TextInput @bind-Value="_currentInput" Placeholder="Type your message..." OnSubmit="HandleInput" Expand="true" />
 
 <Align Horizontal="@HorizontalAlignment.Center">
-    <Markup Content="Enter to send • /config for settings • /quit to exit" Foreground="@Color.Grey58" />
+    <Markup Content="Enter to send • /mode <name> • /config • /quit" Foreground="@Color.Grey58" />
 </Align>
 
 @code {
@@ -105,6 +138,32 @@
             await Orchestrator.InitialiseAsync();
         }
     }
+
+    private RenderFragment RenderTaskNode(Mullai.Abstractions.Orchestration.TaskNode node, int depth) => __builder => {
+        var statusColor = node.Status switch
+        {
+            Mullai.Abstractions.Orchestration.TaskStatus.Running => Color.Yellow,
+            Mullai.Abstractions.Orchestration.TaskStatus.Completed => Color.Green,
+            Mullai.Abstractions.Orchestration.TaskStatus.Failed => Color.Red,
+            _ => Color.Grey
+        };
+        var icon = node.Status switch
+        {
+            Mullai.Abstractions.Orchestration.TaskStatus.Running => "⏳",
+            Mullai.Abstractions.Orchestration.TaskStatus.Completed => "✅",
+            Mullai.Abstractions.Orchestration.TaskStatus.Failed => "❌",
+            _ => "○"
+        };
+        var indent = new string(' ', depth * 2);
+        var connector = depth > 0 ? "┕ " : "";
+
+        <Markup Content="@($"{indent}{connector}{icon} [{statusColor.ToMarkup()}]{node.AssignedAgent}:[/] {node.Description}")" />
+        
+        @foreach (var child in State.GetChildren(node.Id))
+        {
+            @RenderTaskNode(child, depth + 1)
+        }
+    };
 
     private async void OnStateChanged()
     {
@@ -126,6 +185,25 @@
             return;
         }
 
+        if (input.StartsWith("/mode", StringComparison.OrdinalIgnoreCase))
+        {
+            var modeStr = input.Length > 5 ? input[6..].Trim().ToLower() : string.Empty;
+            if (string.IsNullOrEmpty(modeStr))
+            {
+                State.AddErrorMessage($"Current Mode: {Orchestrator.CurrentMode}. Available: chat, agent, team.");
+            }
+            else if (Enum.TryParse<Mullai.Abstractions.Orchestration.ExecutionMode>(modeStr, true, out var mode))
+            {
+                Orchestrator.CurrentMode = mode;
+                State.AddErrorMessage($"Mode switched to: {mode} 🎭");
+            }
+            else
+            {
+                State.AddErrorMessage("Invalid mode. Use: /mode <chat|agent|team>");
+            }
+            return;
+        }
+
         if (input.Equals("/config", StringComparison.OrdinalIgnoreCase))
         {
             Nav.NavigateTo("/config");
@@ -138,6 +216,15 @@
     private List<object> GetVisibleEntries()
     {
         return State.ChronologicalEntries.ToList();
+    }
+
+    private string GetProgressBarMarkup()
+    {
+        const int width = 30;
+        var completed = (int)(State.Progress * width);
+        var remaining = width - completed;
+        var bar = new string('━', completed) + new string('─', remaining);
+        return $"[deepskyblue1]{bar}[/] [green]{(State.Progress * 100):0}%[/] [grey]Working...[/]";
     }
 
     private static string Truncate(string text, int maxLength)

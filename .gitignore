@@ -3,3 +3,4 @@ obj/
 bin/
 appsettings.json
 .DS_Store
+.design-internal/

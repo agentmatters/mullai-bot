@@ -1,8 +1,6 @@
-using Mullai.Abstractions.Agents;
-
 namespace Mullai.Agents.Agents;
 
-public class Joker : IMullaiAgent
+public class Joker
 {
     public string Name { get; set; } = "Joker";
 

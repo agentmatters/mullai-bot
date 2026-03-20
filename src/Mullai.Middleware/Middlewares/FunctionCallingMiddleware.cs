@@ -14,6 +14,7 @@ namespace Mullai.Middleware.Middlewares;
 public class FunctionCallingMiddleware
 {
     private readonly ILogger<FunctionCallingMiddleware> _logger;
+    private readonly Mullai.Abstractions.Messaging.IEventBus? _eventBus;
 
     /// <summary>
     /// Optional observer callback. Inject from the TUI bootstrap layer
@@ -22,9 +23,10 @@ public class FunctionCallingMiddleware
     /// </summary>
     public Action<ToolCallObservation>? OnToolCallObserved { get; set; }
 
-    public FunctionCallingMiddleware(ILogger<FunctionCallingMiddleware> logger)
+    public FunctionCallingMiddleware(ILogger<FunctionCallingMiddleware> logger, Mullai.Abstractions.Messaging.IEventBus? eventBus = null)
     {
         _logger = logger;
+        _eventBus = eventBus;
     }
 
     public async ValueTask<object?> InvokeAsync(
@@ -67,9 +69,11 @@ public class FunctionCallingMiddleware
                 Result: result?.ToString(),
                 Error: error,
                 StartedAt: startedAt,
-                FinishedAt: DateTimeOffset.UtcNow);
+                FinishedAt: DateTimeOffset.UtcNow,
+                AgentName: agent.Id);
 
             OnToolCallObserved?.Invoke(observation);
+            _eventBus?.PublishAsync(new Mullai.Abstractions.Messaging.ToolCallEvent(observation)).AsTask().Wait(); // Middleware context is often sync-compatible or requires wait here
         }
 
         return result;
