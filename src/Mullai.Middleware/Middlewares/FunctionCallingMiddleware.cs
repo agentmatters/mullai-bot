@@ -62,6 +62,7 @@ public class FunctionCallingMiddleware
         }
         finally
         {
+            var sessionId = Mullai.Abstractions.Orchestration.SessionContext.CurrentSessionId ?? "";
             var observation = new ToolCallObservation(
                 ToolName: context.Function.Name,
                 Arguments: new Dictionary<string, object?>(context.Arguments),
@@ -70,10 +71,11 @@ public class FunctionCallingMiddleware
                 Error: error,
                 StartedAt: startedAt,
                 FinishedAt: DateTimeOffset.UtcNow,
-                AgentName: agent.Id);
+                AgentName: agent.Id,
+                SessionId: sessionId);
 
             OnToolCallObserved?.Invoke(observation);
-            _eventBus?.PublishAsync(new Mullai.Abstractions.Messaging.ToolCallEvent(observation)).AsTask().Wait(); // Middleware context is often sync-compatible or requires wait here
+            _eventBus?.PublishAsync(new Mullai.Abstractions.Messaging.ToolCallEvent(sessionId, observation)).AsTask().Wait();
         }
 
         return result;

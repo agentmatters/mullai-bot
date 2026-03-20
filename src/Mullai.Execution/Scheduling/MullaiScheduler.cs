@@ -14,6 +14,7 @@ public class MullaiScheduler : IScheduler
 
     public ValueTask SubmitAsync(TaskNode node, string sessionId, CancellationToken cancellationToken = default)
     {
+        Console.WriteLine($"[DEBUG: FLOW] MullaiScheduler: Queueing task {node.Id} for session {sessionId}");
         return _queue.Writer.WriteAsync(new TaskExecutionRequest(node, sessionId), cancellationToken);
     }
 

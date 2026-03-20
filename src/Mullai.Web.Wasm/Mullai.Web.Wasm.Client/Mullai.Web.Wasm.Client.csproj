@@ -12,6 +12,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+        <ProjectReference Include="..\..\Mullai.Abstractions\Mullai.Abstractions.csproj" />
     </ItemGroup>
 
 </Project>

@@ -14,17 +14,17 @@ using Mullai.Middleware.Middlewares;
 using Mullai.OpenTelemetry.OpenTelemetry;
 
 using Mullai.Abstractions.Agents;
+using Mullai.Tools.TaskTool;
 
 namespace Mullai.Agents;
 
 public class AgentFactory
 {
-    private readonly IServiceProvider _serviceProvider;
+    private readonly IServiceScopeFactory _scopeFactory;
     
-    public AgentFactory(
-        IServiceProvider serviceProvider)
+    public AgentFactory(IServiceScopeFactory scopeFactory)
     {
-        _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory));
     }
     
     public MullaiAgent GetAgent(string agentName)
@@ -40,7 +40,7 @@ public class AgentFactory
                 "Orchestrator" => GetOrchestratorInstructions(),
                 _ => "You are a helpful assistant."
             },
-            Tools = agentName == "Assistant" ? new List<string> { "WeatherTool", "CliTool", "FileSystemTool", "WordTool" } : new List<string>()
+            Tools = agentName == "Assistant" ? new List<string> { "WeatherTool", "CliTool", "FileSystemTool", "WordTool", "TaskTool" } : new List<string>()
         };
 
         return CreateAgent(definition);
@@ -83,7 +83,9 @@ public class AgentFactory
 
     public MullaiAgent CreateAgent(AgentDefinition definition)
     {
-        var chatClient = _serviceProvider.GetRequiredService<IChatClient>();
+        using var scope = _scopeFactory.CreateScope();
+        var serviceProvider = scope.ServiceProvider;
+        var chatClient = serviceProvider.GetRequiredService<IChatClient>();
         
         var mode = definition.Metadata.GetValueOrDefault("ExecutionMode")?.ToString();
         var toolNames = definition.Tools;
@@ -91,10 +93,10 @@ public class AgentFactory
         // If no tools are specified, provide a default set for Agent and Team modes
         if ((toolNames == null || toolNames.Count == 0) && mode != "Chat")
         {
-            toolNames = new List<string> { "WeatherTool", "CliTool", "FileSystemTool", "WordTool" };
+            toolNames = new List<string> { "WeatherTool", "CliTool", "FileSystemTool", "WordTool", "TaskTool" };
         }
         
-        var tools = mode == "Chat" ? new List<AITool>() : ResolveTools(toolNames!);
+        var tools = mode == "Chat" ? new List<AITool>() : ResolveTools(serviceProvider, toolNames!);
 
         var options = new ChatClientAgentOptions
         {
@@ -105,12 +107,12 @@ public class AgentFactory
                 Tools = tools,
                 AllowMultipleToolCalls = true
             },
-            AIContextProviders = ResolveContextProviders(definition.MemoryContexts)
+            AIContextProviders = ResolveContextProviders(serviceProvider, definition.MemoryContexts)
         };
 
-        var agent = chatClient.AsAIAgent(options, _serviceProvider.GetRequiredService<ILoggerFactory>())
+        var agent = chatClient.AsAIAgent(options, serviceProvider.GetRequiredService<ILoggerFactory>())
             .AsBuilder()
-            .Use(_serviceProvider.GetRequiredService<FunctionCallingMiddleware>().InvokeAsync)
+            .Use(serviceProvider.GetRequiredService<FunctionCallingMiddleware>().InvokeAsync)
             .UseOpenTelemetry(
                 sourceName: OpenTelemetrySettings.ServiceName, 
                 configure: (cfg) => cfg.EnableSensitiveData = true)
@@ -119,7 +121,7 @@ public class AgentFactory
         return new MullaiAgent(agent, chatClient);
     }
 
-    private List<AITool> ResolveTools(List<string> toolNames)
+    private List<AITool> ResolveTools(IServiceProvider serviceProvider, List<string> toolNames)
     {
         var tools = new List<AITool>();
         if (toolNames == null) return tools;
@@ -129,27 +131,30 @@ public class AgentFactory
             switch (name)
             {
                 case "WeatherTool":
-                    tools.AddRange(_serviceProvider.GetRequiredService<WeatherTool>().AsAITools());
+                    tools.AddRange(serviceProvider.GetRequiredService<WeatherTool>().AsAITools());
                     break;
                 case "CliTool":
-                    tools.AddRange(_serviceProvider.GetRequiredService<CliTool>().AsAITools());
+                    tools.AddRange(serviceProvider.GetRequiredService<CliTool>().AsAITools());
                     break;
                 case "FileSystemTool":
-                    tools.AddRange(_serviceProvider.GetRequiredService<FileSystemTool>().AsAITools());
+                    tools.AddRange(serviceProvider.GetRequiredService<FileSystemTool>().AsAITools());
                     break;
                 case "WordTool":
-                    tools.AddRange(_serviceProvider.GetRequiredService<WordTool>().AsAITools());
+                    tools.AddRange(serviceProvider.GetRequiredService<WordTool>().AsAITools());
+                    break;
+                case "TaskTool":
+                    tools.AddRange(serviceProvider.GetRequiredService<TaskTool>().AsAITools());
                     break;
             }
         }
         return tools;
     }
 
-    private List<AIContextProvider> ResolveContextProviders(List<string> contextNames)
+    private List<AIContextProvider> ResolveContextProviders(IServiceProvider serviceProvider, List<string> contextNames)
     {
         var providers = new List<AIContextProvider>();
         // Default context
-        providers.Add(_serviceProvider.GetRequiredService<CurrentFolderContext>());
+        providers.Add(serviceProvider.GetRequiredService<CurrentFolderContext>());
         // Add other contexts if needed based on contextNames
         return providers;
     }

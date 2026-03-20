@@ -11,4 +11,5 @@ public interface ICredentialStorage
     
     bool IsModelEnabled(string providerName, string modelId, bool defaultValue);
     void SetModelEnabled(string providerName, string modelId, bool enabled);
+    void SetModelsEnabled(string providerName, IEnumerable<string> modelIds, bool enabled);
 }

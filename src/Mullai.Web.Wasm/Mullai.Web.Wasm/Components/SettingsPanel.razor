@@ -90,6 +90,10 @@
                     <input type="checkbox" @bind="_showEnabledOnly" />
                     Show enabled only
                 </label>
+                <div class="bulk-actions">
+                    <button class="pill-button" @onclick="() => ToggleAllModels(true)">Enable all</button>
+                    <button class="pill-button" @onclick="() => ToggleAllModels(false)">Disable all</button>
+                </div>
             </div>
 
             <div class="model-scroll">
@@ -209,6 +213,14 @@
         var enabled = args.Value is bool b && b;
         Config.SetModelEnabled(providerName, modelId, enabled);
         SetStatus($"{modelId} {(enabled ? "enabled" : "disabled")}.");
+    }
+
+    private void ToggleAllModels(bool enabled)
+    {
+        if (string.IsNullOrEmpty(_selectedProvider)) return;
+        var modelIds = _filteredModels.Select(m => m.ModelId).ToList();
+        Config.SetModelsEnabled(_selectedProvider, modelIds, enabled);
+        SetStatus($"All {modelIds.Count} models for {_selectedProvider} {(enabled ? "enabled" : "disabled")}.");
     }
 
     private void OnProviderChanged()

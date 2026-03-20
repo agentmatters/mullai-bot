@@ -7,6 +7,6 @@ public interface IMullaiAgent
 {
     public string Name {get; set;}
     public string Instructions { get; set; }
-    IAsyncEnumerable<AgentResponseUpdate> RunStreamingAsync(string userInput, AgentSession session, CancellationToken cancellationToken = default);
-    Task<AgentResponse> RunAsync(string userInput, AgentSession session, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<AgentResponseUpdate> RunStreamingAsync(string userInput, AgentSession session, IEnumerable<ChatMessage>? history = null, CancellationToken cancellationToken = default);
+    Task<AgentResponse> RunAsync(string userInput, AgentSession session, IEnumerable<ChatMessage>? history = null, CancellationToken cancellationToken = default);
 }

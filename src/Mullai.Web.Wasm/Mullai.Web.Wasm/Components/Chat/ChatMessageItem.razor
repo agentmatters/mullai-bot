@@ -1,17 +1,21 @@
 @using Markdig
-@using Mullai.Web.Wasm.Messaging
+@using Microsoft.Extensions.AI
 @using Microsoft.AspNetCore.Components
 
-<div class="message @(Message.IsUser ? "user-message" : "agent-message")">
-    <div class="message-content">@((MarkupString)Markdown.ToHtml(Message.Content, Pipeline))</div>
-    @if (Message.TaskUpdates.Any())
-    {
-        <div class="task-log">
-            @foreach (var update in Message.TaskUpdates)
-            {
-                <div class="task-step">@update</div>
-            }
-        </div>
+<div class="message @(Message.Role == ChatRole.User ? "user-message" : "agent-message")">
+    <div class="message-content">@((MarkupString)Markdown.ToHtml(Message.Text ?? "", Pipeline))</div>
+    
+    @{
+        var updates = Message.AdditionalProperties?.GetValueOrDefault("TaskUpdates") as List<string>;
+        if (updates != null && updates.Any())
+        {
+            <div class="task-log">
+                @foreach (var update in updates)
+                {
+                    <div class="task-step">@update</div>
+                }
+            </div>
+        }
     }
 </div>
 

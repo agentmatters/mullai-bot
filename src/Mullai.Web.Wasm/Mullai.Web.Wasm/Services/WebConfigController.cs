@@ -62,6 +62,12 @@ public class WebConfigController
         RefreshClients();
     }
 
+    public void SetModelsEnabled(string providerName, IEnumerable<string> modelIds, bool enabled)
+    {
+        _configManager.SetModelsEnabled(providerName, modelIds, enabled);
+        RefreshClients();
+    }
+
     public string? GetApiKey(string providerName) =>
         _configManager.GetApiKey(providerName);
 

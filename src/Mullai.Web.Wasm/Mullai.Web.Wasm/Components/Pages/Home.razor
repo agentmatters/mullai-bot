@@ -2,6 +2,11 @@
 @page "/settings"
 @rendermode InteractiveServer
 @using Markdig
+@using Microsoft.Extensions.AI
+@using Mullai.Web.Wasm.Services
+@using Mullai.Web.Wasm.Components.Chat
+@using Mullai.Abstractions.Orchestration
+@implements IAsyncDisposable
 
 <PageTitle>Mullai</PageTitle>
 
@@ -36,6 +41,8 @@
                         <button class="ghost-button">New session</button>
                     </div>
                 </div>
+                
+                <TaskGrid />
 
                 <div class="chat-history">
                     @foreach (var entry in ChatState.GetVisibleEntries())

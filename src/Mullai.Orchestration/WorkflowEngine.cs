@@ -16,6 +16,8 @@ public class WorkflowEngine : IWorkflowEngine
     private readonly ConcurrentHashSet<string> _completedTasks = new();
     private readonly ConcurrentHashSet<string> _approvedTasks = new();
     private readonly ConcurrentDictionary<string, int> _traceCounters = new();
+    private readonly ConcurrentDictionary<string, TaskCompletionSource> _taskWaiters = new();
+    private readonly ConcurrentDictionary<string, TaskNode> _allTasks = new();
 
     public WorkflowEngine(IScheduler scheduler, IEventBus eventBus)
     {
@@ -28,77 +30,127 @@ public class WorkflowEngine : IWorkflowEngine
     {
         await foreach (var e in _eventBus.SubscribeAsync<TaskStatusEvent>())
         {
-            if (e.Status == "Completed")
+            Console.WriteLine($"[DEBUG: FLOW] WorkflowEngine: Received status update for task {e.TaskId}: {e.Status}");
+            
+            if (_allTasks.TryGetValue(e.TaskId, out var task))
             {
-                _completedTasks.Add(e.TaskId);
-                _traceCounters.AddOrUpdate(e.TraceId, 0, (_, c) => Math.Max(0, c - 1));
-                await CheckAndReleaseTasksAsync("mullai-session");
+                task.Status = Enum.TryParse<Mullai.Abstractions.Orchestration.TaskStatus>(e.Status, out var status) ? status : task.Status;
+            }
+
+            if (e.Status == "Completed" || e.Status == "Failed" || e.Status == "Cancelled")
+            {
+                if (e.Status == "Completed")
+                {
+                    _completedTasks.Add(e.TaskId);
+                }
+                
+                _traceCounters.AddOrUpdate(e.SessionId, 0, (_, c) => Math.Max(0, c - 1));
+                
+                if (_taskWaiters.TryRemove(e.TaskId, out var tcs))
+                {
+                    Console.WriteLine($"[DEBUG: FLOW] WorkflowEngine: Signaling waiter for task {e.TaskId} with status {e.Status}");
+                    tcs.TrySetResult();
+                }
+
+                await CheckAndReleaseTasksAsync(e.SessionId);
             }
         }
     }
 
     public async Task SubmitGraphAsync(IEnumerable<TaskNode> nodes, string sessionId)
     {
-        foreach (var node in nodes) 
+        var nodeList = nodes.ToList();
+        Console.WriteLine($"[DEBUG: FLOW] WorkflowEngine: Submitting {nodeList.Count} nodes for session {sessionId}");
+        foreach (var node in nodeList) 
         { 
+            node.SessionId = sessionId;
             _pendingTasks.TryAdd(node.Id, node); 
+            _allTasks.TryAdd(node.Id, node);
             if (!string.IsNullOrEmpty(node.TraceId))
             {
                 _traceCounters.AddOrUpdate(node.TraceId, 1, (_, c) => c + 1);
             }
         }
+
+        // Notify UI/CLI about new tasks
+        await _eventBus.PublishAsync(new GraphCreatedEvent(sessionId, new TaskGraph { Nodes = nodeList }));
+
         await CheckAndReleaseTasksAsync(sessionId);
     }
 
     public bool IsTraceComplete(string traceId) => _traceCounters.TryGetValue(traceId, out var count) && count == 0;
+    
+    public Task<TaskNode?> GetTaskAsync(string taskId)
+    {
+        _allTasks.TryGetValue(taskId, out var task);
+        return Task.FromResult(task);
+    }
 
-    public async Task ApproveTaskAsync(string taskId) 
+    public Task<IEnumerable<TaskNode>> GetTasksAsync(string sessionId)
+    {
+        var tasks = _allTasks.Values.Where(t => t.SessionId == sessionId).ToList();
+        return Task.FromResult<IEnumerable<TaskNode>>(tasks);
+    }
+
+    public async Task WaitForTaskAsync(string taskId, CancellationToken ct = default)
+    {
+        if (_completedTasks.Contains(taskId)) return;
+
+        var tcs = _taskWaiters.GetOrAdd(taskId, _ => new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+        
+        using (ct.Register(() => tcs.TrySetCanceled()))
+        {
+            await tcs.Task;
+        }
+    }
+
+    public async Task ApproveTaskAsync(string taskId, string sessionId) 
     { 
         _approvedTasks.Add(taskId); 
-        await CheckAndReleaseTasksAsync("mullai-session"); 
+        await CheckAndReleaseTasksAsync(sessionId); 
     }
 
     private async Task CheckAndReleaseTasksAsync(string sessionId)
     {
         var readyTasks = _pendingTasks.Values
             .Where(t => t.Status == Mullai.Abstractions.Orchestration.TaskStatus.Pending)
-            .Where(t => 
-            {
-                // Simple dependency check: for now we use Metadata to store dependencies or edges
-                // In a more robust system, we would traverse the TaskGraph edges.
-                return true; // Simplified for the migration step
-            })
             .ToList();
+
+        if (readyTasks.Any())
+        {
+            Console.WriteLine($"[DEBUG: FLOW] WorkflowEngine: Found {readyTasks.Count} ready tasks to release");
+        }
 
         foreach (var task in readyTasks)
         {
             if (task.RequiresApproval && !_approvedTasks.Contains(task.Id)) 
             { 
-                 await _eventBus.PublishAsync(new ApprovalRequestedEvent(task.Id, task.Description)); 
+                 Console.WriteLine($"[DEBUG: FLOW] WorkflowEngine: Task {task.Id} requires approval");
+                 await _eventBus.PublishAsync(new ApprovalRequestedEvent(task.Id, sessionId, task.Description)); 
                  continue; 
             }
             
             if (_pendingTasks.TryRemove(task.Id, out _)) 
             {
+                Console.WriteLine($"[DEBUG: FLOW] WorkflowEngine: Releasing task {task.Id} to scheduler");
                 await _scheduler.SubmitAsync(task, sessionId);
             }
         }
     }
 
-    // Compatibility for IWorkflowEngine interface
-    public async Task ExecuteAsync(TaskGraph graph, CancellationToken ct = default)
+    public async Task ExecuteAsync(TaskGraph graph, string sessionId, CancellationToken ct = default)
     {
-        await SubmitGraphAsync(graph.Nodes, "mullai-session");
+        await SubmitGraphAsync(graph.Nodes, sessionId);
     }
 
-    public async IAsyncEnumerable<WorkflowUpdate> ExecuteStreamingAsync(TaskGraph graph, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<WorkflowUpdate> ExecuteStreamingAsync(TaskGraph graph, string sessionId, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
     {
-        await SubmitGraphAsync(graph.Nodes, "mullai-session");
+        await SubmitGraphAsync(graph.Nodes, sessionId);
         
         // Listen for updates related to this graph
         await foreach (var e in _eventBus.SubscribeAsync<TaskStatusEvent>(ct))
         {
-            if (graph.Nodes.Any(n => n.Id == e.TaskId))
+            if (e.SessionId == sessionId && graph.Nodes.Any(n => n.Id == e.TaskId))
             {
                 yield return new WorkflowUpdate 
                 { 

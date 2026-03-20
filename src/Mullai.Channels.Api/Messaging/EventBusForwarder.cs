@@ -22,18 +22,34 @@ public class EventBusForwarder : BackgroundService
         {
             await foreach (var @event in _eventBus.SubscribeAsync<TaskStatusEvent>(stoppingToken))
             {
-                await _hubContext.Clients.All.SendAsync("OnTaskUpdate", @event.TaskId, @event.Status, @event.Message, cancellationToken: stoppingToken);
+                await _hubContext.Clients.Group(@event.SessionId).SendAsync("OnTaskUpdate", @event.TaskId, @event.Status, @event.Message, cancellationToken: stoppingToken);
             }
         }, stoppingToken);
 
         var agentUpdates = Task.Run(async () => 
         {
-            await foreach (var @event in _eventBus.SubscribeAsync<AgentUpdateEvent>(stoppingToken))
+            await foreach (var @event in _eventBus.SubscribeAsync<TokenReceivedEvent>(stoppingToken))
             {
-                await _hubContext.Clients.All.SendAsync("OnAgentToken", @event.AgentName, @event.Content, cancellationToken: stoppingToken);
+                await _hubContext.Clients.Group(@event.SessionId).SendAsync("OnAgentToken", @event.TaskId, @event.AgentName, @event.Token, cancellationToken: stoppingToken);
             }
         }, stoppingToken);
 
-        await Task.WhenAll(taskUpdates, agentUpdates);
+        var toolCallUpdates = Task.Run(async () => 
+        {
+            await foreach (var @event in _eventBus.SubscribeAsync<ToolCallEvent>(stoppingToken))
+            {
+                await _hubContext.Clients.Group(@event.SessionId).SendAsync("OnToolCall", @event.Observation, cancellationToken: stoppingToken);
+            }
+        }, stoppingToken);
+
+        var graphUpdates = Task.Run(async () => 
+        {
+            await foreach (var @event in _eventBus.SubscribeAsync<GraphCreatedEvent>(stoppingToken))
+            {
+                await _hubContext.Clients.Group(@event.SessionId).SendAsync("OnGraphCreated", @event.Graph, cancellationToken: stoppingToken);
+            }
+        }, stoppingToken);
+
+        await Task.WhenAll(taskUpdates, agentUpdates, toolCallUpdates, graphUpdates);
     }
 }
