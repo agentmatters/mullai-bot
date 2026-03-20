@@ -1,0 +1,24 @@
+@using Mullai.Web.Wasm.Messaging
+
+<div class="tool-call">
+    <div class="tool-call-title">🔧 @ToolCall.ToolName</div>
+    @if (!string.IsNullOrWhiteSpace(ToolCall.Result))
+    {
+        <div class="tool-call-detail">↳ @Truncate(ToolCall.Result, 160)</div>
+    }
+    @if (!string.IsNullOrWhiteSpace(ToolCall.Error))
+    {
+        <div class="tool-call-error">✗ @ToolCall.Error</div>
+    }
+</div>
+
+@code {
+    [Parameter] public ToolCallSnapshot ToolCall { get; set; } = default!;
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        var singleLine = text.ReplaceLineEndings(" ");
+        return singleLine.Length <= maxLength ? singleLine : singleLine[..maxLength] + "…";
+    }
+}

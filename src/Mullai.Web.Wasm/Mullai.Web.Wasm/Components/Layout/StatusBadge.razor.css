@@ -1,0 +1,23 @@
+.status-badge {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.status-badge.online {
+    background: #ecfdf3;
+    color: #027a48;
+    border-color: #abefc6;
+}
+
+.status-badge.offline {
+    background: #fef3f2;
+    color: #b42318;
+    border-color: #fecdca;
+}

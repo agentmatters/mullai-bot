@@ -1,29 +1,42 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Mullai.Web.Wasm</a>
+@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<aside class="left-pane">
+    <div class="nav-section">
+        <div class="nav-title">Views</div>
+        <button class="nav-item @(IsSettingsView ? "" : "active")" @onclick="@(() => NavigationManager.NavigateTo("/"))">Chat</button>
+        <button class="nav-item">Agents</button>
+        <button class="nav-item">Tasks</button>
+        <button class="nav-item">Memory</button>
+        <button class="nav-item @(IsSettingsView ? "active" : "")" @onclick="@(() => NavigationManager.NavigateTo("/settings"))">Settings</button>
     </div>
-</div>
+    <div class="nav-section">
+        <div class="nav-title">Shortcuts</div>
+        <div class="nav-placeholder">Pinned items will appear here</div>
+    </div>
+</aside>
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+@code {
+    private bool IsSettingsView => IsSettingsPath(NavigationManager.Uri);
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
-        </div>
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += HandleLocationChanged;
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="counter">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
-            </NavLink>
-        </div>
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        InvokeAsync(StateHasChanged);
+    }
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="weather">
-                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
-            </NavLink>
-        </div>
-    </nav>
-</div>
+    private bool IsSettingsPath(string uri)
+    {
+        var relative = NavigationManager.ToBaseRelativePath(uri);
+        return relative.StartsWith("settings", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+}

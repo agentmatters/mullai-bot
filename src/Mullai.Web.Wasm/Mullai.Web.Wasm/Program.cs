@@ -35,6 +35,7 @@ builder.Services.AddHostedService<EventBusForwarder>();
 builder.Services.AddScoped<IMullaiClient, MullaiClient>();
 builder.Services.AddScoped<IWebChatOrchestrator, WebChatOrchestrator>();
 builder.Services.AddScoped<WebConfigController>();
+builder.Services.AddScoped<ChatState>();
 
 
 var app = builder.Build();

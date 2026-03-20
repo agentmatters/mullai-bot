@@ -1,0 +1,21 @@
+@using Markdig
+@using Mullai.Web.Wasm.Messaging
+@using Microsoft.AspNetCore.Components
+
+<div class="message @(Message.IsUser ? "user-message" : "agent-message")">
+    <div class="message-content">@((MarkupString)Markdown.ToHtml(Message.Content, Pipeline))</div>
+    @if (Message.TaskUpdates.Any())
+    {
+        <div class="task-log">
+            @foreach (var update in Message.TaskUpdates)
+            {
+                <div class="task-step">@update</div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public ChatMessage Message { get; set; } = default!;
+    [Parameter] public MarkdownPipeline Pipeline { get; set; } = default!;
+}
