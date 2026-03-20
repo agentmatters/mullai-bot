@@ -1,0 +1,22 @@
+.tool-call {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.65rem 0.9rem;
+    background: var(--surface-muted);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.tool-call-title {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tool-call-detail {
+    margin-top: 4px;
+}
+
+.tool-call-error {
+    margin-top: 4px;
+    color: #b42318;
+}

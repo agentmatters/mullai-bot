@@ -1,46 +1,18 @@
 @page "/"
 @page "/settings"
 @rendermode InteractiveServer
-@using Mullai.Abstractions.Orchestration
-@using Mullai.Web.Wasm.Messaging
-@using Microsoft.AspNetCore.SignalR.Client
 @using Markdig
-@inject NavigationManager NavigationManager
-@inject IConfiguration Configuration
-@inject IJSRuntime JSRuntime
-@implements IAsyncDisposable
 
 <PageTitle>Mullai</PageTitle>
 
 <div class="app-shell">
     <header class="top-pane">
-        <div class="brand">
-            <div class="brand-mark">M</div>
-            <div class="brand-text">
-                <div class="brand-title">Mullai</div>
-                <div class="brand-subtitle">Assistant Workspace</div>
-            </div>
-        </div>
-        <div class="status-badge @(hubConnection?.State == HubConnectionState.Connected ? "online" : "offline")">
-            @(hubConnection?.State == HubConnectionState.Connected ? "Connected" : "Reconnecting...")
-        </div>
+        <BrandLogo />
+        <StatusBadge />
     </header>
 
     <div class="content-shell">
-        <aside class="left-pane">
-            <div class="nav-section">
-                <div class="nav-title">Views</div>
-                <button class="nav-item @(IsSettingsView ? "" : "active")" @onclick="@(() => NavigationManager.NavigateTo("/"))">Chat</button>
-                <button class="nav-item">Agents</button>
-                <button class="nav-item">Tasks</button>
-                <button class="nav-item">Memory</button>
-                <button class="nav-item @(IsSettingsView ? "active" : "")" @onclick="@(() => NavigationManager.NavigateTo("/settings"))">Settings</button>
-            </div>
-            <div class="nav-section">
-                <div class="nav-title">Shortcuts</div>
-                <div class="nav-placeholder">Pinned items will appear here</div>
-            </div>
-        </aside>
+        <NavMenu />
 
         <main class="center-pane">
             @if (IsSettingsView)
@@ -65,46 +37,25 @@
                     </div>
                 </div>
 
-                <div class="chat-history" @ref="chatHistoryRef">
-                    @foreach (var entry in GetVisibleEntries())
+                <div class="chat-history">
+                    @foreach (var entry in ChatState.GetVisibleEntries())
                     {
                         @if (entry is ChatMessage msg)
                         {
-                            <div class="message @(msg.IsUser ? "user-message" : "agent-message")">
-                                <div class="message-content">@((MarkupString)Markdig.Markdown.ToHtml(msg.Content, _pipeline))</div>
-                                @if (msg.TaskUpdates.Any())
-                                {
-                                    <div class="task-log">
-                                        @foreach (var update in msg.TaskUpdates)
-                                        {
-                                            <div class="task-step">@update</div>
-                                        }
-                                    </div>
-                                }
-                            </div>
+                            <ChatMessageItem Message="msg" Pipeline="_pipeline" />
                         }
                         else if (entry is ToolCallSnapshot toolCall)
                         {
-                            <div class="tool-call">
-                                <div class="tool-call-title">🔧 @toolCall.ToolName</div>
-                                @if (!string.IsNullOrWhiteSpace(toolCall.Result))
-                                {
-                                    <div class="tool-call-detail">↳ @Truncate(toolCall.Result, 160)</div>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(toolCall.Error))
-                                {
-                                    <div class="tool-call-error">✗ @toolCall.Error</div>
-                                }
-                            </div>
+                            <ToolCallItem ToolCall="toolCall" />
                         }
                     }
-                    @if (isThinking)
+                    @if (ChatState.IsThinking)
                     {
                         <div class="message agent-message thinking-message">
                             <div class="message-content">Thinking...</div>
                         </div>
                     }
-                    @if (messages.Count == 0)
+                    @if (ChatState.Messages.Count == 0)
                     {
                         <div class="empty-state">
                             <div class="empty-title">Start a new conversation</div>
@@ -113,257 +64,12 @@
                     }
                 </div>
 
-                <div class="chat-input-area">
-                    <textarea @bind="currentInput" @bind:event="oninput" @onkeydown="HandleKeyDown"
-                              placeholder="Ask a question..." rows="1"></textarea>
-                    <button class="send-button" @onclick="SendMessage" disabled="@(string.IsNullOrWhiteSpace(currentInput) || isThinking)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                    </button>
-                </div>
+                <ChatInput Mode="currentMode" />
             }
         </main>
     </div>
 </div>
 
 @code {
-    private string currentInput = "";
-    private bool isThinking = false;
-    private ElementReference chatHistoryRef;
-    private HubConnection? hubConnection;
-    private string sessionId = Guid.NewGuid().ToString();
-    private string hubUrlDisplay = "";
-    private ExecutionMode currentMode = ExecutionMode.Team;
-    
-    private List<ChatMessage> messages = new();
-    private List<ToolCallSnapshot> toolCalls = new();
-    private Dictionary<string, string> taskStatus = new();
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> streamingBuffers = new();
     private MarkdownPipeline _pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
-    
-    protected override async Task OnInitializedAsync()
-    {
-        NavigationManager.LocationChanged += HandleLocationChanged;
-
-        var hubUrl = GetHubUrl();
-        hubUrlDisplay = hubUrl.ToString();
-        hubConnection = new HubConnectionBuilder()
-            .WithUrl(hubUrl)
-            .WithAutomaticReconnect()
-            .Build();
-
-        hubConnection.On<string, string, string?>("OnTaskUpdate", async (nodeId, status, message) =>
-        {
-            await InvokeAsync(() =>
-            {
-                taskStatus[nodeId] = status;
-                var lastMsg = messages.LastOrDefault(m => !m.IsUser && m.Metadata.GetValueOrDefault("TaskId")?.ToString() == nodeId);
-                if (lastMsg != null && !string.IsNullOrWhiteSpace(message))
-                {
-                    lastMsg.TaskUpdates.Add($"[{status}] {message}");
-                }
-                StateHasChanged();
-            });
-        });
-
-        hubConnection.On<string, string, string>("OnAgentToken", async (taskId, agentName, token) =>
-        {
-            await InvokeAsync(() =>
-            {
-                AppendToken(taskId, token, agentName);
-                isThinking = false;
-                StateHasChanged();
-            });
-        });
-
-        hubConnection.On<ToolCallSnapshot>("OnToolCall", async toolCall =>
-        {
-            await InvokeAsync(() =>
-            {
-                streamingBuffers.Clear();
-                toolCalls.Add(toolCall);
-                StateHasChanged();
-            });
-        });
-
-        hubConnection.On<string, string>("OnSystemAlert", async (level, message) =>
-        {
-            await InvokeAsync(() =>
-            {
-                messages.Add(new ChatMessage
-                {
-                    Content = $"**{level.ToUpperInvariant()}:** {message}",
-                    IsUser = false,
-                    Timestamp = DateTimeOffset.Now
-                });
-                isThinking = false;
-                StateHasChanged();
-            });
-        });
-
-        try
-        {
-            await hubConnection.StartAsync();
-            await hubConnection.SendAsync("JoinSession", sessionId);
-        }
-        catch (Exception ex)
-        {
-            messages.Add(new ChatMessage
-            {
-                Content = $"**Connection error:** {ex.Message}\n\n**Hub URL:** {hubUrlDisplay}",
-                IsUser = false,
-                Timestamp = DateTimeOffset.Now
-            });
-            isThinking = false;
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private async Task HandleKeyDown(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter" && !e.ShiftKey)
-        {
-            await SendMessage();
-        }
-    }
-
-    private async Task SendMessage()
-    {
-        if (string.IsNullOrWhiteSpace(currentInput) || isThinking)
-            return;
-
-        var userText = currentInput;
-        currentInput = "";
-        
-        messages.Add(new ChatMessage { Content = userText, IsUser = true, Timestamp = DateTimeOffset.Now });
-        isThinking = true;
-        streamingBuffers.Clear();
-        
-        await ScrollToBottom();
-        StateHasChanged();
-
-        try
-        {
-            if (hubConnection is not null)
-            {
-                await hubConnection.SendAsync("SendMessage", sessionId, userText, currentMode.ToString());
-            }
-        }
-        catch (Exception ex)
-        {
-            messages.Add(new ChatMessage { Content = $"**Error:** {ex.Message}", IsUser = false, Timestamp = DateTimeOffset.Now });
-            isThinking = false;
-            StateHasChanged();
-        }
-    }
-
-    private async Task ScrollToBottom()
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("chat_scroll_bottom");
-        }
-        catch { }
-    }
-
-    private Uri GetHubUrl()
-    {
-        var configuredBaseUrl = Configuration["ChannelsApi:BaseUrl"];
-        if (string.IsNullOrWhiteSpace(configuredBaseUrl))
-        {
-            return NavigationManager.ToAbsoluteUri("/hubs/fabric");
-        }
-
-        configuredBaseUrl = configuredBaseUrl.TrimEnd('/');
-        return new Uri($"{configuredBaseUrl}/hubs/fabric");
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        NavigationManager.LocationChanged -= HandleLocationChanged;
-        if (hubConnection is not null)
-        {
-            try
-            {
-                await hubConnection.SendAsync("LeaveSession", sessionId);
-            }
-            catch
-            {
-            }
-            await hubConnection.DisposeAsync();
-        }
-    }
-
-    private class ChatMessage
-    {
-        public string Content { get; set; } = "";
-        public bool IsUser { get; set; }
-        public List<string> TaskUpdates { get; set; } = new();
-        public DateTimeOffset Timestamp { get; set; }
-        public Dictionary<string, object> Metadata { get; set; } = new();
-    }
-
-    private IEnumerable<object> GetVisibleEntries()
-    {
-        return messages.Cast<object>()
-            .Concat(toolCalls.Cast<object>())
-            .OrderBy(entry => entry switch
-            {
-                ChatMessage m => m.Timestamp,
-                ToolCallSnapshot t => t.StartedAt,
-                _ => DateTimeOffset.MinValue
-            });
-    }
-
-    private void AppendToken(string taskId, string token, string agentName)
-    {
-        if (string.IsNullOrWhiteSpace(taskId))
-        {
-            return;
-        }
-
-        var buffer = streamingBuffers.AddOrUpdate(taskId, token, (_, existing) => existing + token);
-
-        var msg = messages.LastOrDefault(m => !m.IsUser
-            && m.Metadata.TryGetValue("TaskId", out var id)
-            && id?.ToString() == taskId);
-
-        if (msg == null || string.IsNullOrEmpty(buffer))
-        {
-            msg = new ChatMessage
-            {
-                Content = buffer,
-                IsUser = false,
-                Timestamp = DateTimeOffset.Now
-            };
-            msg.Metadata["TaskId"] = taskId;
-            msg.Metadata["SourceId"] = agentName;
-            messages.Add(msg);
-        }
-        else
-        {
-            msg.Content = buffer;
-            msg.Metadata["SourceId"] = agentName;
-        }
-    }
-
-    private static string Truncate(string text, int maxLength)
-    {
-        if (string.IsNullOrEmpty(text)) return text;
-        var singleLine = text.ReplaceLineEndings(" ");
-        return singleLine.Length <= maxLength ? singleLine : singleLine[..maxLength] + "…";
-    }
-
-    private bool IsSettingsView => IsSettingsPath(NavigationManager.Uri);
-
-    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private bool IsSettingsPath(string uri)
-    {
-        var relative = NavigationManager.ToBaseRelativePath(uri);
-        return relative.StartsWith("settings", StringComparison.OrdinalIgnoreCase);
-    }
-
 }
