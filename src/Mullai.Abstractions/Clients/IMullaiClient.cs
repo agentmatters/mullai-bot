@@ -17,6 +17,9 @@ public interface IMullaiClient
 
     /// <summary> Provides a consolidated stream of all tokens, status changes, and tool observations. </summary>
     IAsyncEnumerable<MullaiUpdate> GetUpdatesAsync(CancellationToken ct = default);
+
+    /// <summary> Retrieves the full conversation history for the current session. </summary>
+    Task<List<Microsoft.Extensions.AI.ChatMessage>> GetHistoryAsync(CancellationToken ct = default);
 }
 
 /// <summary> Represents a single granular update from the orchestration fabric. </summary>

@@ -19,7 +19,6 @@ public class AgentActor : IAgentActor
     private readonly IConversationManager _conversationManager;
     private readonly IEventBus _eventBus;
     private readonly IWorkflowEngine _workflow;
-    private readonly Random _random = new();
     private readonly Channel<TaskExecutionRequest> _mailbox;
     private readonly CancellationTokenSource _cts = new();
     private Task? _processingTask;
@@ -75,8 +74,8 @@ public class AgentActor : IAgentActor
             catch (Exception ex)
             {
                 retries++;
-                if (retries > maxRetries) { await _eventBus.PublishAsync(new TaskStatusEvent(request.Node.Id, request.Node.TraceId ?? "", "Failed", ex.Message), ct); return; }
-                await _eventBus.PublishAsync(new TaskStatusEvent(request.Node.Id, request.Node.TraceId ?? "", "InProgress", $"Crashed. Retrying {retries}/{maxRetries}"), ct);
+                if (retries > maxRetries) { await _eventBus.PublishAsync(new TaskStatusEvent(request.Node.Id, request.SessionId, "Failed", ex.Message), ct); return; }
+                await _eventBus.PublishAsync(new TaskStatusEvent(request.Node.Id, request.SessionId, "InProgress", $"Crashed. Retrying {retries}/{maxRetries}"), ct);
                 await Task.Delay(1000, ct); 
             }
         }
@@ -88,27 +87,11 @@ public class AgentActor : IAgentActor
         var sessionId = request.SessionId;
         var traceId = node.TraceId ?? "";
 
-        await _eventBus.PublishAsync(new TaskStatusEvent(node.Id, traceId, "InProgress", $"[{_agentName}] Active"), cancellationToken);
-        
-        // Simulating transient failures
-        if (attempt == 0 && _random.Next(1, 101) <= 20) throw new Exception("Transient dependency failure");
+        // Set ambient session context for tools and middleware
+        Mullai.Abstractions.Orchestration.SessionContext.CurrentSessionId = sessionId;
 
-        // DYNAMIC SUB-TASKING (Architect)
-        if (_agentName == "Architect" && node.Description.Contains("complex"))
-        {
-            var subTask = new TaskNode 
-            { 
-                Id = node.Id + "-sub", 
-                Description = "SQL Schema Optimization", 
-                AssignedAgent = "DatabaseExpert", 
-                TraceId = traceId, 
-                Priority = 5 
-            };
-            // Propagate ExecutionMode and other metadata
-            foreach (var kvp in node.Metadata) subTask.Metadata[kvp.Key] = kvp.Value;
-            
-            await _workflow.SubmitGraphAsync(new[] { subTask }, sessionId);
-        }
+        Console.WriteLine($"[DEBUG: FLOW] AgentActor: Starting execution of task {node.Id} for agent {_agentName}");
+        await _eventBus.PublishAsync(new TaskStatusEvent(node.Id, sessionId, "InProgress", $"[{_agentName}] Active"), cancellationToken);
 
         var agent = node.AgentDefinition != null
             ? _agentFactory.CreateAgent(new AgentDefinition 
@@ -135,32 +118,31 @@ public class AgentActor : IAgentActor
         double costFactor = _agentName switch { "Architect" => 0.05, "DatabaseExpert" => 0.08, "Coder" => 0.03, "Tester" => 0.01, _ => 0.02 };
 
         var fullResponse = new StringBuilder();
-        await foreach (var update in agent.RunStreamingAsync(node.Description, session, cancellationToken))
+        await foreach (var update in agent.RunStreamingAsync(node.Description, session, history, cancellationToken))
         {
             var token = update?.ToString() ?? "";
             if (!string.IsNullOrEmpty(token))
             {
                 fullResponse.Append(token);
-                await _eventBus.PublishAsync(new TokenReceivedEvent(node.Id, token, agent.Name), cancellationToken);
+                await _eventBus.PublishAsync(new TokenReceivedEvent(node.Id, sessionId, token, agent.Name), cancellationToken);
             }
             // Economics: Charge per token
-            await _eventBus.PublishAsync(new CostUpdateEvent(traceId, costFactor), cancellationToken);
+            await _eventBus.PublishAsync(new CostUpdateEvent(sessionId, costFactor), cancellationToken);
         }
         
         // Persist the agent's response for future turns
         if (fullResponse.Length > 0)
         {
-            await _conversationManager.AddMessageAsync(sessionId, new ChatMessage(ChatRole.Assistant, fullResponse.ToString()), cancellationToken);
+            var responseMsg = new ChatMessage(ChatRole.Assistant, fullResponse.ToString());
+            responseMsg.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            responseMsg.AdditionalProperties["TaskId"] = node.Id;
+            responseMsg.AdditionalProperties["AgentName"] = _agentName;
+            await _conversationManager.AddMessageAsync(sessionId, responseMsg, cancellationToken);
         }
 
-        // AGENT AUTONOMY (Tester)
-        if (_agentName == "Tester" && _random.Next(1, 4) == 1)
-        {
-            await _workflow.SubmitGraphAsync(new[] { new TaskNode { Id = Guid.NewGuid().ToString()[..4], Description = "Fix bug discovered by Tester", AssignedAgent = "Coder", TraceId = traceId, Priority = 8 } }, sessionId);
-        }
-
-        await _eventBus.PublishAsync(new TraceUpdateEvent(traceId, node.Id, _agentName, $"Completed: {node.Description}"), cancellationToken);
-        await _eventBus.PublishAsync(new TaskStatusEvent(node.Id, traceId, "Completed"), cancellationToken);
+        await _eventBus.PublishAsync(new TraceUpdateEvent(sessionId, node.Id, _agentName, $"Completed: {node.Description}"), cancellationToken);
+        Console.WriteLine($"[DEBUG: FLOW] AgentActor: Completed task {node.Id} for agent {_agentName}");
+        await _eventBus.PublishAsync(new TaskStatusEvent(node.Id, sessionId, "Completed"), cancellationToken);
     }
 
     public async Task StopAsync()

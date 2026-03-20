@@ -13,9 +13,11 @@ public partial class Home : ComponentBase, IAsyncDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        ChatState.OnChange += StateHasChanged;
+        ChatState.OnChange += OnChatStateChanged;
         await ChatState.InitializeAsync();
     }
+
+    private void OnChatStateChanged() => InvokeAsync(StateHasChanged);
 
     private bool IsSettingsView => IsSettingsPath(NavigationManager.Uri);
 
@@ -27,7 +29,7 @@ public partial class Home : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        ChatState.OnChange -= StateHasChanged;
+        ChatState.OnChange -= OnChatStateChanged;
         // Navigation handling is now in NavMenu, but we could keep it here if needed.
         // However, the original code had it here too.
     }

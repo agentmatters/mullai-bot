@@ -3,24 +3,25 @@ using Microsoft.Extensions.AI;
 using Mullai.Abstractions.Clients;
 using Mullai.Abstractions.Messaging;
 using Mullai.Abstractions.Orchestration;
+using Mullai.Agents;
 
 namespace Mullai.Execution.Clients;
 
 public class MullaiClient : IMullaiClient
 {
-    private readonly IPlanner _planner;
+    private readonly AgentFactory _agentFactory;
     private readonly IWorkflowEngine _workflowEngine;
     private readonly IEventBus _eventBus;
     private readonly IConversationManager _conversationManager;
     private string _sessionId = "default";
 
     public MullaiClient(
-        IPlanner planner,
+        AgentFactory agentFactory,
         IWorkflowEngine workflowEngine,
         IEventBus eventBus,
         IConversationManager conversationManager)
     {
-        _planner = planner;
+        _agentFactory = agentFactory;
         _workflowEngine = workflowEngine;
         _eventBus = eventBus;
         _conversationManager = conversationManager;
@@ -35,33 +36,32 @@ public class MullaiClient : IMullaiClient
     public async Task SendPromptAsync(string input, ExecutionMode mode = ExecutionMode.Team, CancellationToken ct = default)
     {
         // 1. Save user input to history
+        Console.WriteLine($"[DEBUG: FLOW] MullaiClient: Received prompt: {input}");
         await _conversationManager.AddMessageAsync(_sessionId, new ChatMessage(ChatRole.User, input), ct);
 
-        // 2. Load full history for planning
-        var history = new List<ChatMessage>();
-        await foreach (var msg in _conversationManager.GetHistoryAsync(_sessionId, ct))
+        // 2. Start root agent task
+        var rootTask = new TaskNode
         {
-            history.Add(msg);
-        }
+            Id = "root-" + Guid.NewGuid().ToString()[..4],
+            Description = input,
+            AssignedAgent = "Assistant",
+            Priority = 10,
+            TraceId = _sessionId,
+            Metadata = { ["SessionId"] = _sessionId }
+        };
 
-        // 3. Plan with context
-        var plan = await _planner.PlanAsync(input, history, mode, ct);
-        foreach (var node in plan.Nodes)
-        {
-            node.Metadata["SessionId"] = _sessionId;
-        }
-
-        // 4. Notify UI about the new graph
-        await _eventBus.PublishAsync(new GraphCreatedEvent(plan), ct);
-
-        // 5. Submit for execution
-        await _workflowEngine.SubmitGraphAsync(plan.Nodes, _sessionId);
+        // 3. Submit to workflow engine to kick off the agentic flow
+        Console.WriteLine($"[DEBUG: FLOW] MullaiClient: Submitting root task {rootTask.Id} to WorkflowEngine");
+        await _workflowEngine.SubmitGraphAsync(new[] { rootTask }, _sessionId);
     }
 
     public async IAsyncEnumerable<MullaiUpdate> GetUpdatesAsync([EnumeratorCancellation] CancellationToken ct = default)
     {
         await foreach (var @event in _eventBus.SubscribeAllAsync(ct))
         {
+            if (@event is ISessionEvent sessionEvent && sessionEvent.SessionId != _sessionId)
+                continue;
+
             var update = @event switch
             {
                 TokenReceivedEvent e => new MullaiUpdate { TaskId = e.TaskId, AgentName = e.AgentName, Text = e.Token, Type = UpdateType.Token },
@@ -73,5 +73,15 @@ public class MullaiClient : IMullaiClient
 
             if (update != null) yield return update;
         }
+    }
+
+    public async Task<List<Microsoft.Extensions.AI.ChatMessage>> GetHistoryAsync(CancellationToken ct = default)
+    {
+        var history = new List<Microsoft.Extensions.AI.ChatMessage>();
+        await foreach (var message in _conversationManager.GetHistoryAsync(_sessionId, ct))
+        {
+            history.Add(message);
+        }
+        return history;
     }
 }

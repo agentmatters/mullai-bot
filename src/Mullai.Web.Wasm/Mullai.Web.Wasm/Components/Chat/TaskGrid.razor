@@ -1,0 +1,50 @@
+@using Mullai.Abstractions.Orchestration
+@using Mullai.Web.Wasm.Services
+@inject ChatState ChatState
+
+@if (ChatState.Tasks.Any())
+{
+    <div class="task-grid-container">
+        <div class="grid-header">
+            <h3>Sub-agent Tasks</h3>
+            <span class="task-count">@ChatState.Tasks.CountActive() active</span>
+        </div>
+        <div class="task-grid">
+            @foreach (var task in ChatState.Tasks.Values.OrderByDescending(t => t.Priority))
+            {
+                <div class="task-card @task.Status.ToString().ToLower()">
+                    <div class="task-card-header">
+                        <div class="agent-avatar">
+                            @GetAgentInitial(task.AssignedAgent)
+                        </div>
+                        <div class="agent-info">
+                            <span class="agent-name">@task.AssignedAgent</span>
+                            <span class="task-id">#@task.Id</span>
+                        </div>
+                        <div class="status-indicator">
+                            <div class="dot"></div>
+                            @task.Status
+                        </div>
+                    </div>
+                    <div class="task-card-body">
+                        <p class="task-description">@task.Description</p>
+                    </div>
+                    @if (task.Status == Mullai.Abstractions.Orchestration.TaskStatus.Running)
+                    {
+                        <div class="progress-bar">
+                            <div class="progress-fill"></div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private string GetAgentInitial(string? name)
+    {
+        if (string.IsNullOrEmpty(name)) return "?";
+        return name[..1].ToUpperInvariant();
+    }
+}

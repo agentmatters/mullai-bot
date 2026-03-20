@@ -13,6 +13,11 @@ public class FabricHub : Hub
         _chatOrchestrator = chatOrchestrator;
     }
 
+    public async Task<List<Microsoft.Extensions.AI.ChatMessage>> GetHistory(string sessionId)
+    {
+        return await _chatOrchestrator.GetHistoryAsync(sessionId, Context.ConnectionAborted);
+    }
+
     public async Task JoinSession(string sessionId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, sessionId);

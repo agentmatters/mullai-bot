@@ -14,7 +14,8 @@ public record ToolCallObservation(
     DateTimeOffset StartedAt,
     DateTimeOffset FinishedAt,
     string TaskId = "",
-    string AgentName = "")
+    string AgentName = "",
+    string SessionId = "")
 {
     public TimeSpan Elapsed => FinishedAt - StartedAt;
 }

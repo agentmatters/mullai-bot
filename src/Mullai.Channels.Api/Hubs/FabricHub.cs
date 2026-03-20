@@ -1,12 +1,30 @@
 using Microsoft.AspNetCore.SignalR;
+using Mullai.Abstractions.Orchestration;
 
 namespace Mullai.Channels.Api.Hubs;
 
 public class FabricHub : Hub
 {
+    private readonly IConversationManager _conversationManager;
+
+    public FabricHub(IConversationManager conversationManager)
+    {
+        _conversationManager = conversationManager;
+    }
+
     public async Task JoinSession(string sessionId)
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, sessionId);
+    }
+
+    public async Task<List<Microsoft.Extensions.AI.ChatMessage>> GetHistory(string sessionId)
+    {
+        var history = new List<Microsoft.Extensions.AI.ChatMessage>();
+        await foreach (var msg in _conversationManager.GetHistoryAsync(sessionId))
+        {
+            history.Add(msg);
+        }
+        return history;
     }
 
     public async Task LeaveSession(string sessionId)

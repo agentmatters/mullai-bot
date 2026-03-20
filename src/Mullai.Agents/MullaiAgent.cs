@@ -28,14 +28,22 @@ public class MullaiAgent : IMullaiAgent
     public async Task<AgentSession> CreateSessionAsync(CancellationToken cancellationToken = default) 
         => await _agent.CreateSessionAsync(cancellationToken);
 
-    public IAsyncEnumerable<AgentResponseUpdate> RunStreamingAsync(string userInput, AgentSession session, CancellationToken cancellationToken = default)
+    public IAsyncEnumerable<AgentResponseUpdate> RunStreamingAsync(string userInput, AgentSession session, IEnumerable<ChatMessage>? history = null, CancellationToken cancellationToken = default)
     {
-        return _agent.RunStreamingAsync(userInput, session, null, cancellationToken);
+        var messages = new List<ChatMessage>();
+        if (history != null) messages.AddRange(history);
+        messages.Add(new ChatMessage(ChatRole.User, userInput));
+
+        return _agent.RunStreamingAsync(messages, session, null, cancellationToken);
     }
 
-    public async Task<AgentResponse> RunAsync(string userInput, AgentSession session, CancellationToken cancellationToken = default)
+    public async Task<AgentResponse> RunAsync(string userInput, AgentSession session, IEnumerable<ChatMessage>? history = null, CancellationToken cancellationToken = default)
     {
-        return await _agent.RunAsync(userInput, session, null, cancellationToken);
+        var messages = new List<ChatMessage>();
+        if (history != null) messages.AddRange(history);
+        messages.Add(new ChatMessage(ChatRole.User, userInput));
+
+        return await _agent.RunAsync(messages, session, null, cancellationToken);
     }
 
     public void RefreshClients(Action refreshAction)

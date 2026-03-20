@@ -14,6 +14,7 @@ using Mullai.Skills;
 using Mullai.Tools.CliTool;
 using Mullai.Tools.FileSystemTool;
 using Mullai.Tools.WordTool;
+using Mullai.Tools.TaskTool;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using Mullai.Abstractions.Orchestration;
@@ -90,7 +91,6 @@ namespace Mullai.Global.ServiceConfiguration
                 })
                 .AddSingleton<AgentFactory>()
                 .AddSingleton<IConversationManager, ConversationManager>()
-                .AddSingleton<IPlanner, Planner>()
                 .AddSingleton<IAgentRouter, AgentRouter>()
                 .AddSingleton<IWorkflowEngine, WorkflowEngine>()
                 .AddSingleton<IEventBus, InternalEventBus>()
@@ -104,6 +104,7 @@ namespace Mullai.Global.ServiceConfiguration
                 .AddCliTool()
                 .AddFileSystemTool()
                 .AddWordTool()
+                .AddTaskTool()
                 .AddUserMemory()
                 .AddMullaiSkills();
             

@@ -1,6 +1,7 @@
 @using Microsoft.AspNetCore.SignalR.Client
 @using Mullai.Web.Wasm.Services
 @inject ChatState ChatState
+@implements IDisposable
 
 <div class="status-badge @(ChatState.ConnectionState == HubConnectionState.Connected ? "online" : "offline")">
     @(ChatState.ConnectionState == HubConnectionState.Connected ? "Connected" : "Reconnecting...")
@@ -9,11 +10,13 @@
 @code {
     protected override void OnInitialized()
     {
-        ChatState.OnChange += StateHasChanged;
+        ChatState.OnChange += HandleChange;
     }
+
+    private void HandleChange() => InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
-        ChatState.OnChange -= StateHasChanged;
+        ChatState.OnChange -= HandleChange;
     }
 }

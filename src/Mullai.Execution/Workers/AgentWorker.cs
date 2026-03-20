@@ -12,7 +12,7 @@ public class AgentWorker : BackgroundService
     private readonly IActorManager _actorManager;
     private readonly IEventBus _eventBus;
 
-    private readonly SemaphoreSlim _throttle = new(2); // Global slot limit
+    private readonly SemaphoreSlim _throttle = new(10); // Global slot limit
 
     public AgentWorker(
         IScheduler scheduler, 
@@ -33,7 +33,10 @@ public class AgentWorker : BackgroundService
                 var request = await _scheduler.DequeueAsync(stoppingToken);
                 if (request == null) continue;
 
+                Console.WriteLine($"[DEBUG: FLOW] AgentWorker: Dequeued task {request.Node.Id} for agent {request.Node.AssignedAgent}");
+
                 // --- CONCURRENCY THROTTLING ---
+                Console.WriteLine($"[DEBUG: FLOW] AgentWorker: Task {request.Node.Id} waiting for slot in throttle");
                 await _eventBus.PublishAsync(new TaskStatusEvent(request.Node.Id, request.Node.TraceId ?? "", "Pending", "Waiting for free slot"), stoppingToken);
                 await _throttle.WaitAsync(stoppingToken);
                 
@@ -41,12 +44,14 @@ public class AgentWorker : BackgroundService
                 {
                     try
                     {
+                        Console.WriteLine($"[DEBUG: FLOW] AgentWorker: Dispatching task {request.Node.Id} to ActorManager");
                         await _eventBus.PublishAsync(new TaskStatusEvent(request.Node.Id, request.Node.TraceId ?? "", "InProgress", "Dispatching to agent actor"), stoppingToken);
                         await _actorManager.DispatchAsync(request, stoppingToken);
                     }
                     finally
                     {
                         _throttle.Release();
+                        Console.WriteLine($"[DEBUG: FLOW] AgentWorker: Released slot for task {request.Node.Id}");
                     }
                 }, stoppingToken);
             }

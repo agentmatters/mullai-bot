@@ -90,6 +90,16 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         SaveCredentials();
     }
 
+    public void SetModelsEnabled(string providerName, IEnumerable<string> modelIds, bool enabled)
+    {
+        foreach (var modelId in modelIds)
+        {
+            var key = GetModelKey(providerName, modelId);
+            _credentials[key] = enabled.ToString();
+        }
+        SaveCredentials();
+    }
+
     private string GetModelKey(string providerName, string modelId) => $"Model:{providerName}:{modelId}:Enabled";
 
     // IMullaiConfigurationManager Implementation

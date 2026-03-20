@@ -134,6 +134,13 @@
     background: var(--surface);
     padding-bottom: 8px;
     z-index: 1;
+    align-items: center;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
 }
 
 .model-toolbar select,

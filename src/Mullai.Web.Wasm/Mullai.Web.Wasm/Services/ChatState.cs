@@ -1,13 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.AI;
+using Mullai.Abstractions.Orchestration;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.JSInterop;
 using Mullai.Web.Wasm.Messaging;
-using Mullai.Abstractions.Orchestration;
 
 namespace Mullai.Web.Wasm.Services;
 
@@ -23,7 +20,7 @@ public class ChatState : IAsyncDisposable
 
     public List<ChatMessage> Messages { get; } = new();
     public List<ToolCallSnapshot> ToolCalls { get; } = new();
-    public Dictionary<string, string> TaskStatus { get; } = new();
+    public Dictionary<string, TaskNode> Tasks { get; } = new();
     public bool IsThinking { get; private set; }
     public HubConnectionState ConnectionState => _hubConnection?.State ?? HubConnectionState.Disconnected;
     public string HubUrlDisplay { get; private set; } = "";
@@ -48,11 +45,29 @@ public class ChatState : IAsyncDisposable
 
         _hubConnection.On<string, string, string?>("OnTaskUpdate", (nodeId, status, message) =>
         {
-            TaskStatus[nodeId] = status;
-            var lastMsg = Messages.LastOrDefault(m => !m.IsUser && m.Metadata.GetValueOrDefault("TaskId")?.ToString() == nodeId);
+            if (Tasks.TryGetValue(nodeId, out var task))
+            {
+                if (Enum.TryParse<Mullai.Abstractions.Orchestration.TaskStatus>(status, out var taskStatus))
+                {
+                    task.Status = taskStatus;
+                }
+            }
+
+            var lastMsg = Messages.LastOrDefault(m => m.Role == ChatRole.Assistant && m.AdditionalProperties?.GetValueOrDefault("TaskId")?.ToString() == nodeId);
             if (lastMsg != null && !string.IsNullOrWhiteSpace(message))
             {
-                lastMsg.TaskUpdates.Add($"[{status}] {message}");
+                var updates = lastMsg.AdditionalProperties?.GetValueOrDefault("TaskUpdates") as List<string> ?? new List<string>();
+                updates.Add($"[{status}] {message}");
+                lastMsg.AdditionalProperties!["TaskUpdates"] = updates;
+            }
+            NotifyStateChanged();
+        });
+
+        _hubConnection.On<TaskGraph>("OnGraphCreated", (graph) =>
+        {
+            foreach (var node in graph.Nodes)
+            {
+                Tasks[node.Id] = node;
             }
             NotifyStateChanged();
         });
@@ -73,12 +88,10 @@ public class ChatState : IAsyncDisposable
 
         _hubConnection.On<string, string>("OnSystemAlert", (level, message) =>
         {
-            Messages.Add(new ChatMessage
-            {
-                Content = $"**{level.ToUpperInvariant()}:** {message}",
-                IsUser = false,
-                Timestamp = DateTimeOffset.Now
-            });
+            var msg = new ChatMessage(ChatRole.System, $"**{level.ToUpperInvariant()}:** {message}");
+            msg.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            msg.AdditionalProperties["Timestamp"] = DateTimeOffset.Now;
+            Messages.Add(msg);
             IsThinking = false;
             NotifyStateChanged();
         });
@@ -87,15 +100,22 @@ public class ChatState : IAsyncDisposable
         {
             await _hubConnection.StartAsync();
             await _hubConnection.SendAsync("JoinSession", _sessionId);
+
+            // Fetch History
+            var history = await _hubConnection.InvokeAsync<List<ChatMessage>>("GetHistory", _sessionId);
+            if (history != null && history.Any())
+            {
+                Messages.Clear();
+                Messages.AddRange(history);
+                NotifyStateChanged();
+            }
         }
         catch (Exception ex)
         {
-            Messages.Add(new ChatMessage
-            {
-                Content = $"**Connection error:** {ex.Message}\n\n**Hub URL:** {HubUrlDisplay}",
-                IsUser = false,
-                Timestamp = DateTimeOffset.Now
-            });
+            var msg = new ChatMessage(ChatRole.System, $"**Connection error:** {ex.Message}\n\n**Hub URL:** {HubUrlDisplay}");
+            msg.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            msg.AdditionalProperties["Timestamp"] = DateTimeOffset.Now;
+            Messages.Add(msg);
             IsThinking = false;
             NotifyStateChanged();
         }
@@ -106,7 +126,11 @@ public class ChatState : IAsyncDisposable
         if (string.IsNullOrWhiteSpace(userText) || IsThinking)
             return;
 
-        Messages.Add(new ChatMessage { Content = userText, IsUser = true, Timestamp = DateTimeOffset.Now });
+        var msg = new ChatMessage(ChatRole.User, userText);
+        msg.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+        msg.AdditionalProperties["Timestamp"] = DateTimeOffset.Now;
+        Messages.Add(msg);
+        
         IsThinking = true;
         _streamingBuffers.Clear();
         
@@ -122,7 +146,10 @@ public class ChatState : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Messages.Add(new ChatMessage { Content = $"**Error:** {ex.Message}", IsUser = false, Timestamp = DateTimeOffset.Now });
+            var errorMsg = new ChatMessage(ChatRole.System, $"**Error:** {ex.Message}");
+            errorMsg.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            errorMsg.AdditionalProperties["Timestamp"] = DateTimeOffset.Now;
+            Messages.Add(errorMsg);
             IsThinking = false;
             NotifyStateChanged();
         }
@@ -134,26 +161,26 @@ public class ChatState : IAsyncDisposable
 
         var buffer = _streamingBuffers.AddOrUpdate(taskId, token, (_, existing) => existing + token);
 
-        var msg = Messages.LastOrDefault(m => !m.IsUser
-            && m.Metadata.TryGetValue("TaskId", out var id)
+        var msg = Messages.LastOrDefault(m => m.Role == ChatRole.Assistant
+            && m.AdditionalProperties?.TryGetValue("TaskId", out var id) == true
             && id?.ToString() == taskId);
 
         if (msg == null || string.IsNullOrEmpty(buffer))
         {
-            msg = new ChatMessage
-            {
-                Content = buffer,
-                IsUser = false,
-                Timestamp = DateTimeOffset.Now
-            };
-            msg.Metadata["TaskId"] = taskId;
-            msg.Metadata["SourceId"] = agentName;
+            msg = new ChatMessage(ChatRole.Assistant, buffer);
+            msg.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            msg.AdditionalProperties["TaskId"] = taskId;
+            msg.AdditionalProperties["SourceId"] = agentName;
+            msg.AdditionalProperties["Timestamp"] = DateTimeOffset.Now;
+            msg.AdditionalProperties["TaskUpdates"] = new List<string>();
             Messages.Add(msg);
         }
         else
         {
-            msg.Content = buffer;
-            msg.Metadata["SourceId"] = agentName;
+            msg.Contents.Clear();
+            msg.Contents.Add(new TextContent(buffer));
+            msg.AdditionalProperties ??= new AdditionalPropertiesDictionary();
+            msg.AdditionalProperties["SourceId"] = agentName;
         }
     }
 
@@ -199,7 +226,7 @@ public class ChatState : IAsyncDisposable
             .Concat(ToolCalls.Cast<object>())
             .OrderBy(entry => entry switch
             {
-                ChatMessage m => m.Timestamp,
+                ChatMessage m => m.AdditionalProperties?.TryGetValue("Timestamp", out var ts) == true && ts is DateTimeOffset dto ? dto : DateTimeOffset.MinValue,
                 ToolCallSnapshot t => t.StartedAt,
                 _ => DateTimeOffset.MinValue
             });

@@ -128,7 +128,29 @@ public class ChatState
 
     public void SetGraph(TaskGraph graph)
     {
-        _currentGraph = graph;
+        foreach (var node in graph.Nodes)
+        {
+            var existing = _currentGraph.Nodes.FirstOrDefault(n => n.Id == node.Id);
+            if (existing == null)
+            {
+                _currentGraph.Nodes.Add(node);
+            }
+            else
+            {
+                existing.Status = node.Status;
+                existing.Description = node.Description;
+                existing.AssignedAgent = node.AssignedAgent;
+            }
+        }
+
+        foreach (var edge in graph.Edges)
+        {
+            if (!_currentGraph.Edges.Any(e => e.FromId == edge.FromId && e.ToId == edge.ToId))
+            {
+                _currentGraph.Edges.Add(edge);
+            }
+        }
+        
         Notify();
     }
 
