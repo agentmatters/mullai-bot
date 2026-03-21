@@ -195,7 +195,8 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
             new() { Name = "Groq", Priority = 3, Enabled = true },
             new() { Name = "Mistral", Priority = 4, Enabled = true },
             new() { Name = "Cerebras", Priority = 5, Enabled = true },
-            new() { Name = "OllamaOpenAI", Priority = 6, Enabled = true }
+            new() { Name = "OllamaOpenAI", Priority = 6, Enabled = true },
+            new() { Name = "Nvidia", Priority = 7, Enabled = true }
         };
     }
 

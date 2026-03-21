@@ -9,6 +9,8 @@ using Mullai.Providers.LLMProviders.OpenRouter;
 using Mullai.Abstractions.Models;
 using Mullai.Abstractions.Configuration;
 using System.Text.Json;
+using Mullai.Providers.LLMProviders.Gemini;
+using Mullai.Providers.LLMProviders.Nvidia;
 using OpenAI;
 
 namespace Mullai.Providers;
@@ -104,6 +106,8 @@ public static class MullaiChatClientFactory
             {
                 "Mistral"     => Mistral.GetMistralChatClient(effectiveConfig, httpClient, modelId),
                 "OpenRouter"  => OpenRouter.GetOpenRouterChatClient(effectiveConfig, httpClient, modelId),
+                "Gemini"  => Gemini.GetGeminiChatClient(effectiveConfig, httpClient, modelId),
+                "Nvidia"  => Nvidia.GetNvidiaChatClient(effectiveConfig, httpClient, modelId),
                 _ => null
             };
         }
