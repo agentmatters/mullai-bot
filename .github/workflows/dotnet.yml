@@ -87,13 +87,13 @@ jobs:
           -o publish/web
 
     - name: Package and Prepare
-      shell: bash
+      shell: pwsh
       run: |
-        VERSION=${{ steps.get_version.outputs.VERSION }}
-        OS=${{ matrix.os }}
-        ARCH=${{ matrix.arch }}
-        ZIP_NAME=Mullai_${VERSION}_${OS}_${ARCH}.zip
-        cd publish && zip -r ../$ZIP_NAME .
+        $VERSION = "${{ steps.get_version.outputs.VERSION }}"
+        $OS = "${{ matrix.os }}"
+        $ARCH = "${{ matrix.arch }}"
+        $ZIP_NAME = "Mullai_${VERSION}_${OS}_${ARCH}.zip"
+        Compress-Archive -Path ./publish/* -DestinationPath "$ZIP_NAME"
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
