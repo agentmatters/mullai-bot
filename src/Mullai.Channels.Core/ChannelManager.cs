@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Agents.AI;
 using Mullai.Agents;
+using Mullai.Channels.Core.Clients;
 using Mullai.Channels.Core.Abstractions;
 using Mullai.Channels.Core.Models;
 using System.Collections.Concurrent;
@@ -12,8 +12,7 @@ public class ChannelManager
     private readonly IEnumerable<IChannelAdapter> _channelAdapters;
     private readonly AgentFactory _agentFactory;
     private readonly ILogger<ChannelManager> _logger;
-    private readonly ConcurrentDictionary<string, MullaiAgent> _agents;
-    private readonly ConcurrentDictionary<string, AgentSession> _sessions;
+    private readonly ConcurrentDictionary<string, ChannelMullaiClient> _clients;
 
     public ChannelManager(
         IEnumerable<IChannelAdapter> channelAdapters,
@@ -23,8 +22,7 @@ public class ChannelManager
         _channelAdapters = channelAdapters ?? throw new ArgumentNullException(nameof(channelAdapters));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _agents = new ConcurrentDictionary<string, MullaiAgent>();
-        _sessions = new ConcurrentDictionary<string, AgentSession>();
+        _clients = new ConcurrentDictionary<string, ChannelMullaiClient>();
 
         InitializeAdapters();
     }
@@ -45,17 +43,13 @@ public class ChannelManager
             _logger.LogInformation("Received message on {ChannelId} from {UserId}", message.ChannelId, message.UserId);
 
             // Using the Assistant as default. We can make this configurable later based on ChannelId or UserId
-            var agent = _agents.GetOrAdd(message.UserId, _ => _agentFactory.GetAgent("Assistant"));
-
-            // Get or create session
-            var session = _sessions.GetOrAdd(message.UserId, _ => agent.CreateSessionAsync().GetAwaiter().GetResult());
+            var client = _clients.GetOrAdd(message.UserId, _ => new ChannelMullaiClient(_agentFactory));
 
             string fullResponse = "";
             
             // We await the textual response completely before returning it
             // as most chat platforms are not built for character-by-character streaming webhook repsonses
-            var response = await agent.RunAsync(message.TextContent, session);
-            fullResponse = response?.ToString() ?? string.Empty;
+            fullResponse = await client.RunAsync(message.TextContent);
 
             var responseMessage = new ChannelMessage
             {

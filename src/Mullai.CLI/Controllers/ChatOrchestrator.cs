@@ -1,66 +1,39 @@
-using Microsoft.Agents.AI;
-using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Configuration;
-using Mullai.Agents;
-using Mullai.Abstractions.Configuration;
+using Mullai.Abstractions.Clients;
 using Mullai.CLI.State;
 
 namespace Mullai.CLI.Controllers;
 
 public class ChatOrchestrator
 {
-    private readonly AgentFactory _agentFactory;
+    private readonly IMullaiClient _mullaiClient;
     private readonly ChatState _state;
-    private readonly IConfiguration _configuration;
-    private readonly IMullaiConfigurationManager _configManager;
-    private readonly HttpClient _httpClient;
-    private MullaiAgent? _agent;
-    private AgentSession? _session;
+    private bool _isInitialised;
 
     public ChatOrchestrator(
-        AgentFactory agentFactory, 
-        ChatState state, 
-        IConfiguration configuration,
-        IMullaiConfigurationManager configManager,
-        HttpClient httpClient)
+        IMullaiClient mullaiClient,
+        ChatState state)
     {
-        _agentFactory = agentFactory;
+        _mullaiClient = mullaiClient;
         _state = state;
-        _configuration = configuration;
-        _configManager = configManager;
-        _httpClient = httpClient;
     }
 
     public void RefreshClients()
     {
-        _agent?.RefreshClients(() => 
-        {
-            var chatClient = _agent?.ChatClient;
-            if (chatClient is Mullai.Providers.MullaiChatClient mullaiClient)
-            {
-                var config = _configManager.GetProvidersConfig();
-                var customProviders = _configManager.GetCustomProviders();
-                var newClients = Mullai.Providers.MullaiChatClientFactory.BuildOrderedClients(
-                    config, 
-                    customProviders,
-                    _configuration, 
-                    _configManager, 
-                    _httpClient);
-                
-                mullaiClient.UpdateClients(newClients);
-            }
-        });
+        _mullaiClient.RefreshClients();
     }
 
-    public string ModelName => _agent?.ModelName ?? "Unknown";
-    public string ProviderName => _agent?.ProviderName ?? "Unknown";
+    public string ModelName => _mullaiClient.ModelName;
+    public string ProviderName => _mullaiClient.ProviderName;
 
     public async Task InitialiseAsync()
     {
-        if (_agent != null) return; // Already initialized
-        
-        _agent = _agentFactory.GetAgent("Assistant");
-        _session = await _agent.CreateSessionAsync();
+        if (_isInitialised)
+        {
+            return;
+        }
+
+        await _mullaiClient.InitialiseAsync();
+        _isInitialised = true;
 
         _ = PumpToolCallsAsync();
     }
@@ -75,21 +48,17 @@ public class ChatOrchestrator
 
     public async Task HandleMessageAsync(string userInput)
     {
-        if (_agent is null || _session is null)
-            return;
-
         _state.AddUserMessage(userInput);
         _state.BeginAgentResponse();
 
         try
         {
             var firstUpdate = true;
-            await foreach (var update in _agent.RunStreamingAsync(userInput, _session))
+            await foreach (var update in _mullaiClient.RunStreamingAsync(userInput))
             {
-                var text = update?.ToString() ?? string.Empty;
-                if (!string.IsNullOrEmpty(text))
+                if (!string.IsNullOrEmpty(update))
                 {
-                    _state.AppendUpdate(text, firstUpdate);
+                    _state.AppendUpdate(update, firstUpdate);
                     if (firstUpdate) firstUpdate = false;
                 }
             }

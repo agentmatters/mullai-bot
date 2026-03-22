@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Mullai.Abstractions.Clients;
+using Mullai.CLI.Clients;
 using Mullai.CLI.Components;
 using Mullai.CLI.Controllers;
 using Mullai.CLI.State;
@@ -22,6 +24,7 @@ hostBuilder.ConfigureServices((context, services) =>
     services.ConfigureMullaiServices(context.Configuration);
 
     services.AddSingleton<ChatState>();
+    services.AddSingleton<IMullaiClient, CliMullaiClient>();
     services.AddSingleton<ChatOrchestrator>();
     services.AddSingleton<ConfigController>();
 
