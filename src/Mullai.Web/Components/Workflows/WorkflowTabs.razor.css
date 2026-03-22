@@ -1,0 +1,28 @@
+.workflow-tabs {
+    display: flex;
+    gap: 1rem;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.tab-item {
+    padding: 1rem 0;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--subtle);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab-item:hover {
+    color: var(--text);
+}
+
+.tab-item.is-active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}

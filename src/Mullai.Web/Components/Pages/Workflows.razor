@@ -1,10 +1,12 @@
 @page "/workflows"
+@page "/workflows/{SelectedWorkflowId}"
 @rendermode InteractiveServer
 @using Mullai.TaskRuntime.Abstractions
 @using Mullai.TaskRuntime.Models
 @using Mullai.TaskRuntime.Options
 @using Mullai.Workflows.Abstractions
 @using Mullai.Workflows.Models
+@using Mullai.Web.Components.Workflows
 @using Microsoft.Extensions.Options
 @implements IAsyncDisposable
 
@@ -15,155 +17,98 @@
 @inject IOptions<MullaiTaskRuntimeOptions> RuntimeOptions
 @inject HttpClient Http
 @inject NavigationManager Nav
+@inject Mullai.Tools.WorkflowTool.WorkflowTool WorkflowTool
 
 <PageTitle>Workflows</PageTitle>
 
-<div class="workflows-page">
-    <header class="workflows-header">
-        <div>
-            <h1>Workflows</h1>
-            <p class="workflows-subtitle">Run and monitor workflow agents.</p>
-        </div>
-    </header>
+<div class="workflows-dashboard">
+    <WorkflowSidebar 
+        Workflows="@_definitions" 
+        SelectedWorkflowId="@SelectedWorkflowId" 
+        OnWorkflowSelected="HandleWorkflowSelected"
+        WorkflowStatuses="@_workflowStatuses" />
 
-    @if (_cards.Count == 0)
-    {
-        <div class="workflows-empty">
-            <h2>No workflows configured</h2>
-            <p>Drop YAML files into <span class="mono">@_workflowDir</span> to get started.</p>
-            <pre class="workflow-example"><code>@_sampleYaml</code></pre>
-        </div>
-    }
-    else
-    {
-        <div class="workflows-grid">
-            @foreach (var card in _cards)
-            {
-                <section class="workflow-card">
-                    <div class="workflow-card-header">
-                        <div>
-                            <h2>@card.Definition.Name</h2>
-                            <p>@card.Definition.Description</p>
-                        </div>
-                        <span class="workflow-kind">@card.Definition.Kind</span>
-                    </div>
+    <main class="workflow-main">
+        @if (SelectedWorkflowId == null)
+        {
+            <div class="workflow-empty-state">
+                <div class="empty-icon">📂</div>
+                <h2>Select a Workflow</h2>
+                <p>Choose a workflow from the sidebar to view details, run agents, or monitor history.</p>
+            </div>
+        }
+        else if (_selectedState != null)
+        {
+            <header class="workflow-detail-header">
+                <div class="header-info">
+                    <h1>@_selectedState.Definition.Name</h1>
+                    <p>@_selectedState.Definition.Description</p>
+                </div>
+                <div class="header-meta">
+                    <span class="kind-badge">@_selectedState.Definition.Kind</span>
+                    <label class="workflow-toggle">
+                        <input type="checkbox"
+                               checked="@_selectedState.Definition.IsEnabled"
+                               @onchange="async _ => await ToggleWorkflowAsync(_selectedState)" />
+                        <span>@(_selectedState.Definition.IsEnabled ? "On" : "Off")</span>
+                    </label>
+                </div>
+            </header>
 
-                    <label class="workflow-input-label" for="@($"input-{card.Definition.Id}")">Input</label>
-                    <textarea id="@($"input-{card.Definition.Id}")"
-                              class="workflow-input"
-                              rows="3"
-                              placeholder="Type input for this workflow..."
-                              @bind="card.Input"></textarea>
+            <WorkflowTabs ActiveTab="@_activeTab" OnTabChanged="tab => _activeTab = tab" />
 
-                    <div class="workflow-actions">
-                        <button class="workflow-run" @onclick="() => RunWorkflowAsync(card)" disabled="@card.IsRunning">
-                            @(card.IsRunning ? "Running..." : "Run Workflow")
-                        </button>
-                        <span class="workflow-status">@card.Status</span>
-                    </div>
-
-                    <div class="workflow-output">
-                        @if (!string.IsNullOrWhiteSpace(card.Error))
-                        {
-                            <div class="workflow-error">@card.Error</div>
-                        }
-                        else if (!string.IsNullOrWhiteSpace(card.Response))
-                        {
-                            <pre>@card.Response</pre>
-                        }
-                        else
-                        {
-                            <div class="workflow-placeholder">No output yet.</div>
-                        }
-                    </div>
-
-                    @if (card.WebhookTriggers.Count > 0)
-                    {
-                        <div class="workflow-history">
-                            <div class="workflow-history-title">Webhook Triggers</div>
-                            <ul class="workflow-history-list">
-                                @foreach (var trigger in card.WebhookTriggers)
-                                {
-                                    <li class="workflow-history-item workflow-trigger-item">
-                                        <div class="workflow-trigger-info">
-                                            <strong>@trigger.DisplayName</strong>
-                                            <span class="workflow-trigger-id">@trigger.TriggerId</span>
-                                        </div>
-                                        <textarea class="workflow-trigger-payload"
-                                                  rows="2"
-                                                  placeholder="{ \"message\": \"hello\" }"
-                                                  @bind="trigger.Payload"></textarea>
-                                        <input class="workflow-trigger-secret"
-                                               placeholder="x-mullai-secret (optional)"
-                                               @bind="trigger.Secret" />
-                                        <button class="workflow-run"
-                                                @onclick="() => SendWebhookAsync(card, trigger)"
-                                                disabled="@trigger.IsSending">
-                                            @(trigger.IsSending ? "Sending..." : "Send Webhook")
-                                        </button>
-                                        @if (!string.IsNullOrWhiteSpace(trigger.Status))
-                                        {
-                                            <span class="workflow-status">@trigger.Status</span>
-                                        }
-                                    </li>
-                                }
-                            </ul>
-                        </div>
-                    }
-
-                    <div class="workflow-history">
-                        <div class="workflow-history-title">Recent Runs</div>
-                        @if (card.RecentRuns.Count == 0)
-                        {
-                            <div class="workflow-placeholder">No runs yet.</div>
-                        }
-                        else
-                        {
-                            <ul class="workflow-history-list">
-                                @foreach (var run in card.RecentRuns)
-                                {
-                                    <li class="workflow-history-item">
-                                        <span class="workflow-history-state">@run.State</span>
-                                        <span class="workflow-history-time">@run.UpdatedAtUtc.ToLocalTime().ToString("g")</span>
-                                        <span class="workflow-history-summary">@run.Summary</span>
-                                    </li>
-                                }
-                            </ul>
-                        }
-                    </div>
-                </section>
-            }
-        </div>
-    }
+            <div class="workflow-content">
+                @if (_activeTab == "Execution")
+                {
+                    <WorkflowExecutionView 
+                        @bind-Input="_selectedState.Input"
+                        IsRunning="@_selectedState.IsRunning"
+                        Status="@_selectedState.Status"
+                        Response="@_selectedState.Response"
+                        Error="@_selectedState.Error"
+                        IsEnabled="@_selectedState.Definition.IsEnabled"
+                        OnRunClicked="() => RunWorkflowAsync(_selectedState)" />
+                }
+                else if (_activeTab == "Visual Graph")
+                {
+                    <WorkflowGraphView Definition="@_selectedState.Definition" />
+                }
+                else if (_activeTab == "History")
+                {
+                    <WorkflowRunsView Runs="@_selectedState.RecentRuns" />
+                }
+                else if (_activeTab == "Triggers")
+                {
+                    <WorkflowTriggersView 
+                        Triggers="@_selectedState.WebhookTriggers" 
+                        OnSendWebhook="trigger => SendWebhookAsync(_selectedState, trigger)" />
+                }
+            </div>
+        }
+    </main>
 </div>
 
 @code {
-    private readonly List<WorkflowCardState> _cards = [];
+    [Parameter] public string? SelectedWorkflowId { get; set; }
+
+    private List<WorkflowDefinition> _definitions = [];
+    private readonly Dictionary<string, WorkflowCardState> _states = new();
+    private readonly Dictionary<string, string> _workflowStatuses = new();
+    private WorkflowCardState? _selectedState => SelectedWorkflowId != null && _states.TryGetValue(SelectedWorkflowId, out var state) ? state : null;
+    private string _activeTab = "Execution";
+
     private CancellationTokenSource? _pollingCts;
     private Task? _pollingTask;
     private Task? _responseTask;
-    private readonly string _workflowDir = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".mullai",
-        "workflows");
-    private const string _sampleYaml =
-        "id: bilingual-reply\n" +
-        "name: Bilingual Reply\n" +
-        "description: Responds in English and French in parallel.\n" +
-        "kind: ParallelAgents\n" +
-        "agents:\n" +
-        "  - name: FrenchAgent\n" +
-        "    displayName: French\n" +
-        "    instructions: \"You are a helpful assistant who always responds in French.\"\n" +
-        "  - name: EnglishAgent\n" +
-        "    displayName: English\n" +
-        "    instructions: \"You are a helpful assistant who always responds in English.\"\n";
 
     protected override void OnInitialized()
     {
-        foreach (var definition in WorkflowRegistry.GetAll())
+        _definitions = WorkflowRegistry.GetAll().ToList();
+        foreach (var def in _definitions)
         {
-            _cards.Add(new WorkflowCardState(definition));
+            var state = new WorkflowCardState(def);
+            _states[def.Id] = state;
+            _workflowStatuses[def.Id] = state.Status;
         }
 
         _pollingCts = new CancellationTokenSource();
@@ -171,17 +116,31 @@
         _responseTask = RunResponseFeedAsync(_pollingCts.Token);
     }
 
+    protected override void OnParametersSet()
+    {
+        if (SelectedWorkflowId != null && !_states.ContainsKey(SelectedWorkflowId))
+        {
+            SelectedWorkflowId = null;
+        }
+    }
+
+    private void HandleWorkflowSelected(string id)
+    {
+        Nav.NavigateTo($"/workflows/{id}");
+    }
+
     private async Task RunWorkflowAsync(WorkflowCardState card)
     {
-        if (card is null || card.IsRunning)
+        if (card.IsRunning) return;
+        if (!card.Definition.IsEnabled)
         {
+            card.Error = "Workflow is disabled.";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(card.Input))
         {
             card.Error = "Input is required.";
-            await InvokeAsync(StateHasChanged);
             return;
         }
 
@@ -189,6 +148,7 @@
         card.Response = string.Empty;
         card.Status = "Queued";
         card.IsRunning = true;
+        _workflowStatuses[card.Definition.Id] = card.Status;
 
         var maxAttempts = Math.Max(1, RuntimeOptions.Value.DefaultMaxAttempts);
         card.SessionKey ??= $"workflow-{card.Definition.Id}-{Guid.NewGuid():N}";
@@ -218,15 +178,48 @@
         {
             card.IsRunning = false;
             card.Error = $"Failed to queue workflow: {ex.Message}";
+            card.Status = "Idle";
+            _workflowStatuses[card.Definition.Id] = card.Status;
         }
-
-        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task SendWebhookAsync(WorkflowCardState card, WebhookTriggerState trigger)
+    private async Task ToggleWorkflowAsync(WorkflowCardState card)
     {
-        if (trigger.IsSending)
+        var enabled = !card.Definition.IsEnabled;
+        var updated = new WorkflowDefinition
         {
+            Id = card.Definition.Id,
+            Name = card.Definition.Name,
+            Description = card.Definition.Description,
+            Kind = card.Definition.Kind,
+            Enabled = enabled,
+            Agents = card.Definition.Agents,
+            Triggers = card.Definition.Triggers,
+            Outputs = card.Definition.Outputs
+        };
+
+        await WorkflowTool.UpsertWorkflow(updated);
+
+        card.Definition = updated;
+        _definitions = _definitions.Select(d => d.Id == updated.Id ? updated : d).ToList();
+        _states[updated.Id] = card;
+        if (!enabled)
+        {
+            card.Status = "Disabled";
+            _workflowStatuses[updated.Id] = "Disabled";
+        }
+        else if (!_workflowStatuses.TryGetValue(updated.Id, out _))
+        {
+            _workflowStatuses[updated.Id] = card.Status;
+        }
+    }
+
+    private async Task SendWebhookAsync(WorkflowCardState card, WorkflowTriggersView.WebhookTriggerState trigger)
+    {
+        if (trigger.IsSending) return;
+        if (!card.Definition.IsEnabled)
+        {
+            trigger.Status = "Workflow is disabled.";
             return;
         }
 
@@ -252,9 +245,7 @@
             }
 
             using var response = await Http.SendAsync(request);
-            trigger.Status = response.IsSuccessStatusCode
-                ? "Sent"
-                : $"Failed: {(int)response.StatusCode}";
+            trigger.Status = response.IsSuccessStatusCode ? "Sent" : $"Failed: {(int)response.StatusCode}";
         }
         catch (Exception ex)
         {
@@ -263,14 +254,11 @@
         finally
         {
             trigger.IsSending = false;
-            await InvokeAsync(StateHasChanged);
         }
     }
 
     private async Task PollRuntimeAsync(CancellationToken cancellationToken)
     {
-        var pollInterval = TimeSpan.FromMilliseconds(250);
-
         while (!cancellationToken.IsCancellationRequested)
         {
             try
@@ -279,29 +267,14 @@
                 {
                     var changed = await SyncRunsAsync(cancellationToken);
                     changed |= await SyncHistoryAsync(cancellationToken);
-                    if (changed)
-                    {
-                        StateHasChanged();
-                    }
+                    if (changed) StateHasChanged();
                 });
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch
-            {
-                // Keep polling to avoid UI stalls.
-            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
+            catch { /* Ignore */ }
 
-            try
-            {
-                await Task.Delay(pollInterval, cancellationToken);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                break;
-            }
+            try { await Task.Delay(500, cancellationToken); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
         }
     }
 
@@ -309,58 +282,53 @@
     {
         await foreach (var update in ResponseChannel.Reader.ReadAllAsync(cancellationToken))
         {
-            var card = _cards.FirstOrDefault(x => x.TaskId == update.TaskId);
-            if (card is null)
+            var card = _states.Values.FirstOrDefault(x => x.TaskId == update.TaskId);
+            if (card != null)
             {
-                continue;
+                card.Response = update.Response ?? string.Empty;
+                await InvokeAsync(StateHasChanged);
             }
-
-            card.Response = update.Response ?? string.Empty;
-            await InvokeAsync(StateHasChanged);
         }
     }
 
     private async Task<bool> SyncRunsAsync(CancellationToken cancellationToken)
     {
         var changed = false;
-        foreach (var card in _cards)
+        foreach (var card in _states.Values)
         {
-            if (string.IsNullOrWhiteSpace(card.TaskId))
-            {
-                continue;
-            }
+            if (string.IsNullOrWhiteSpace(card.TaskId)) continue;
 
             var status = await StatusStore.GetAsync(card.TaskId, cancellationToken);
-            if (status is null)
-            {
-                continue;
-            }
+            if (status == null) continue;
 
+            var oldStatus = card.Status;
+            card.Status = status.State.ToString();
+            
             if (status.State is MullaiTaskState.Queued or MullaiTaskState.Running or MullaiTaskState.RetryScheduled)
             {
-                card.Status = status.State.ToString();
-                if (!string.IsNullOrWhiteSpace(status.Response))
-                {
-                    card.Response = status.Response!;
-                }
-                changed = true;
-                continue;
-            }
-
-            card.Status = status.State.ToString();
-            card.IsRunning = false;
-            if (status.State == MullaiTaskState.Succeeded)
-            {
-                card.Response = string.IsNullOrWhiteSpace(status.Response) ? "(No response)" : status.Response!;
-                card.Error = null;
+                if (!string.IsNullOrWhiteSpace(status.Response)) card.Response = status.Response!;
+                card.IsRunning = true;
             }
             else
             {
-                card.Error = status.Error ?? "Workflow failed.";
+                card.IsRunning = false;
+                if (status.State == MullaiTaskState.Succeeded)
+                {
+                    card.Response = string.IsNullOrWhiteSpace(status.Response) ? "(No response)" : status.Response!;
+                    card.Error = null;
+                }
+                else
+                {
+                    card.Error = status.Error ?? "Workflow failed.";
+                }
             }
-            changed = true;
-        }
 
+            if (oldStatus != card.Status)
+            {
+                _workflowStatuses[card.Definition.Id] = card.Status;
+                changed = true;
+            }
+        }
         return changed;
     }
 
@@ -369,92 +337,55 @@
         var recent = await StatusStore.GetRecentAsync(200, cancellationToken);
         var changed = false;
 
-        foreach (var card in _cards)
+        foreach (var card in _states.Values)
         {
             var runs = recent
-                .Where(snapshot => string.Equals(snapshot.WorkflowId, card.Definition.Id, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(snapshot => snapshot.UpdatedAtUtc)
-                .Take(5)
-                .Select(snapshot => new WorkflowRunEntry
+                .Where(s => string.Equals(s.WorkflowId, card.Definition.Id, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(s => s.UpdatedAtUtc)
+                .Select(s => new WorkflowRunsView.WorkflowRunRow
                 {
-                    TaskId = snapshot.TaskId,
-                    State = snapshot.State.ToString(),
-                    UpdatedAtUtc = snapshot.UpdatedAtUtc,
-                    Summary = BuildRunSummary(snapshot)
+                    TaskId = s.TaskId,
+                    State = s.State.ToString(),
+                    UpdatedAtUtc = s.UpdatedAtUtc,
+                    Summary = BuildRunSummary(s),
+                    FullText = s.Response ?? s.Error ?? string.Empty
                 })
                 .ToList();
 
-            var signature = string.Join("|", runs.Select(r => $"{r.TaskId}:{r.State}:{r.UpdatedAtUtc.UtcTicks}:{r.Summary}"));
-            if (!string.Equals(card.RecentRunsSignature, signature, StringComparison.Ordinal))
+            var signature = string.Join("|", runs.Select(r => $"{r.TaskId}:{r.State}:{r.UpdatedAtUtc.UtcTicks}"));
+            if (card.RecentRunsSignature != signature)
             {
                 card.RecentRuns = runs;
                 card.RecentRunsSignature = signature;
                 changed = true;
             }
         }
-
         return changed;
     }
 
-    private static string BuildRunSummary(MullaiTaskStatusSnapshot snapshot)
+    private static string BuildRunSummary(MullaiTaskStatusSnapshot s)
     {
-        if (!string.IsNullOrWhiteSpace(snapshot.Error))
-        {
-            return $"Error: {Truncate(snapshot.Error, 80)}";
-        }
-
-        if (!string.IsNullOrWhiteSpace(snapshot.Response))
-        {
-            return Truncate(snapshot.Response, 80);
-        }
-
+        if (!string.IsNullOrWhiteSpace(s.Error)) return $"Error: {Truncate(s.Error, 80)}";
+        if (!string.IsNullOrWhiteSpace(s.Response)) return Truncate(s.Response, 80);
         return "No response yet.";
     }
 
-    private static string Truncate(string text, int maxLength)
+    private static string Truncate(string text, int max)
     {
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return string.Empty;
-        }
-
+        if (string.IsNullOrWhiteSpace(text)) return string.Empty;
         var oneLine = text.ReplaceLineEndings(" ");
-        return oneLine.Length <= maxLength ? oneLine : $"{oneLine[..maxLength]}...";
+        return oneLine.Length <= max ? oneLine : $"{oneLine[..max]}...";
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (_pollingCts is null)
+        if (_pollingCts != null)
         {
-            return;
+            _pollingCts.Cancel();
+            if (_pollingTask != null) try { await _pollingTask; } catch { }
+            if (_responseTask != null) try { await _responseTask; } catch { }
+            _pollingCts.Dispose();
         }
-
-        _pollingCts.Cancel();
-        if (_pollingTask is not null)
-        {
-            try
-            {
-                await _pollingTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected during shutdown.
-            }
-        }
-
-        if (_responseTask is not null)
-        {
-            try
-            {
-                await _responseTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected during shutdown.
-            }
-        }
-
-        _pollingCts.Dispose();
     }
 
     private sealed class WorkflowCardState
@@ -464,15 +395,14 @@
             Definition = definition;
             WebhookTriggers = definition.Triggers
                 .Where(t => t.Enabled && t.Type.Equals("webhook", StringComparison.OrdinalIgnoreCase))
-                .Select(t => new WebhookTriggerState
+                .Select(t => new WorkflowTriggersView.WebhookTriggerState
                 {
                     TriggerId = string.IsNullOrWhiteSpace(t.Id) ? t.Name : t.Id,
                     DisplayName = string.IsNullOrWhiteSpace(t.Name) ? t.Id : t.Name
                 })
                 .ToList();
         }
-
-        public WorkflowDefinition Definition { get; }
+        public WorkflowDefinition Definition { get; set; }
         public string Input { get; set; } = string.Empty;
         public string Status { get; set; } = "Idle";
         public string Response { get; set; } = string.Empty;
@@ -480,26 +410,8 @@
         public bool IsRunning { get; set; }
         public string? TaskId { get; set; }
         public string? SessionKey { get; set; }
-        public List<WorkflowRunEntry> RecentRuns { get; set; } = [];
+        public List<WorkflowRunsView.WorkflowRunRow> RecentRuns { get; set; } = [];
         public string RecentRunsSignature { get; set; } = string.Empty;
-        public List<WebhookTriggerState> WebhookTriggers { get; set; }
-    }
-
-    private sealed class WebhookTriggerState
-    {
-        public string TriggerId { get; init; } = string.Empty;
-        public string DisplayName { get; init; } = string.Empty;
-        public string Payload { get; set; } = string.Empty;
-        public string Secret { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public bool IsSending { get; set; }
-    }
-
-    private sealed class WorkflowRunEntry
-    {
-        public string TaskId { get; init; } = string.Empty;
-        public string State { get; init; } = string.Empty;
-        public DateTimeOffset UpdatedAtUtc { get; init; }
-        public string Summary { get; init; } = string.Empty;
+        public List<WorkflowTriggersView.WebhookTriggerState> WebhookTriggers { get; set; }
     }
 }

@@ -1,0 +1,124 @@
+.runs-view {
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.runs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.runs-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.filter-select {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.runs-table-container {
+    flex: 1;
+    overflow-y: auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.runs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.runs-table th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    border-bottom: 2px solid var(--border);
+    font-weight: 600;
+    color: var(--subtle);
+    position: sticky;
+    top: 0;
+}
+
+.runs-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.run-row:hover {
+    background: var(--surface-2);
+}
+
+.run-state {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.run-state.succeeded { background: #d1e7dd; color: #0f5132; }
+.run-state.failed { background: #f8d7da; color: #842029; }
+.run-state.running { background: #cff4fc; color: #055160; }
+.run-state.queued { background: #fff3cd; color: #664d03; }
+
+.run-time {
+    color: var(--subtle);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.run-summary {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.details-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    color: var(--subtle);
+}
+
+.details-toggle:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.run-details-row td {
+    background: var(--surface-2);
+    padding: 1.5rem;
+}
+
+.run-full-text pre {
+    margin: 0;
+    padding: 1rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.no-runs {
+    text-align: center;
+    padding: 3rem;
+    color: var(--subtle);
+    font-style: italic;
+}

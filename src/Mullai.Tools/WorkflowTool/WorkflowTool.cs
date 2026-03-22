@@ -124,6 +124,7 @@ public sealed class WorkflowTool
         "id: demo-workflow\n" +
         "name: Demo Workflow\n" +
         "description: Demonstrates agents, triggers, and outputs.\n" +
+        "enabled: true\n" +
         "kind: ParallelAgents\n" +
         "agents:\n" +
         "  - name: EnglishAgent\n" +

@@ -1,0 +1,97 @@
+@using Mullai.TaskRuntime.Models
+
+<div class="runs-view">
+    <div class="runs-header">
+        <h3>Execution History</h3>
+        <div class="runs-filters">
+            <select @bind="StateFilter" class="filter-select">
+                <option value="">All States</option>
+                @foreach (var state in _stateOptions)
+                {
+                    <option value="@state">@state</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="runs-table-container">
+        <table class="runs-table">
+            <thead>
+                <tr>
+                    <th>State</th>
+                    <th>Updated</th>
+                    <th>Summary</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredRuns.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="no-runs">No recent runs found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var run in FilteredRuns)
+                    {
+                        <tr class="run-row">
+                            <td>
+                                <span class="run-state @run.State.ToLowerInvariant()">@run.State</span>
+                            </td>
+                            <td class="run-time">@run.UpdatedAtUtc.ToLocalTime().ToString("g")</td>
+                            <td class="run-summary">@run.Summary</td>
+                            <td>
+                                <button class="details-toggle" @onclick="() => ToggleDetails(run)">
+                                    @(run.ShowDetails ? "Hide" : "Details")
+                                </button>
+                            </td>
+                        </tr>
+                        @if (run.ShowDetails)
+                        {
+                            <tr class="run-details-row">
+                                <td colspan="4">
+                                    <div class="run-full-text">
+                                        <pre>@run.FullText</pre>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter] public List<WorkflowRunRow> Runs { get; set; } = [];
+    
+    private string _stateFilter = string.Empty;
+    private readonly List<string> _stateOptions = Enum.GetNames(typeof(MullaiTaskState)).ToList();
+
+    private string StateFilter
+    {
+        get => _stateFilter;
+        set { _stateFilter = value; StateHasChanged(); }
+    }
+
+    private List<WorkflowRunRow> FilteredRuns => string.IsNullOrWhiteSpace(StateFilter) 
+        ? Runs 
+        : Runs.Where(r => string.Equals(r.State, StateFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private void ToggleDetails(WorkflowRunRow run)
+    {
+        run.ShowDetails = !run.ShowDetails;
+    }
+
+    public class WorkflowRunRow
+    {
+        public string TaskId { get; init; } = string.Empty;
+        public string State { get; init; } = string.Empty;
+        public DateTimeOffset UpdatedAtUtc { get; init; }
+        public string Summary { get; init; } = string.Empty;
+        public string FullText { get; init; } = string.Empty;
+        public bool ShowDetails { get; set; }
+    }
+}

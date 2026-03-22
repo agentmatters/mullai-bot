@@ -11,10 +11,13 @@ public sealed class WorkflowDefinition
     public string Id { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
+    public bool? Enabled { get; init; }
     public WorkflowKind Kind { get; init; } = WorkflowKind.SingleAgent;
     public List<WorkflowAgentDefinition> Agents { get; init; } = [];
     public List<WorkflowTriggerDefinition> Triggers { get; init; } = [];
     public List<WorkflowOutputDefinition> Outputs { get; init; } = [];
+
+    public bool IsEnabled => Enabled ?? true;
 }
 
 public sealed class WorkflowAgentDefinition

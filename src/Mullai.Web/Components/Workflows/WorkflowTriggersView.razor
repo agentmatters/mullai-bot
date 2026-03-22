@@ -1,0 +1,71 @@
+<div class="triggers-view">
+    <div class="triggers-header">
+        <h3>Manual Triggers</h3>
+        <p>Manually simulate webhook events to test this workflow.</p>
+    </div>
+
+    @if (Triggers.Count == 0)
+    {
+        <div class="triggers-empty">No webhook triggers defined for this workflow.</div>
+    }
+    else
+    {
+        <div class="triggers-list">
+            @foreach (var trigger in Triggers)
+            {
+                <div class="trigger-card">
+                    <div class="trigger-info">
+                        <div class="trigger-name">@trigger.DisplayName</div>
+                        <div class="trigger-id">Trigger ID: <code>@trigger.TriggerId</code></div>
+                    </div>
+                    
+                    <div class="trigger-inputs">
+                        <div class="input-group">
+                            <label>Payload (JSON)</label>
+                            <textarea @bind="trigger.Payload" placeholder='{ "message": "hello" }' rows="3"></textarea>
+                        </div>
+                        <div class="input-group">
+                            <label>Secret (Optional)</label>
+                            <input type="text" @bind="trigger.Secret" placeholder="x-mullai-secret" />
+                        </div>
+                    </div>
+
+                    <div class="trigger-actions">
+                        <button class="send-button" @onclick="() => OnSendWebhook.InvokeAsync(trigger)" disabled="@trigger.IsSending">
+                            @if (trigger.IsSending)
+                            {
+                                <span class="spinner"></span>
+                                <span>Sending...</span>
+                            }
+                            else
+                            {
+                                <span>Send Webhook</span>
+                            }
+                        </button>
+                        @if (!string.IsNullOrEmpty(trigger.Status))
+                        {
+                            <span class="trigger-status @(trigger.Status.Contains("Failed") || trigger.Status.Contains("Error") ? "failed" : "success")">
+                                @trigger.Status
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<WebhookTriggerState> Triggers { get; set; } = [];
+    [Parameter] public EventCallback<WebhookTriggerState> OnSendWebhook { get; set; }
+
+    public class WebhookTriggerState
+    {
+        public string TriggerId { get; init; } = string.Empty;
+        public string DisplayName { get; init; } = string.Empty;
+        public string Payload { get; set; } = string.Empty;
+        public string Secret { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public bool IsSending { get; set; }
+    }
+}

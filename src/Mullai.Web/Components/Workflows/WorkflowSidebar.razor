@@ -1,0 +1,37 @@
+@using Mullai.Workflows.Models
+@using Mullai.Workflows.Abstractions
+
+<aside class="workflow-sidebar">
+    <div class="sidebar-header">
+        <div class="sidebar-title">Workflows</div>
+        <div class="sidebar-count">@Workflows.Count total</div>
+    </div>
+    
+    <div class="sidebar-list">
+        @foreach (var workflow in Workflows)
+        {
+            <div class="sidebar-item @(SelectedWorkflowId == workflow.Id ? "is-selected" : "")"
+                 @onclick="() => OnWorkflowSelected.InvokeAsync(workflow.Id)">
+                <div class="item-title">@workflow.Name</div>
+                <div class="item-meta">
+                    <span class="item-kind">@workflow.Kind</span>
+                    @if (!workflow.IsEnabled)
+                    {
+                        <span class="item-status disabled">Off</span>
+                    }
+                    @if (WorkflowStatuses.TryGetValue(workflow.Id, out var status))
+                    {
+                        <span class="item-status @status.ToLowerInvariant()">@status</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</aside>
+
+@code {
+    [Parameter] public List<WorkflowDefinition> Workflows { get; set; } = [];
+    [Parameter] public string? SelectedWorkflowId { get; set; }
+    [Parameter] public EventCallback<string> OnWorkflowSelected { get; set; }
+    [Parameter] public Dictionary<string, string> WorkflowStatuses { get; set; } = [];
+}

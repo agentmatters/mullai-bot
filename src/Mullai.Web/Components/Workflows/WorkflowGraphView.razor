@@ -1,0 +1,61 @@
+@using Mullai.Workflows.Models
+
+<div class="graph-view">
+    <div class="graph-header">
+        <h3>Architecture</h3>
+        <p>Visualization of triggers, agents, and outputs.</p>
+    </div>
+    <div class="graph-container">
+        @if (Definition is null)
+        {
+            <div class="graph-placeholder">No workflow selected.</div>
+        }
+        else
+        {
+            <pre class="mermaid">@_mermaid</pre>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public WorkflowDefinition? Definition { get; set; }
+    
+    private string _mermaid = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        if (Definition != null)
+        {
+            _mermaid = BuildMermaid(Definition);
+        }
+    }
+
+    private static string BuildMermaid(WorkflowDefinition definition)
+    {
+        var lines = new List<string>
+        {
+            "flowchart LR",
+            $"  W[{Escape(definition.Name)}]"
+        };
+
+        var triggerIndex = 0;
+        foreach (var trigger in definition.Triggers)
+        {
+            var triggerLabel = $"{trigger.Type}:{(string.IsNullOrWhiteSpace(trigger.Name) ? trigger.Id : trigger.Name)}";
+            var triggerNode = $"T{triggerIndex++}";
+            lines.Add($"  {triggerNode}(({Escape(triggerLabel)})) --> W");
+        }
+
+        var outputIndex = 0;
+        foreach (var output in definition.Outputs)
+        {
+            var outputLabel = $"{output.Type}:{(string.IsNullOrWhiteSpace(output.Target) ? "-" : output.Target)}";
+            var outputNode = $"O{outputIndex++}";
+            lines.Add($"  W --> {outputNode}[{Escape(outputLabel)}]");
+        }
+
+        return string.Join('\n', lines);
+    }
+
+    private static string Escape(string value) => value?.Replace("\"", "'") ?? " ";
+}

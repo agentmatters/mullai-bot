@@ -1,0 +1,101 @@
+@using Mullai.Workflows.Models
+@using Mullai.TaskRuntime.Models
+
+<div class="execution-view">
+    <div class="execution-controls">
+        <label class="input-label">Workflow Input</label>
+        <textarea class="workflow-input" 
+                  rows="5" 
+                  placeholder="Enter context or parameters for this workflow..."
+                  @bind="InputValue"
+                  disabled="@(!IsEnabled || IsRunning)"></textarea>
+        
+        <div class="execution-actions">
+            <button class="run-button" @onclick="OnRun" disabled="@(!IsEnabled || IsRunning)">
+                @if (IsRunning)
+                {
+                    <span class="spinner"></span>
+                    <span>Running Agent...</span>
+                }
+                else
+                {
+                    <span class="icon">▶</span>
+                    <span>Run Workflow</span>
+                }
+            </button>
+            <span class="execution-status @Status.ToLowerInvariant()">@Status</span>
+            @if (!IsEnabled)
+            {
+                <span class="execution-disabled">Disabled</span>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="execution-error">
+            <span class="error-icon">⚠</span>
+            @Error
+        </div>
+    }
+
+    <div class="execution-output">
+        <div class="output-header">
+            <span>Response</span>
+            @if (IsRunning)
+            {
+                <span class="streaming-indicator">Streaming...</span>
+            }
+        </div>
+        <div class="output-content">
+            @if (string.IsNullOrWhiteSpace(Response))
+            {
+                <div class="output-placeholder">No output yet. Run the workflow to see results.</div>
+            }
+            else
+            {
+                <pre>@Response</pre>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Input { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> InputChanged { get; set; }
+    
+    [Parameter] public bool IsRunning { get; set; }
+    [Parameter] public string Status { get; set; } = "Idle";
+    [Parameter] public string Response { get; set; } = string.Empty;
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public bool IsEnabled { get; set; } = true;
+
+    private string _inputValue = string.Empty;
+
+    private string InputValue
+    {
+        get => _inputValue;
+        set
+        {
+            if (string.Equals(_inputValue, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _inputValue = value;
+            _ = InputChanged.InvokeAsync(value);
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        _inputValue = Input;
+    }
+    
+    [Parameter] public EventCallback OnRunClicked { get; set; }
+
+    private async Task OnRun()
+    {
+        await OnRunClicked.InvokeAsync();
+    }
+}

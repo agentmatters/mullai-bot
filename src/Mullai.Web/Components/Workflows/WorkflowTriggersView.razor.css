@@ -1,0 +1,131 @@
+.triggers-view {
+    padding: 1.5rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.triggers-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.triggers-header p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.85rem;
+    color: var(--subtle);
+}
+
+.triggers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.trigger-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.trigger-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+}
+
+.trigger-id {
+    font-size: 0.75rem;
+    color: var(--subtle);
+    margin-top: 0.25rem;
+}
+
+.trigger-id code {
+    background: var(--surface-3);
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+.trigger-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.input-group label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--subtle);
+}
+
+.input-group textarea, .input-group input {
+    padding: 0.6rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    outline: none;
+}
+
+.trigger-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.send-button {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.send-button:hover:not(:disabled) {
+    background: var(--surface-3);
+}
+
+.trigger-status {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.trigger-status.success { color: var(--success); }
+.trigger-status.failed { color: var(--danger); }
+
+.spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.triggers-empty {
+    text-align: center;
+    padding: 3rem;
+    color: var(--subtle);
+    font-style: italic;
+    background: var(--surface-2);
+    border-radius: 8px;
+}

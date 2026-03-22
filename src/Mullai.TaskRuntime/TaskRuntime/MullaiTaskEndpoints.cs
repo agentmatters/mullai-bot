@@ -111,9 +111,14 @@ public static class MullaiTaskEndpoints
         IOptions<MullaiTaskRuntimeOptions> runtimeOptions,
         CancellationToken cancellationToken)
     {
-        if (registry.GetById(workflowId) is null)
+        var workflow = registry.GetById(workflowId);
+        if (workflow is null)
         {
             return Results.NotFound($"Workflow '{workflowId}' was not found.");
+        }
+        if (!workflow.IsEnabled)
+        {
+            return Results.Conflict($"Workflow '{workflowId}' is disabled.");
         }
 
         if (string.IsNullOrWhiteSpace(request.Input))
@@ -161,6 +166,10 @@ public static class MullaiTaskEndpoints
         if (workflow is null)
         {
             return Results.NotFound($"Workflow '{workflowId}' was not found.");
+        }
+        if (!workflow.IsEnabled)
+        {
+            return Results.Conflict($"Workflow '{workflowId}' is disabled.");
         }
 
         var trigger = workflow.Triggers.FirstOrDefault(t =>

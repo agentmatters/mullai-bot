@@ -46,6 +46,11 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
                 var activeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var workflow in workflows)
                 {
+                    if (!workflow.IsEnabled)
+                    {
+                        continue;
+                    }
+
                     foreach (var trigger in workflow.Triggers.Where(t => t.Enabled))
                     {
                         var key = $"{workflow.Id}:{trigger.Id}";
