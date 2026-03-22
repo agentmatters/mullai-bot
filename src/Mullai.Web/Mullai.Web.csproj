@@ -10,6 +10,7 @@
   <ItemGroup>
         <ProjectReference Include="..\Mullai.TaskRuntime\Mullai.TaskRuntime.csproj" />
         <ProjectReference Include="..\Mullai.Global.ServiceConfiguration\Mullai.Global.ServiceConfiguration.csproj" />
+        <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj" />
   </ItemGroup>
 
   <ItemGroup>

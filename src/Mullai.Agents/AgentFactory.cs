@@ -16,12 +16,14 @@ using Mullai.Tools.BashTool;
 using Mullai.Tools.CodeSearchTool;
 using Mullai.Tools.TodoTool;
 using Mullai.Tools.WebTool;
+using Mullai.Workflows.Abstractions;
 
 namespace Mullai.Agents;
 
 public class AgentFactory
 {
     private readonly IServiceProvider _serviceProvider;
+    private const string WorkflowAgentPrefix = "workflow:";
     
     public AgentFactory(
         IServiceProvider serviceProvider)
@@ -33,7 +35,16 @@ public class AgentFactory
     {
         AIAgent agent;
         var chatClient = _serviceProvider.GetRequiredService<IChatClient>();
-        
+
+        if (!string.IsNullOrWhiteSpace(agentName) &&
+            agentName.StartsWith(WorkflowAgentPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var workflowId = agentName[WorkflowAgentPrefix.Length..].Trim();
+            var workflowAgentFactory = _serviceProvider.GetRequiredService<IWorkflowAgentFactory>();
+            agent = workflowAgentFactory.CreateAgent(workflowId, chatClient);
+            return new MullaiAgent(agent, chatClient);
+        }
+
         switch (agentName)
         {
             case "Joker":

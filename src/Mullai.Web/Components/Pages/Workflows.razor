@@ -1,0 +1,316 @@
+@page "/workflows"
+@rendermode InteractiveServer
+@using Mullai.TaskRuntime.Abstractions
+@using Mullai.TaskRuntime.Models
+@using Mullai.TaskRuntime.Options
+@using Mullai.Workflows.Abstractions
+@using Mullai.Workflows.Models
+@using Microsoft.Extensions.Options
+@implements IAsyncDisposable
+
+@inject IWorkflowRegistry WorkflowRegistry
+@inject IMullaiTaskQueue TaskQueue
+@inject IMullaiTaskStatusStore StatusStore
+@inject IMullaiTaskResponseChannel ResponseChannel
+@inject IOptions<MullaiTaskRuntimeOptions> RuntimeOptions
+
+<PageTitle>Workflows</PageTitle>
+
+<div class="workflows-page">
+    <header class="workflows-header">
+        <div>
+            <h1>Workflows</h1>
+            <p class="workflows-subtitle">Run and monitor workflow agents.</p>
+        </div>
+    </header>
+
+    @if (_cards.Count == 0)
+    {
+        <div class="workflows-empty">
+            <h2>No workflows configured</h2>
+            <p>Drop YAML files into <span class="mono">@_workflowDir</span> to get started.</p>
+            <pre class="workflow-example"><code>@_sampleYaml</code></pre>
+        </div>
+    }
+    else
+    {
+        <div class="workflows-grid">
+            @foreach (var card in _cards)
+            {
+                <section class="workflow-card">
+                    <div class="workflow-card-header">
+                        <div>
+                            <h2>@card.Definition.Name</h2>
+                            <p>@card.Definition.Description</p>
+                        </div>
+                        <span class="workflow-kind">@card.Definition.Kind</span>
+                    </div>
+
+                    <label class="workflow-input-label" for="@($"input-{card.Definition.Id}")">Input</label>
+                    <textarea id="@($"input-{card.Definition.Id}")"
+                              class="workflow-input"
+                              rows="3"
+                              placeholder="Type input for this workflow..."
+                              @bind="card.Input"></textarea>
+
+                    <div class="workflow-actions">
+                        <button class="workflow-run" @onclick="() => RunWorkflowAsync(card)" disabled="@card.IsRunning">
+                            @(card.IsRunning ? "Running..." : "Run Workflow")
+                        </button>
+                        <span class="workflow-status">@card.Status</span>
+                    </div>
+
+                    <div class="workflow-output">
+                        @if (!string.IsNullOrWhiteSpace(card.Error))
+                        {
+                            <div class="workflow-error">@card.Error</div>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(card.Response))
+                        {
+                            <pre>@card.Response</pre>
+                        }
+                        else
+                        {
+                            <div class="workflow-placeholder">No output yet.</div>
+                        }
+                    </div>
+                </section>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<WorkflowCardState> _cards = [];
+    private CancellationTokenSource? _pollingCts;
+    private Task? _pollingTask;
+    private Task? _responseTask;
+    private readonly string _workflowDir = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ".mullai",
+        "workflows");
+    private const string _sampleYaml =
+        "id: bilingual-reply\n" +
+        "name: Bilingual Reply\n" +
+        "description: Responds in English and French in parallel.\n" +
+        "kind: ParallelAgents\n" +
+        "agents:\n" +
+        "  - name: FrenchAgent\n" +
+        "    displayName: French\n" +
+        "    instructions: \"You are a helpful assistant who always responds in French.\"\n" +
+        "  - name: EnglishAgent\n" +
+        "    displayName: English\n" +
+        "    instructions: \"You are a helpful assistant who always responds in English.\"\n";
+
+    protected override void OnInitialized()
+    {
+        foreach (var definition in WorkflowRegistry.GetAll())
+        {
+            _cards.Add(new WorkflowCardState(definition));
+        }
+
+        _pollingCts = new CancellationTokenSource();
+        _pollingTask = PollRuntimeAsync(_pollingCts.Token);
+        _responseTask = RunResponseFeedAsync(_pollingCts.Token);
+    }
+
+    private async Task RunWorkflowAsync(WorkflowCardState card)
+    {
+        if (card is null || card.IsRunning)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(card.Input))
+        {
+            card.Error = "Input is required.";
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        card.Error = null;
+        card.Response = string.Empty;
+        card.Status = "Queued";
+        card.IsRunning = true;
+
+        var maxAttempts = Math.Max(1, RuntimeOptions.Value.DefaultMaxAttempts);
+        card.SessionKey ??= $"workflow-{card.Definition.Id}-{Guid.NewGuid():N}";
+
+        var workItem = new MullaiTaskWorkItem
+        {
+            TaskId = Guid.NewGuid().ToString("N"),
+            SessionKey = card.SessionKey,
+            AgentName = $"workflow:{card.Definition.Id}",
+            Prompt = card.Input.Trim(),
+            Source = MullaiTaskSource.Client,
+            MaxAttempts = maxAttempts,
+            Metadata = new Dictionary<string, string>
+            {
+                ["workflowId"] = card.Definition.Id
+            }
+        };
+
+        card.TaskId = workItem.TaskId;
+
+        try
+        {
+            await TaskQueue.EnqueueAsync(workItem);
+            await StatusStore.MarkQueuedAsync(workItem);
+        }
+        catch (Exception ex)
+        {
+            card.IsRunning = false;
+            card.Error = $"Failed to queue workflow: {ex.Message}";
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PollRuntimeAsync(CancellationToken cancellationToken)
+    {
+        var pollInterval = TimeSpan.FromMilliseconds(250);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await InvokeAsync(async () =>
+                {
+                    var changed = await SyncRunsAsync(cancellationToken);
+                    if (changed)
+                    {
+                        StateHasChanged();
+                    }
+                });
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch
+            {
+                // Keep polling to avoid UI stalls.
+            }
+
+            try
+            {
+                await Task.Delay(pollInterval, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+        }
+    }
+
+    private async Task RunResponseFeedAsync(CancellationToken cancellationToken)
+    {
+        await foreach (var update in ResponseChannel.Reader.ReadAllAsync(cancellationToken))
+        {
+            var card = _cards.FirstOrDefault(x => x.TaskId == update.TaskId);
+            if (card is null)
+            {
+                continue;
+            }
+
+            card.Response = update.Response ?? string.Empty;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task<bool> SyncRunsAsync(CancellationToken cancellationToken)
+    {
+        var changed = false;
+        foreach (var card in _cards)
+        {
+            if (string.IsNullOrWhiteSpace(card.TaskId))
+            {
+                continue;
+            }
+
+            var status = await StatusStore.GetAsync(card.TaskId, cancellationToken);
+            if (status is null)
+            {
+                continue;
+            }
+
+            if (status.State is MullaiTaskState.Queued or MullaiTaskState.Running or MullaiTaskState.RetryScheduled)
+            {
+                card.Status = status.State.ToString();
+                if (!string.IsNullOrWhiteSpace(status.Response))
+                {
+                    card.Response = status.Response!;
+                }
+                changed = true;
+                continue;
+            }
+
+            card.Status = status.State.ToString();
+            card.IsRunning = false;
+            if (status.State == MullaiTaskState.Succeeded)
+            {
+                card.Response = string.IsNullOrWhiteSpace(status.Response) ? "(No response)" : status.Response!;
+                card.Error = null;
+            }
+            else
+            {
+                card.Error = status.Error ?? "Workflow failed.";
+            }
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pollingCts is null)
+        {
+            return;
+        }
+
+        _pollingCts.Cancel();
+        if (_pollingTask is not null)
+        {
+            try
+            {
+                await _pollingTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during shutdown.
+            }
+        }
+
+        if (_responseTask is not null)
+        {
+            try
+            {
+                await _responseTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during shutdown.
+            }
+        }
+
+        _pollingCts.Dispose();
+    }
+
+    private sealed class WorkflowCardState
+    {
+        public WorkflowCardState(WorkflowDefinition definition)
+        {
+            Definition = definition;
+        }
+
+        public WorkflowDefinition Definition { get; }
+        public string Input { get; set; } = string.Empty;
+        public string Status { get; set; } = "Idle";
+        public string Response { get; set; } = string.Empty;
+        public string? Error { get; set; }
+        public bool IsRunning { get; set; }
+        public string? TaskId { get; set; }
+        public string? SessionKey { get; set; }
+    }
+}

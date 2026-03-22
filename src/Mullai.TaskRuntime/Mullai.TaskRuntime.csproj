@@ -11,9 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Cronos" />
     <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj" />
     <ProjectReference Include="..\Mullai.Agents\Mullai.Agents.csproj" />
     <ProjectReference Include="..\Mullai.Global.ServiceConfiguration\Mullai.Global.ServiceConfiguration.csproj" />
+    <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj" />
   </ItemGroup>
 
 </Project>

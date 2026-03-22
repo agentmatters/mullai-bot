@@ -3,6 +3,8 @@ using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Execution;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
+using Mullai.Workflows.Abstractions;
+using Mullai.Workflows.Models;
 
 namespace Mullai.TaskRuntime.Services;
 
@@ -13,6 +15,8 @@ public class MullaiTaskWorkerService : BackgroundService
     private readonly IMullaiTaskExecutor _executor;
     private readonly IMullaiTaskResponseChannel _responseChannel;
     private readonly MullaiTaskRuntimeOptions _runtimeOptions;
+    private readonly IWorkflowRegistry _workflowRegistry;
+    private readonly IWorkflowOutputDispatcher _workflowOutputDispatcher;
     private readonly ILogger<MullaiTaskWorkerService> _logger;
 
     public MullaiTaskWorkerService(
@@ -20,6 +24,8 @@ public class MullaiTaskWorkerService : BackgroundService
         IMullaiTaskStatusStore statusStore,
         IMullaiTaskExecutor executor,
         IMullaiTaskResponseChannel responseChannel,
+        IWorkflowRegistry workflowRegistry,
+        IWorkflowOutputDispatcher workflowOutputDispatcher,
         IOptions<MullaiTaskRuntimeOptions> runtimeOptions,
         ILogger<MullaiTaskWorkerService> logger)
     {
@@ -27,6 +33,8 @@ public class MullaiTaskWorkerService : BackgroundService
         _statusStore = statusStore ?? throw new ArgumentNullException(nameof(statusStore));
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
         _responseChannel = responseChannel ?? throw new ArgumentNullException(nameof(responseChannel));
+        _workflowRegistry = workflowRegistry ?? throw new ArgumentNullException(nameof(workflowRegistry));
+        _workflowOutputDispatcher = workflowOutputDispatcher ?? throw new ArgumentNullException(nameof(workflowOutputDispatcher));
         _runtimeOptions = runtimeOptions?.Value ?? throw new ArgumentNullException(nameof(runtimeOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -90,6 +98,7 @@ public class MullaiTaskWorkerService : BackgroundService
                 },
                 cancellationToken).ConfigureAwait(false);
             await _statusStore.MarkSucceededAsync(workItem, response, cancellationToken).ConfigureAwait(false);
+            await DispatchWorkflowOutputsAsync(workItem, response, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -123,5 +132,35 @@ public class MullaiTaskWorkerService : BackgroundService
             await _queue.EnqueueAsync(retryItem, cancellationToken).ConfigureAwait(false);
             await _statusStore.MarkQueuedAsync(retryItem, cancellationToken).ConfigureAwait(false);
         }
+    }
+
+    private async Task DispatchWorkflowOutputsAsync(
+        MullaiTaskWorkItem workItem,
+        string response,
+        CancellationToken cancellationToken)
+    {
+        if (workItem.Metadata is null ||
+            !workItem.Metadata.TryGetValue("workflowId", out var workflowId) ||
+            string.IsNullOrWhiteSpace(workflowId))
+        {
+            return;
+        }
+
+        var definition = _workflowRegistry.GetById(workflowId);
+        if (definition is null || definition.Outputs.Count == 0)
+        {
+            return;
+        }
+
+        var context = new WorkflowOutputContext
+        {
+            Definition = definition,
+            Response = response,
+            TaskId = workItem.TaskId,
+            SessionKey = workItem.SessionKey,
+            Metadata = workItem.Metadata
+        };
+
+        await _workflowOutputDispatcher.DispatchAsync(context, cancellationToken).ConfigureAwait(false);
     }
 }

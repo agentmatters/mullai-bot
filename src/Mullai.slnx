@@ -15,6 +15,7 @@
   <Project Path="Mullai.Tools/Mullai.Tools.csproj" />
   <Project Path="Mullai.Tools.Tests/Mullai.Tools.Tests.csproj" />
   <Project Path="Mullai.Providers.Tests/Mullai.Providers.Tests.csproj" />
+  <Project Path="Mullai.Workflows/Mullai.Workflows.csproj" />
   <Project Path="Mullai.Web/Mullai.Web.csproj" />
   <Project Path="Mullai.TaskRuntime/Mullai.TaskRuntime.csproj" />
 </Solution>

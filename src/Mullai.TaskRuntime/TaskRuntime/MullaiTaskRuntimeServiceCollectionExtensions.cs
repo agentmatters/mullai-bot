@@ -3,6 +3,9 @@ using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Clients;
 using Mullai.TaskRuntime.Options;
 using Mullai.TaskRuntime.Services;
+using Mullai.TaskRuntime.Services.WorkflowOutputHandlers;
+using Mullai.Workflows.Abstractions;
+using Mullai.Workflows;
 
 namespace Mullai.TaskRuntime;
 
@@ -14,6 +17,7 @@ public static class MullaiTaskRuntimeServiceCollectionExtensions
         services.Configure<MullaiRecurringTaskOptions>(configuration.GetSection(MullaiRecurringTaskOptions.SectionName));
 
         services.ConfigureMullaiServices(configuration);
+        services.AddMullaiWorkflows();
 
         services.AddSingleton<IMullaiTaskQueue, InMemoryMullaiTaskQueue>();
         services.AddSingleton<IMullaiTaskStatusStore, InMemoryMullaiTaskStatusStore>();
@@ -21,8 +25,11 @@ public static class MullaiTaskRuntimeServiceCollectionExtensions
         services.AddSingleton<IMullaiTaskResponseChannel, MullaiTaskResponseChannel>();
         services.AddSingleton<IMullaiTaskClientFactory, WebMullaiClientFactory>();
         services.AddSingleton<IMullaiTaskExecutor, MullaiTaskExecutor>();
+        services.AddSingleton<IWorkflowOutputHandler, LogWorkflowOutputHandler>();
+        services.AddSingleton<IWorkflowOutputHandler, WorkflowChainOutputHandler>();
 
         services.AddHostedService<MullaiTaskWorkerService>();
+        services.AddHostedService<WorkflowTriggerSchedulerService>();
         services.AddHostedService<CronTaskSchedulerService>();
 
         return services;

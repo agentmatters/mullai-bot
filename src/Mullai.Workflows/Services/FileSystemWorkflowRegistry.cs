@@ -1,0 +1,118 @@
+using Microsoft.Extensions.Logging;
+using Mullai.Workflows.Abstractions;
+using Mullai.Workflows.Models;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+
+namespace Mullai.Workflows.Services;
+
+public sealed class FileSystemWorkflowRegistry : IWorkflowRegistry
+{
+    private readonly ILogger<FileSystemWorkflowRegistry> _logger;
+    private readonly IReadOnlyList<WorkflowDefinition> _definitions;
+    private readonly Dictionary<string, WorkflowDefinition> _byId;
+
+    public FileSystemWorkflowRegistry(ILogger<FileSystemWorkflowRegistry> logger)
+    {
+        _logger = logger;
+        _definitions = LoadDefinitions();
+        _byId = _definitions.ToDictionary(def => def.Id, StringComparer.OrdinalIgnoreCase);
+        if (_definitions.Count == 0)
+        {
+            _logger.LogWarning("No workflow definitions loaded from ~/.mullai/workflows.");
+        }
+        else
+        {
+            _logger.LogInformation(
+                "Loaded {WorkflowCount} workflow definition(s): {WorkflowIds}",
+                _definitions.Count,
+                string.Join(", ", _definitions.Select(d => d.Id)));
+        }
+    }
+
+    public IReadOnlyList<WorkflowDefinition> GetAll() => _definitions;
+
+    public WorkflowDefinition? GetById(string workflowId)
+    {
+        if (string.IsNullOrWhiteSpace(workflowId))
+        {
+            return null;
+        }
+
+        return _byId.TryGetValue(workflowId.Trim(), out var definition) ? definition : null;
+    }
+
+    private IReadOnlyList<WorkflowDefinition> LoadDefinitions()
+    {
+        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var workflowDir = Path.Combine(homeDir, ".mullai", "workflows");
+        if (!Directory.Exists(workflowDir))
+        {
+            _logger.LogInformation("Workflow directory not found at {WorkflowDir}.", workflowDir);
+            return Array.Empty<WorkflowDefinition>();
+        }
+
+        var deserializer = new DeserializerBuilder()
+            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+            .IgnoreUnmatchedProperties()
+            .Build();
+
+        var results = new List<WorkflowDefinition>();
+        var files = Directory.EnumerateFiles(workflowDir, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(path => path.EndsWith(".yml", StringComparison.OrdinalIgnoreCase) ||
+                           path.EndsWith(".yaml", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var file in files)
+        {
+            try
+            {
+                var yaml = File.ReadAllText(file);
+                if (string.IsNullOrWhiteSpace(yaml))
+                {
+                    continue;
+                }
+
+                if (TryDeserializeList(deserializer, yaml, out var list))
+                {
+                    results.AddRange(list);
+                    continue;
+                }
+
+                var definition = deserializer.Deserialize<WorkflowDefinition>(yaml);
+                if (definition is not null && !string.IsNullOrWhiteSpace(definition.Id))
+                {
+                    results.Add(definition);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to load workflow definition from {WorkflowFile}.", file);
+            }
+        }
+
+        return results
+            .Where(def => !string.IsNullOrWhiteSpace(def.Id))
+            .ToArray();
+    }
+
+    private static bool TryDeserializeList(IDeserializer deserializer, string yaml, out List<WorkflowDefinition> definitions)
+    {
+        definitions = [];
+        try
+        {
+            var list = deserializer.Deserialize<List<WorkflowDefinition>>(yaml);
+            if (list is null || list.Count == 0)
+            {
+                return false;
+            }
+
+            definitions = list;
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}

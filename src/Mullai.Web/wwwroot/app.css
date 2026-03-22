@@ -305,3 +305,10 @@ select {
     background: var(--border-strong);
     border-radius: 10px;
 }
+:root {
+    --workflow-accent: #0f766e;
+    --workflow-accent-soft: #e0f2f1;
+    --workflow-surface: #ffffff;
+    --workflow-surface-muted: #f7f7f7;
+    --workflow-border: #e3e3e3;
+}
