@@ -18,6 +18,7 @@
 
   <ItemGroup>
       <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj" />
+      <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

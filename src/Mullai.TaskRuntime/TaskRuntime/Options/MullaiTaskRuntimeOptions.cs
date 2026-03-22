@@ -8,4 +8,5 @@ public sealed class MullaiTaskRuntimeOptions
     public int WorkerCount { get; set; } = Math.Max(2, Environment.ProcessorCount);
     public int DefaultMaxAttempts { get; set; } = 3;
     public int RetryDelaySeconds { get; set; } = 3;
+    public int WorkflowRunRetentionCount { get; set; } = 10;
 }

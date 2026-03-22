@@ -112,6 +112,7 @@ public sealed class WorkflowTool
         yield return AIFunctionFactory.Create(this.UpdateWorkflowFromYaml);
         yield return AIFunctionFactory.Create(this.UpsertWorkflow);
         yield return AIFunctionFactory.Create(this.GetSampleWorkflowYaml);
+        yield return AIFunctionFactory.Create(this.GetIncrementalSummaryWorkflowYaml);
     }
 
     [Description("Returns a sample workflow YAML that covers all currently supported features (agents, triggers, outputs).")]
@@ -160,6 +161,40 @@ public sealed class WorkflowTool
         "    target: concise-assistant\n" +
         "    properties:\n" +
         "      input: \"Summarize this response in one paragraph: {{response}}\"\n";
+
+    [Description("Returns a workflow YAML template for incrementally summarizing a large codebase using workflow state.")]
+    public Task<string> GetIncrementalSummaryWorkflowYaml()
+    {
+        return Task.FromResult(IncrementalSummaryYaml);
+    }
+
+    private const string IncrementalSummaryYaml =
+        "id: project-summary\n" +
+        "name: Project Summary (Incremental)\n" +
+        "description: Summarizes one file per run and stores progress in workflow state.\n" +
+        "enabled: true\n" +
+        "kind: SingleAgent\n" +
+        "agents:\n" +
+        "  - name: SummarizerAgent\n" +
+        "    displayName: Summarizer\n" +
+        "    instructions: |\n" +
+        "      You are summarizing a large codebase incrementally.\n" +
+        "      Use WorkflowStateTool to read state key 'summary.cursor'.\n" +
+        "      If missing, initialize it with {\"files\":[],\"index\":0,\"root\":\"/path\"}.\n" +
+        "      Use FileSystemTool to list files and read the next file.\n" +
+        "      Write a short summary as a comment at the top of the file.\n" +
+        "      Increment index and save back to 'summary.cursor'.\n" +
+        "      When index >= files.length, set state key 'summary.done' to true.\n" +
+        "triggers:\n" +
+        "  - type: interval\n" +
+        "    name: every-30s\n" +
+        "    intervalSeconds: 30\n" +
+        "    input: \"Summarize the next file.\"\n" +
+        "    properties:\n" +
+        "      stopKey: \"summary.done\"\n" +
+        "      stopValue: \"true\"\n" +
+        "outputs:\n" +
+        "  - type: log\n";
 
     private static string ResolveWorkflowDirectory()
     {

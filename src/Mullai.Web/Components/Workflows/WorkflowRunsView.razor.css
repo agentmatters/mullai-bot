@@ -116,6 +116,68 @@
     overflow-y: auto;
 }
 
+.run-events {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.run-events h4 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--subtle);
+}
+
+.run-events-status {
+    font-size: 0.85rem;
+    color: var(--subtle);
+}
+
+.run-events-status.error {
+    color: #b91c1c;
+}
+
+.run-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.run-event {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.75rem;
+    background: var(--surface);
+}
+
+.run-event-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--subtle);
+    margin-bottom: 0.5rem;
+}
+
+.run-event-type {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.run-event pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.5rem;
+}
+
 .no-runs {
     text-align: center;
     padding: 3rem;

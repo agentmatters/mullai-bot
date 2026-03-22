@@ -1,7 +1,8 @@
-using System.Text.Json;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Options;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
+using Mullai.TaskRuntime.Options;
 
 namespace Mullai.TaskRuntime.Services;
 
@@ -25,8 +26,15 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
         CREATE INDEX IF NOT EXISTS idx_task_status_workflow ON task_status(workflow_id);
         """;
 
-    public SqliteMullaiTaskStatusStore()
+    private readonly IWorkflowRunEventStore _runEventStore;
+    private readonly int _retentionCount;
+
+    public SqliteMullaiTaskStatusStore(
+        IOptions<MullaiTaskRuntimeOptions> runtimeOptions,
+        IWorkflowRunEventStore runEventStore)
     {
+        _retentionCount = Math.Max(0, runtimeOptions?.Value.WorkflowRunRetentionCount ?? 0);
+        _runEventStore = runEventStore ?? throw new ArgumentNullException(nameof(runEventStore));
         using var connection = SqliteStoreHelper.CreateConnection();
         using var command = connection.CreateCommand();
         command.CommandText = InitSql;
@@ -34,34 +42,19 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
     }
 
     public Task MarkQueuedAsync(MullaiTaskWorkItem workItem, CancellationToken cancellationToken = default)
-    {
-        Upsert(workItem, MullaiTaskState.Queued, null, null);
-        return Task.CompletedTask;
-    }
+        => UpsertAsync(workItem, MullaiTaskState.Queued, null, null, cancellationToken);
 
     public Task MarkRunningAsync(MullaiTaskWorkItem workItem, string? response = null, CancellationToken cancellationToken = default)
-    {
-        Upsert(workItem, MullaiTaskState.Running, response, null);
-        return Task.CompletedTask;
-    }
+        => UpsertAsync(workItem, MullaiTaskState.Running, response, null, cancellationToken);
 
     public Task MarkRetryScheduledAsync(MullaiTaskWorkItem workItem, string error, CancellationToken cancellationToken = default)
-    {
-        Upsert(workItem, MullaiTaskState.RetryScheduled, null, error);
-        return Task.CompletedTask;
-    }
+        => UpsertAsync(workItem, MullaiTaskState.RetryScheduled, null, error, cancellationToken);
 
     public Task MarkSucceededAsync(MullaiTaskWorkItem workItem, string response, CancellationToken cancellationToken = default)
-    {
-        Upsert(workItem, MullaiTaskState.Succeeded, response, null);
-        return Task.CompletedTask;
-    }
+        => UpsertAsync(workItem, MullaiTaskState.Succeeded, response, null, cancellationToken);
 
     public Task MarkFailedAsync(MullaiTaskWorkItem workItem, string error, CancellationToken cancellationToken = default)
-    {
-        Upsert(workItem, MullaiTaskState.Failed, null, error);
-        return Task.CompletedTask;
-    }
+        => UpsertAsync(workItem, MullaiTaskState.Failed, null, error, cancellationToken);
 
     public Task<MullaiTaskStatusSnapshot?> GetAsync(string taskId, CancellationToken cancellationToken = default)
     {
@@ -123,7 +116,12 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
         };
     }
 
-    private static void Upsert(MullaiTaskWorkItem workItem, MullaiTaskState state, string? response, string? error)
+    private async Task UpsertAsync(
+        MullaiTaskWorkItem workItem,
+        MullaiTaskState state,
+        string? response,
+        string? error,
+        CancellationToken cancellationToken)
     {
         string? workflowId = null;
         workItem.Metadata?.TryGetValue("workflowId", out workflowId);
@@ -179,5 +177,54 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
         command.Parameters.AddWithValue("$error", (object?)error ?? DBNull.Value);
         command.Parameters.AddWithValue("$updatedAtUtc", DateTimeOffset.UtcNow.ToString("O"));
         command.ExecuteNonQuery();
+
+        if (state is MullaiTaskState.Succeeded or MullaiTaskState.Failed &&
+            !string.IsNullOrWhiteSpace(workflowId))
+        {
+            await PruneRunsAsync(workflowId, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task PruneRunsAsync(string workflowId, CancellationToken cancellationToken)
+    {
+        if (_retentionCount <= 0)
+        {
+            return;
+        }
+
+        using var connection = SqliteStoreHelper.CreateConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT task_id
+            FROM task_status
+            WHERE workflow_id = $workflowId
+            ORDER BY updated_at_utc DESC
+            LIMIT -1 OFFSET $keep;
+            """;
+        command.Parameters.AddWithValue("$workflowId", workflowId);
+        command.Parameters.AddWithValue("$keep", _retentionCount);
+
+        using var reader = command.ExecuteReader();
+        var taskIds = new List<string>();
+        while (reader.Read())
+        {
+            taskIds.Add(reader.GetString(reader.GetOrdinal("task_id")));
+        }
+
+        if (taskIds.Count == 0)
+        {
+            return;
+        }
+
+        using var deleteCommand = connection.CreateCommand();
+        var parameters = taskIds.Select((_, index) => $"$id{index}").ToArray();
+        deleteCommand.CommandText = $"DELETE FROM task_status WHERE task_id IN ({string.Join(",", parameters)});";
+        for (var i = 0; i < taskIds.Count; i++)
+        {
+            deleteCommand.Parameters.AddWithValue(parameters[i], taskIds[i]);
+        }
+        deleteCommand.ExecuteNonQuery();
+
+        await _runEventStore.RemoveByTaskIdsAsync(taskIds, cancellationToken).ConfigureAwait(false);
     }
 }

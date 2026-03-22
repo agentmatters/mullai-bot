@@ -5,6 +5,7 @@ using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
 using Mullai.Workflows.Abstractions;
 using Mullai.Workflows.Models;
+using Mullai.Abstractions.WorkflowState;
 
 namespace Mullai.TaskRuntime.Services;
 
@@ -14,18 +15,21 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
     private readonly IMullaiTaskQueue _queue;
     private readonly IMullaiTaskStatusStore _statusStore;
     private readonly MullaiTaskRuntimeOptions _runtimeOptions;
+    private readonly IWorkflowStateStore _stateStore;
     private readonly ILogger<WorkflowTriggerSchedulerService> _logger;
 
     public WorkflowTriggerSchedulerService(
         IWorkflowRegistry registry,
         IMullaiTaskQueue queue,
         IMullaiTaskStatusStore statusStore,
+        IWorkflowStateStore stateStore,
         IOptions<MullaiTaskRuntimeOptions> runtimeOptions,
         ILogger<WorkflowTriggerSchedulerService> logger)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _queue = queue ?? throw new ArgumentNullException(nameof(queue));
         _statusStore = statusStore ?? throw new ArgumentNullException(nameof(statusStore));
+        _stateStore = stateStore ?? throw new ArgumentNullException(nameof(stateStore));
         _runtimeOptions = runtimeOptions?.Value ?? throw new ArgumentNullException(nameof(runtimeOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -69,7 +73,17 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
 
                         if (schedule.NextRunUtc is not null && schedule.NextRunUtc <= now)
                         {
-                            await EnqueueWorkflowAsync(workflow, trigger, stoppingToken).ConfigureAwait(false);
+                            if (!await IsStopConditionMetAsync(workflow.Id, trigger, stoppingToken).ConfigureAwait(false))
+                            {
+                                await EnqueueWorkflowAsync(workflow, trigger, stoppingToken).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                _logger.LogInformation(
+                                    "Skipping trigger {TriggerId} for workflow {WorkflowId} due to stop condition.",
+                                    trigger.Id,
+                                    workflow.Id);
+                            }
                             schedule.NextRunUtc = ComputeNextRun(schedule, now, timeZone);
                         }
                     }
@@ -205,6 +219,49 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
             workflow.Id,
             trigger.Id,
             trigger.Type);
+    }
+
+    private async Task<bool> IsStopConditionMetAsync(
+        string workflowId,
+        WorkflowTriggerDefinition trigger,
+        CancellationToken cancellationToken)
+    {
+        if (!trigger.Properties.TryGetValue("stopKey", out var key) || string.IsNullOrWhiteSpace(key))
+        {
+            return false;
+        }
+
+        var record = await _stateStore.GetAsync(workflowId, key, cancellationToken).ConfigureAwait(false);
+        if (record is null)
+        {
+            return false;
+        }
+
+        if (!trigger.Properties.TryGetValue("stopValue", out var stopValue) || string.IsNullOrWhiteSpace(stopValue))
+        {
+            return IsTruthy(record.JsonValue);
+        }
+
+        return NormalizeJsonValue(record.JsonValue)
+            .Equals(stopValue.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsTruthy(string json)
+    {
+        var normalized = NormalizeJsonValue(json);
+        return string.Equals(normalized, "true", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalized, "1", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeJsonValue(string json)
+    {
+        var trimmed = json.Trim();
+        if (trimmed.StartsWith("\"", StringComparison.Ordinal) && trimmed.EndsWith("\"", StringComparison.Ordinal))
+        {
+            return trimmed[1..^1];
+        }
+
+        return trimmed;
     }
 
     private sealed class TriggerSchedule

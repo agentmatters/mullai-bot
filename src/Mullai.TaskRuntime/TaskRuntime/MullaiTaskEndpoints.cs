@@ -5,6 +5,7 @@ using Mullai.TaskRuntime.Options;
 using Mullai.Workflows.Abstractions;
 using Mullai.Workflows.Models;
 using System.Text.Json;
+using Mullai.Abstractions.WorkflowState;
 
 namespace Mullai.TaskRuntime;
 
@@ -31,8 +32,13 @@ public static class MullaiTaskEndpoints
         workflowGroup.MapPost("/{workflowId}/run", RunWorkflowAsync);
         workflowGroup.MapPost("/{workflowId}/triggers/{triggerId}", RunWorkflowTriggerAsync);
         workflowGroup.MapGet("/runs", GetWorkflowRunsAsync);
+        workflowGroup.MapGet("/runs/{taskId}/events", GetWorkflowRunEventsAsync);
         workflowGroup.MapGet("/outputs/deadletter", GetOutputDeadLetterAsync);
         workflowGroup.MapPost("/outputs/deadletter/{failureId}/replay", ReplayOutputDeadLetterAsync);
+        workflowGroup.MapGet("/{workflowId}/state", GetWorkflowStateAsync);
+        workflowGroup.MapGet("/{workflowId}/state/{key}", GetWorkflowStateKeyAsync);
+        workflowGroup.MapPost("/{workflowId}/state/{key}", UpsertWorkflowStateAsync);
+        workflowGroup.MapDelete("/{workflowId}/state/{key}", DeleteWorkflowStateAsync);
 
         return endpoints;
     }
@@ -254,6 +260,18 @@ public static class MullaiTaskEndpoints
         return Results.Ok(filtered);
     }
 
+    private static async Task<IResult> GetWorkflowRunEventsAsync(
+        string taskId,
+        IWorkflowRunEventStore runEventStore,
+        int take = 500,
+        CancellationToken cancellationToken = default)
+    {
+        var results = await runEventStore
+            .GetForTaskAsync(taskId, Math.Max(1, take), cancellationToken)
+            .ConfigureAwait(false);
+        return Results.Ok(results);
+    }
+
     private static async Task<IResult> GetOutputDeadLetterAsync(
         IWorkflowOutputFailureStore failureStore,
         int take = 50,
@@ -309,5 +327,46 @@ public static class MullaiTaskEndpoints
         await failureStore.RemoveAsync(failure.Id, cancellationToken).ConfigureAwait(false);
 
         return Results.Ok();
+    }
+
+    private static async Task<IResult> GetWorkflowStateAsync(
+        string workflowId,
+        IWorkflowStateStore stateStore,
+        CancellationToken cancellationToken)
+    {
+        var results = await stateStore.GetAllAsync(workflowId, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(results);
+    }
+
+    private static async Task<IResult> GetWorkflowStateKeyAsync(
+        string workflowId,
+        string key,
+        IWorkflowStateStore stateStore,
+        CancellationToken cancellationToken)
+    {
+        var record = await stateStore.GetAsync(workflowId, key, cancellationToken).ConfigureAwait(false);
+        return record is null ? Results.NotFound() : Results.Ok(record);
+    }
+
+    private static async Task<IResult> UpsertWorkflowStateAsync(
+        string workflowId,
+        string key,
+        JsonElement payload,
+        IWorkflowStateStore stateStore,
+        CancellationToken cancellationToken)
+    {
+        var json = payload.GetRawText();
+        await stateStore.UpsertAsync(workflowId, key, json, cancellationToken).ConfigureAwait(false);
+        return Results.Ok();
+    }
+
+    private static async Task<IResult> DeleteWorkflowStateAsync(
+        string workflowId,
+        string key,
+        IWorkflowStateStore stateStore,
+        CancellationToken cancellationToken)
+    {
+        await stateStore.RemoveAsync(workflowId, key, cancellationToken).ConfigureAwait(false);
+        return Results.NoContent();
     }
 }

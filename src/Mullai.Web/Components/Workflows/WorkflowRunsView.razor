@@ -54,6 +54,36 @@
                                     <div class="run-full-text">
                                         <pre>@run.FullText</pre>
                                     </div>
+                                    <div class="run-events">
+                                        <h4>Run Events</h4>
+                                        @if (run.IsLoadingEvents)
+                                        {
+                                        <div class="run-events-status">Loading events...</div>
+                                        }
+                                        else if (!string.IsNullOrWhiteSpace(run.EventsError))
+                                        {
+                                            <div class="run-events-status error">@run.EventsError</div>
+                                        }
+                                        else if (run.Events.Count == 0)
+                                        {
+                                            <div class="run-events-status">No events captured.</div>
+                                        }
+                                        else
+                                        {
+                                            <div class="run-events-list">
+                                                @foreach (var evt in run.Events)
+                                                {
+                                                    <div class="run-event">
+                                                        <div class="run-event-meta">
+                                                            <span class="run-event-type">@evt.EventType</span>
+                                                            <span class="run-event-time">@evt.CreatedAtUtc.ToLocalTime().ToString("g")</span>
+                                                        </div>
+                                                        <pre>@evt.Payload</pre>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -66,6 +96,7 @@
 
 @code {
     [Parameter] public List<WorkflowRunRow> Runs { get; set; } = [];
+    [Parameter] public Func<WorkflowRunRow, Task>? OnLoadDetails { get; set; }
     
     private string _stateFilter = string.Empty;
     private readonly List<string> _stateOptions = Enum.GetNames(typeof(MullaiTaskState)).ToList();
@@ -80,9 +111,15 @@
         ? Runs 
         : Runs.Where(r => string.Equals(r.State, StateFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
-    private void ToggleDetails(WorkflowRunRow run)
+    private async Task ToggleDetails(WorkflowRunRow run)
     {
         run.ShowDetails = !run.ShowDetails;
+        if (run.ShowDetails && !run.EventsLoaded && OnLoadDetails is not null)
+        {
+            run.IsLoadingEvents = true;
+            await OnLoadDetails(run);
+            run.IsLoadingEvents = false;
+        }
     }
 
     public class WorkflowRunRow
@@ -93,5 +130,16 @@
         public string Summary { get; init; } = string.Empty;
         public string FullText { get; init; } = string.Empty;
         public bool ShowDetails { get; set; }
+        public bool IsLoadingEvents { get; set; }
+        public bool EventsLoaded { get; set; }
+        public string? EventsError { get; set; }
+        public List<WorkflowRunEventRow> Events { get; set; } = [];
+    }
+
+    public class WorkflowRunEventRow
+    {
+        public string EventType { get; init; } = string.Empty;
+        public DateTimeOffset CreatedAtUtc { get; init; }
+        public string Payload { get; init; } = string.Empty;
     }
 }

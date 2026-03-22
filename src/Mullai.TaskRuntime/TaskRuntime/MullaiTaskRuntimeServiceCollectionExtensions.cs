@@ -1,5 +1,6 @@
 using Mullai.Global.ServiceConfiguration;
 using Mullai.TaskRuntime.Abstractions;
+using Mullai.Abstractions.WorkflowState;
 using Mullai.TaskRuntime.Clients;
 using Mullai.TaskRuntime.Options;
 using Mullai.TaskRuntime.Services;
@@ -25,7 +26,9 @@ public static class MullaiTaskRuntimeServiceCollectionExtensions
         services.AddSingleton<IMullaiTaskResponseChannel, MullaiTaskResponseChannel>();
         services.AddSingleton<IMullaiTaskClientFactory, WebMullaiClientFactory>();
         services.AddSingleton<IMullaiTaskExecutor, MullaiTaskExecutor>();
+        services.AddSingleton<IWorkflowRunEventStore, SqliteWorkflowRunEventStore>();
         services.AddSingleton<IWorkflowOutputFailureStore, SqliteWorkflowOutputFailureStore>();
+        services.AddSingleton<IWorkflowStateStore, SqliteWorkflowStateStore>();
         services.AddSingleton<IWorkflowOutputHandler, LogWorkflowOutputHandler>();
         services.AddSingleton<IWorkflowOutputHandler, WorkflowChainOutputHandler>();
         services.AddSingleton<IWorkflowOutputHandler, WebhookWorkflowOutputHandler>();

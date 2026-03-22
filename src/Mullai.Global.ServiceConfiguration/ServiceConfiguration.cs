@@ -19,11 +19,13 @@ using Mullai.Tools.TodoTool;
 using Mullai.Tools.WebTool;
 using Mullai.Tools.WordTool;
 using Mullai.Tools.WorkflowTool;
+using Mullai.Tools.WorkflowStateTool;
 using Mullai.Tools.RestApiTool;
 using Mullai.Tools.HtmlToMarkdownTool;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using Mullai.Workflows;
+using Mullai.Workflows.Abstractions;
 
 namespace Mullai.Global.ServiceConfiguration
 {
@@ -95,11 +97,14 @@ namespace Mullai.Global.ServiceConfiguration
                 .AddFileSystemTool()
                 .AddWordTool()
                 .AddWorkflowTool()
+                .AddWorkflowStateTool()
                 .AddRestApiTool()
                 .AddHtmlToMarkdownTool()
                 .AddUserMemory()
                 .AddMullaiSkills()
                 .AddMullaiWorkflows();
+
+            services.AddSingleton<IWorkflowToolsProvider, WorkflowToolsProvider>();
             
             return services;
         }

@@ -1,0 +1,54 @@
+@using Mullai.TaskRuntime.Models
+
+<div class="state-view">
+    <div class="state-header">
+        <div>
+            <h3>Workflow State</h3>
+            <p>Persistent key/value JSON entries for this workflow.</p>
+        </div>
+        <button class="btn" @onclick="OnReload">Reload</button>
+    </div>
+
+    @if (Entries.Count == 0)
+    {
+        <div class="state-empty">No state entries yet.</div>
+    }
+    else
+    {
+        <div class="state-list">
+            @foreach (var entry in Entries)
+            {
+                <div class="state-card">
+                    <div class="state-row">
+                        <div class="state-key">@entry.Key</div>
+                        <div class="state-updated">@entry.UpdatedAtUtc.ToLocalTime().ToString("g")</div>
+                    </div>
+                    <textarea class="state-json" rows="4" @bind="entry.JsonValue"></textarea>
+                    <div class="state-actions">
+                        <button class="btn btn-primary" @onclick="() => OnSave.InvokeAsync(entry)">Save</button>
+                        <button class="btn" @onclick="() => OnDelete.InvokeAsync(entry)">Delete</button>
+                        @if (!string.IsNullOrWhiteSpace(entry.Status))
+                        {
+                            <span class="state-status">@entry.Status</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<WorkflowStateEntry> Entries { get; set; } = [];
+    [Parameter] public EventCallback<WorkflowStateEntry> OnSave { get; set; }
+    [Parameter] public EventCallback<WorkflowStateEntry> OnDelete { get; set; }
+    [Parameter] public EventCallback OnReload { get; set; }
+
+    public sealed class WorkflowStateEntry
+    {
+        public string Key { get; init; } = string.Empty;
+        public string JsonValue { get; set; } = "{}";
+        public DateTimeOffset UpdatedAtUtc { get; init; }
+        public string Status { get; set; } = string.Empty;
+    }
+}
