@@ -80,9 +80,26 @@ irm https://raw.githubusercontent.com/agentmatters/mullai-bot/main/scripts/insta
 
 This will:
 1. Detect your Operating System and Architecture.
-2. Download the latest `Mullai` binary.
-3. Install it to `~/.mullai/bin` (or `$HOME\.mullai\bin` on Windows).
-4. Add the installation directory to your `PATH`.
+2. Download and extract the latest Mullai package.
+3. Install the CLI to `~/.mullai/bin` (or `$HOME\.mullai\bin` on Windows).
+4. Install the Web app to `~/.mullai/web` and register it as a system service (listening on port **7755**).
+5. Add the CLI installation directory to your `PATH`.
+
+---
+
+## Uninstall
+
+### macOS / Linux (Bash)
+```bash
+curl -sSL https://raw.githubusercontent.com/agentmatters/mullai-bot/main/scripts/uninstall.sh | bash
+```
+
+### Windows (PowerShell)
+```powershell
+irm https://raw.githubusercontent.com/agentmatters/mullai-bot/main/scripts/uninstall.ps1 | iex
+```
+
+This will stop and remove the Mullai Web service and delete the installation directory.
 
 ---
 
@@ -212,7 +229,7 @@ Follow these steps to get Mullai up and running quickly.
     cd src/Mullai.Web
     dotnet run
     ```
-    Access the UI at `http://localhost:5000` (or as specified in the console).
+    Access the UI at `http://localhost:7755` (or as specified in the console).
 
 3.  **(Optional) Run the Developer CLI:**
     ```bash
