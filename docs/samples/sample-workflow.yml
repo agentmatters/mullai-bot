@@ -1,0 +1,47 @@
+- id: bilingual-reply
+  name: Bilingual Reply
+  description: Responds in English and French in parallel.
+  kind: ParallelAgents
+  agents:
+    - name: FrenchAgent
+      displayName: French
+      instructions: "You are a helpful assistant who always responds in French."
+    - name: EnglishAgent
+      displayName: English
+      instructions: "You are a helpful assistant who always responds in English."
+  triggers:
+    - type: cron
+      name: every-10s
+      cron: "*/10 * * * * *"
+      input: "Give me a bilingual status update."
+    - type: interval
+      name: every-30s
+      intervalSeconds: 30
+      input: "Say hello in two languages."
+    - type: webhook
+      id: external-hook
+      name: external-hook
+      input: "Incoming payload: {{payload}}"
+      properties:
+        secret: "super-secret"
+  outputs:
+    - type: log
+    - type: webhook
+      target: "https://example.com/mullai-webhook"
+      properties:
+        header:X-Auth: "token123"
+    - type: workflow
+      target: concise-assistant
+      properties:
+        input: "Summarize this response in one paragraph: {{response}}"
+
+- id: concise-assistant
+  name: Concise Assistant
+  description: Responds in 3 sentences or fewer.
+  kind: SingleAgent
+  agents:
+    - name: ConciseAgent
+      displayName: Concise
+      instructions: "Respond in three sentences or fewer."
+  outputs:
+    - type: log

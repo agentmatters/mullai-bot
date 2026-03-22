@@ -74,6 +74,27 @@
                             <div class="workflow-placeholder">No output yet.</div>
                         }
                     </div>
+
+                    <div class="workflow-history">
+                        <div class="workflow-history-title">Recent Runs</div>
+                        @if (card.RecentRuns.Count == 0)
+                        {
+                            <div class="workflow-placeholder">No runs yet.</div>
+                        }
+                        else
+                        {
+                            <ul class="workflow-history-list">
+                                @foreach (var run in card.RecentRuns)
+                                {
+                                    <li class="workflow-history-item">
+                                        <span class="workflow-history-state">@run.State</span>
+                                        <span class="workflow-history-time">@run.UpdatedAtUtc.ToLocalTime().ToString("g")</span>
+                                        <span class="workflow-history-summary">@run.Summary</span>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
                 </section>
             }
         </div>
@@ -177,6 +198,7 @@
                 await InvokeAsync(async () =>
                 {
                     var changed = await SyncRunsAsync(cancellationToken);
+                    changed |= await SyncHistoryAsync(cancellationToken);
                     if (changed)
                     {
                         StateHasChanged();
@@ -262,6 +284,64 @@
         return changed;
     }
 
+    private async Task<bool> SyncHistoryAsync(CancellationToken cancellationToken)
+    {
+        var recent = await StatusStore.GetRecentAsync(200, cancellationToken);
+        var changed = false;
+
+        foreach (var card in _cards)
+        {
+            var runs = recent
+                .Where(snapshot => string.Equals(snapshot.WorkflowId, card.Definition.Id, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(snapshot => snapshot.UpdatedAtUtc)
+                .Take(5)
+                .Select(snapshot => new WorkflowRunEntry
+                {
+                    TaskId = snapshot.TaskId,
+                    State = snapshot.State.ToString(),
+                    UpdatedAtUtc = snapshot.UpdatedAtUtc,
+                    Summary = BuildRunSummary(snapshot)
+                })
+                .ToList();
+
+            var signature = string.Join("|", runs.Select(r => $"{r.TaskId}:{r.State}:{r.UpdatedAtUtc.UtcTicks}:{r.Summary}"));
+            if (!string.Equals(card.RecentRunsSignature, signature, StringComparison.Ordinal))
+            {
+                card.RecentRuns = runs;
+                card.RecentRunsSignature = signature;
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    private static string BuildRunSummary(MullaiTaskStatusSnapshot snapshot)
+    {
+        if (!string.IsNullOrWhiteSpace(snapshot.Error))
+        {
+            return $"Error: {Truncate(snapshot.Error, 80)}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(snapshot.Response))
+        {
+            return Truncate(snapshot.Response, 80);
+        }
+
+        return "No response yet.";
+    }
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        var oneLine = text.ReplaceLineEndings(" ");
+        return oneLine.Length <= maxLength ? oneLine : $"{oneLine[..maxLength]}...";
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_pollingCts is null)
@@ -312,5 +392,15 @@
         public bool IsRunning { get; set; }
         public string? TaskId { get; set; }
         public string? SessionKey { get; set; }
+        public List<WorkflowRunEntry> RecentRuns { get; set; } = [];
+        public string RecentRunsSignature { get; set; } = string.Empty;
+    }
+
+    private sealed class WorkflowRunEntry
+    {
+        public string TaskId { get; init; } = string.Empty;
+        public string State { get; init; } = string.Empty;
+        public DateTimeOffset UpdatedAtUtc { get; init; }
+        public string Summary { get; init; } = string.Empty;
     }
 }

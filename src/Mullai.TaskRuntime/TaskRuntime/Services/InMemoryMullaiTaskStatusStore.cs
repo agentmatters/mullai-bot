@@ -61,12 +61,15 @@ public class InMemoryMullaiTaskStatusStore : IMullaiTaskStatusStore
         string? response = null,
         string? error = null)
     {
+        string? workflowId = null;
+        workItem.Metadata?.TryGetValue("workflowId", out workflowId);
         var snapshot = new MullaiTaskStatusSnapshot
         {
             TaskId = workItem.TaskId,
             SessionKey = workItem.SessionKey,
             AgentName = workItem.AgentName,
             Source = workItem.Source,
+            WorkflowId = workflowId,
             State = state,
             Attempt = workItem.Attempt,
             MaxAttempts = workItem.MaxAttempts,

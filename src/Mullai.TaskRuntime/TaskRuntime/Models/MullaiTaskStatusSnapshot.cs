@@ -6,6 +6,7 @@ public sealed record MullaiTaskStatusSnapshot
     public string SessionKey { get; init; } = string.Empty;
     public string AgentName { get; init; } = "Assistant";
     public MullaiTaskSource Source { get; init; } = MullaiTaskSource.Client;
+    public string? WorkflowId { get; init; }
     public MullaiTaskState State { get; init; } = MullaiTaskState.Queued;
     public int Attempt { get; init; }
     public int MaxAttempts { get; init; } = 3;

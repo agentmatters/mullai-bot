@@ -27,6 +27,7 @@ public static class MullaiTaskRuntimeServiceCollectionExtensions
         services.AddSingleton<IMullaiTaskExecutor, MullaiTaskExecutor>();
         services.AddSingleton<IWorkflowOutputHandler, LogWorkflowOutputHandler>();
         services.AddSingleton<IWorkflowOutputHandler, WorkflowChainOutputHandler>();
+        services.AddSingleton<IWorkflowOutputHandler, WebhookWorkflowOutputHandler>();
 
         services.AddHostedService<MullaiTaskWorkerService>();
         services.AddHostedService<WorkflowTriggerSchedulerService>();

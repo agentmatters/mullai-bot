@@ -155,6 +155,57 @@
     font-size: 0.95rem;
 }
 
+.workflow-history {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.workflow-history-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted, #6f6f6f);
+}
+
+.workflow-history-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.workflow-history-item {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.6rem;
+    background: var(--workflow-surface-muted, #f7f7f7);
+}
+
+.workflow-history-state {
+    font-weight: 700;
+    color: var(--workflow-accent, #0f766e);
+}
+
+.workflow-history-time {
+    color: var(--text-muted, #6f6f6f);
+    white-space: nowrap;
+}
+
+.workflow-history-summary {
+    color: #1f2937;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .workflow-error {
     color: #b42318;
     font-weight: 600;

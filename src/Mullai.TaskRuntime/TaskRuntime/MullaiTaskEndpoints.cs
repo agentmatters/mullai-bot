@@ -3,6 +3,8 @@ using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
 using Mullai.Workflows.Abstractions;
+using Mullai.Workflows.Models;
+using System.Text.Json;
 
 namespace Mullai.TaskRuntime;
 
@@ -27,6 +29,7 @@ public static class MullaiTaskEndpoints
         workflowGroup.MapGet("/", GetWorkflowsAsync);
         workflowGroup.MapGet("/{workflowId}", GetWorkflowAsync);
         workflowGroup.MapPost("/{workflowId}/run", RunWorkflowAsync);
+        workflowGroup.MapPost("/{workflowId}/triggers/{triggerId}", RunWorkflowTriggerAsync);
 
         return endpoints;
     }
@@ -131,6 +134,80 @@ public static class MullaiTaskEndpoints
             Metadata = new Dictionary<string, string>
             {
                 ["workflowId"] = workflowId
+            }
+        };
+
+        await queue.EnqueueAsync(workItem, cancellationToken).ConfigureAwait(false);
+        await statusStore.MarkQueuedAsync(workItem, cancellationToken).ConfigureAwait(false);
+
+        return Results.Accepted($"/api/mullai/tasks/{workItem.TaskId}", new { workItem.TaskId, workItem.SessionKey });
+    }
+
+    private static async Task<IResult> RunWorkflowTriggerAsync(
+        string workflowId,
+        string triggerId,
+        JsonElement payload,
+        HttpRequest httpRequest,
+        IWorkflowRegistry registry,
+        IMullaiTaskQueue queue,
+        IMullaiTaskStatusStore statusStore,
+        IOptions<MullaiTaskRuntimeOptions> runtimeOptions,
+        CancellationToken cancellationToken)
+    {
+        var workflow = registry.GetById(workflowId);
+        if (workflow is null)
+        {
+            return Results.NotFound($"Workflow '{workflowId}' was not found.");
+        }
+
+        var trigger = workflow.Triggers.FirstOrDefault(t =>
+            t.Enabled &&
+            t.Type.Equals("webhook", StringComparison.OrdinalIgnoreCase) &&
+            (string.Equals(t.Id, triggerId, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(t.Name, triggerId, StringComparison.OrdinalIgnoreCase)));
+
+        if (trigger is null)
+        {
+            return Results.NotFound($"Webhook trigger '{triggerId}' not found for workflow '{workflowId}'.");
+        }
+
+        if (trigger.Properties.TryGetValue("secret", out var secret) && !string.IsNullOrWhiteSpace(secret))
+        {
+            if (!httpRequest.Headers.TryGetValue("x-mullai-secret", out var provided) ||
+                !string.Equals(provided.ToString(), secret, StringComparison.Ordinal))
+            {
+                return Results.Unauthorized();
+            }
+        }
+
+        var payloadJson = payload.GetRawText();
+        var input = !string.IsNullOrWhiteSpace(trigger.Input)
+            ? trigger.Input.Replace("{{payload}}", payloadJson, StringComparison.OrdinalIgnoreCase)
+            : payloadJson;
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return Results.BadRequest("Trigger input is required.");
+        }
+
+        var sessionKey = string.IsNullOrWhiteSpace(trigger.SessionKey)
+            ? $"workflow-{workflow.Id}-{trigger.Id}"
+            : trigger.SessionKey.Trim();
+
+        var maxAttempts = Math.Max(1, runtimeOptions.Value.DefaultMaxAttempts);
+        var workItem = new MullaiTaskWorkItem
+        {
+            TaskId = Guid.NewGuid().ToString("N"),
+            SessionKey = sessionKey,
+            AgentName = $"workflow:{workflow.Id}",
+            Prompt = input,
+            Source = MullaiTaskSource.System,
+            MaxAttempts = maxAttempts,
+            Metadata = new Dictionary<string, string>
+            {
+                ["workflowId"] = workflow.Id,
+                ["triggerId"] = trigger.Id,
+                ["triggerType"] = trigger.Type
             }
         };
 
