@@ -1,0 +1,27 @@
+/* Blazor error UI */
+#blazor-error-ui {
+    position: fixed;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: var(--shadow-md);
+    color: var(--text);
+    display: none;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+#blazor-error-ui .reload {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+#blazor-error-ui .dismiss {
+    margin-left: auto;
+    cursor: pointer;
+    color: var(--subtle);
+}

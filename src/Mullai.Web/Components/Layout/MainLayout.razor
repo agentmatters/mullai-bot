@@ -1,18 +1,24 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@implements IDisposable
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu/>
-    </div>
+@inject NavigationManager NavigationManager
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+<div class="app-shell @(_sidebarOpen ? "sidebar-open" : string.Empty)">
+    <aside class="app-sidebar" aria-label="Sidebar">
+        <LeftNav OnNavigate="CloseSidebar" />
+    </aside>
 
-        <article class="content px-4">
+    <div class="app-overlay" @onclick="CloseSidebar" aria-hidden="true"></div>
+
+    <main class="app-main">
+        <TopNav Title="@_headerTitle"
+                Subtitle="@_headerSubtitle"
+                SessionId="@_sessionLabel"
+                Status="Active"
+                OnToggleSidebar="ToggleSidebar" />
+        <section class="app-content">
             @Body
-        </article>
+        </section>
     </main>
 </div>
 
@@ -21,3 +27,46 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private bool _sidebarOpen;
+    private string _headerTitle = "Mullai";
+    private string? _headerSubtitle;
+    private string _sessionLabel = "Mullai Assistant";
+
+    protected override void OnInitialized()
+    {
+        UpdateHeaderForLocation();
+        NavigationManager.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateHeaderForLocation();
+        _sidebarOpen = false;
+        StateHasChanged();
+    }
+
+    private void UpdateHeaderForLocation()
+    {
+        var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        relative = relative.Split('?', '#')[0];
+
+        (_headerTitle, _headerSubtitle) = relative switch
+        {
+            "" => ("Chat", "Interactive runtime session"),
+            "settings" => ("Settings", "Configure providers, models, and credentials"),
+            "not-found" => ("Not Found", null),
+            _ => ("Mullai", relative)
+        };
+    }
+
+    private void ToggleSidebar()
+        => _sidebarOpen = !_sidebarOpen;
+
+    private void CloseSidebar()
+        => _sidebarOpen = false;
+
+    public void Dispose()
+        => NavigationManager.LocationChanged -= HandleLocationChanged;
+}

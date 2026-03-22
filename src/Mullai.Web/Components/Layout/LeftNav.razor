@@ -1,0 +1,44 @@
+@using Microsoft.AspNetCore.Components.Routing
+
+<div class="sidebar">
+    <div class="sidebar-header">
+        <BrandLogo />
+    </div>
+
+    <nav class="sidebar-nav" aria-label="Primary">
+        <div class="nav-section">
+            <div class="nav-section-title">Workspace</div>
+            <NavLink class="nav-item" href="" Match="NavLinkMatch.All" @onclick="HandleNavClick">
+                <span class="nav-item-label">Chat</span>
+            </NavLink>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">System</div>
+            <NavLink class="nav-item" href="settings" Match="NavLinkMatch.Prefix" @onclick="HandleNavClick">
+                <span class="nav-item-label">Settings</span>
+            </NavLink>
+        </div>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-footer-meta">
+            <div class="sidebar-footer-title">Mullai</div>
+            <div class="sidebar-footer-subtitle">Assistant UI</div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public EventCallback OnNavigate { get; set; }
+
+    private Task HandleNavClick()
+    {
+        if (!OnNavigate.HasDelegate)
+        {
+            return Task.CompletedTask;
+        }
+
+        return OnNavigate.InvokeAsync();
+    }
+}

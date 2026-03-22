@@ -1,0 +1,339 @@
+/* Cards / settings */
+.card {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.15rem 1.15rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(242, 244, 248, 0.55);
+}
+
+.card-title {
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.2rem;
+}
+
+.card-subtitle {
+    font-size: 0.9rem;
+    color: var(--muted);
+}
+
+.card-body {
+    padding: 1.15rem;
+}
+
+.card-compact .card-head {
+    padding: 0.9rem 0.95rem 0.75rem;
+}
+
+.card-compact .card-body {
+    padding: 0.95rem;
+}
+
+/* Credentials Bar */
+.credentials-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 0.85rem 1.15rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+}
+
+.credentials-bar-main {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.credentials-bar-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.credentials-bar-status {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.credentials-bar-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Key Editor & Confirmations */
+.key-editor {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.key-editor-header {
+    margin-bottom: 1rem;
+}
+
+.key-editor-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.key-editor-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+}
+
+.key-editor-form .input {
+    flex: 1;
+}
+
+.key-confirm-title {
+    font-weight: 850;
+    margin-bottom: 0.4rem;
+    color: var(--text);
+}
+
+/* Split Layout */
+.settings-split {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.25rem;
+    align-items: flex-start;
+    /* Don't stretch if we use fixed height, or use stretch if we want min-height */
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.65);
+    overflow: hidden;
+    height: 530px;
+    /* Fixed height for symmetry */
+}
+
+.panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 0.95rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(242, 244, 248, 0.55);
+}
+
+.panel-title {
+    font-weight: 850;
+    color: var(--text);
+}
+
+.panel-sub {
+    font-size: 0.86rem;
+    color: var(--subtle);
+}
+
+.panel-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.panel-toolbar {
+    display: flex;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.85rem 0.95rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.55);
+}
+
+/* Lists and Tables */
+.list {
+    flex: 1;
+    overflow: auto;
+    padding: 0.5rem;
+}
+
+.list-item {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    padding: 0.75rem 0.8rem;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text);
+    margin-bottom: 2px;
+}
+
+.list-item:hover {
+    background: rgba(242, 244, 248, 0.75);
+    border-color: rgba(208, 215, 226, 0.65);
+}
+
+.list-item.selected {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+}
+
+.list-item-title {
+    font-weight: 850;
+    margin-bottom: 0.15rem;
+}
+
+.list-item-sub {
+    font-size: 0.86rem;
+    color: var(--subtle);
+}
+
+.provider-details {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.detail-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.models-scroll {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+}
+
+.models-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.models-scroll th {
+    position: sticky;
+    top: 0;
+    background: #fdfdfe;
+    z-index: 5;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--subtle);
+    border-bottom: 1px solid var(--border);
+}
+
+.models-scroll td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.model-name {
+    font-weight: 800;
+}
+
+.model-sub {
+    font-size: 0.82rem;
+    color: var(--subtle);
+}
+
+/* Utilities */
+.dot-separator {
+    display: inline-block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--border-strong);
+    margin: 0 0.4rem;
+    vertical-align: middle;
+}
+
+.btn-sm {
+    height: 32px;
+    padding: 0 0.7rem;
+    font-size: 0.82rem;
+}
+
+.btn-on {
+    background: var(--accent-soft);
+    border-color: var(--accent-border);
+}
+
+.pill {
+    display: inline-flex;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.pill-ok {
+    background: rgba(15, 118, 110, 0.08);
+    border-color: rgba(15, 118, 110, 0.18);
+    color: var(--success);
+}
+
+.pill-warn {
+    background: rgba(255, 255, 255, 0.55);
+    border-color: rgba(208, 215, 226, 0.9);
+    color: var(--subtle);
+}
+
+.hint {
+    font-size: 0.86rem;
+    color: var(--subtle);
+}
+
+.panel-empty {
+    padding: 2rem;
+    text-align: center;
+}
+
+.panel-empty-title {
+    font-weight: 850;
+    margin-bottom: 0.5rem;
+}
+
+.panel-empty-sub {
+    color: var(--muted);
+}
+
+@media (max-width: 960px) {
+    .settings-split {
+        grid-template-columns: 1fr;
+    }
+}

@@ -7,6 +7,10 @@ Welcome to the technical documentation for Mullai, an advanced AI Assistant fram
 - [Project Overview](../README.md): High-level introduction, features, and quick start guide.
 - [Contributing Guidelines](../CONTRIBUTING.md): Standards and workflows for contributing to Mullai.
 - [Observability Stack](../docker/observability/README.md): Details on the OpenTelemetry, Jaeger, and Prometheus integration.
+- [Architecture Docs](./architecture/README.md): Runtime architecture deep dives and operational guidance.
+- [Mullai Web Task Runtime](./architecture/runtime/README.md): Detailed architecture, flow diagrams, and extension points.
+- [Mullai Web Task Runtime API](./architecture/runtime/API.md): Endpoint contracts and payload examples.
+- [Mullai Web Task Runtime Operations](./architecture/runtime/OPERATIONS.md): Capacity, reliability, and troubleshooting runbook.
 
 ## Project Structure & Components
 

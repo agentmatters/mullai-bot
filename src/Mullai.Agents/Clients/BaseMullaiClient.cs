@@ -9,6 +9,7 @@ public abstract class BaseMullaiClient : IMullaiClient
     private readonly AgentFactory _agentFactory;
     private readonly string _agentName;
     private readonly SemaphoreSlim _initialisationLock = new(1, 1);
+    private readonly SemaphoreSlim _executionLock = new(1, 1);
     private MullaiAgent? _agent;
     private AgentSession? _session;
 
@@ -52,26 +53,42 @@ public abstract class BaseMullaiClient : IMullaiClient
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await InitialiseAsync(cancellationToken).ConfigureAwait(false);
+        await _executionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-        var agent = _agent!;
-        var session = _session!;
-
-        await foreach (var update in agent.RunStreamingAsync(userInput, session, cancellationToken))
+        try
         {
-            var text = update?.ToString();
-            if (!string.IsNullOrEmpty(text))
+            var agent = _agent!;
+            var session = _session!;
+
+            await foreach (var update in agent.RunStreamingAsync(userInput, session, cancellationToken))
             {
-                yield return text;
+                var text = update?.ToString();
+                if (!string.IsNullOrEmpty(text))
+                {
+                    yield return text;
+                }
             }
+        }
+        finally
+        {
+            _executionLock.Release();
         }
     }
 
     public async Task<string> RunAsync(string userInput, CancellationToken cancellationToken = default)
     {
         await InitialiseAsync(cancellationToken).ConfigureAwait(false);
+        await _executionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-        var response = await _agent!.RunAsync(userInput, _session!, cancellationToken).ConfigureAwait(false);
-        return response?.ToString() ?? string.Empty;
+        try
+        {
+            var response = await _agent!.RunAsync(userInput, _session!, cancellationToken).ConfigureAwait(false);
+            return response?.ToString() ?? string.Empty;
+        }
+        finally
+        {
+            _executionLock.Release();
+        }
     }
 
     public virtual void RefreshClients()

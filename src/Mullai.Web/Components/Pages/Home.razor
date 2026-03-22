@@ -1,7 +1,322 @@
-﻿@page "/"
+@page "/"
+@rendermode InteractiveServer
+@using Microsoft.Extensions.Options
+@using Mullai.TaskRuntime.Abstractions
+@using Mullai.TaskRuntime.Models
+@using Mullai.TaskRuntime.Options
+@implements IAsyncDisposable
 
-<PageTitle>Home</PageTitle>
+@inject IMullaiTaskQueue TaskQueue
+@inject IMullaiTaskStatusStore StatusStore
+@inject IMullaiToolCallFeed ToolCallFeed
+@inject IOptions<MullaiTaskRuntimeOptions> RuntimeOptions
 
-<h1>Hello, world!</h1>
+<PageTitle>Mullai Chat</PageTitle>
 
-Welcome to your new app.
+<div class="chat-container">
+    <div class="chat-messages">
+        @if (_timeline.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-title">Welcome to Mullai Assistant</div>
+                <div class="empty-subtitle">How can I help you today?</div>
+            </div>
+        }
+        else
+        {
+            @foreach (var entry in _timeline)
+            {
+                if (entry is ChatTimelineEntry message)
+                {
+                    <div class="chat-bubble-row @(message.IsUser ? "user" : "assistant")" @key="message.Id">
+                        <div class="bubble-meta">@((message.IsUser) ? "You" : "Mullai")</div>
+                        <div class="chat-bubble @(message.IsError ? "error" : string.Empty)">
+                            <div class="message-content">@message.Content</div>
+                            @if (message.IsPending)
+                            {
+                                <div class="message-pending">...</div>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (entry is ThoughtTimelineEntry thought)
+                {
+                    <div class="thought-status" @key="thought.Id">
+                        <div class="status-indicator pending">
+                            Working on it...
+                        </div>
+                    </div>
+                }
+                else if (entry is ToolTimelineEntry tool)
+                {
+                    <div class="tool-observation" @key="tool.Id">
+                        <div class="tool-header">Tool Trace: @tool.FeedItem.Observation.ToolName</div>
+                        @if (!string.IsNullOrWhiteSpace(tool.FeedItem.Observation.Result))
+                        {
+                            <div class="tool-result">@Truncate(tool.FeedItem.Observation.Result!, 200)</div>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(tool.FeedItem.Observation.Error))
+                        {
+                            <div class="tool-error">@tool.FeedItem.Observation.Error</div>
+                        }
+                    </div>
+                }
+            }
+        }
+    </div>
+
+    <div class="chat-input-area">
+        <form class="composer-form" @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault="true">
+            <input class="composer-input"
+                   @bind="_draft"
+                   @bind:event="oninput"
+                   placeholder="Type a message..."
+                   autocomplete="off" />
+            <button class="composer-btn"
+                    type="submit"
+                    disabled="@string.IsNullOrWhiteSpace(_draft)">
+                Send
+            </button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private readonly List<TimelineEntry> _timeline = [];
+    private readonly Dictionary<string, ThoughtTimelineEntry> _pendingAssistantMessages = new();
+    private readonly string _sessionKey = $"web-{Guid.NewGuid():N}";
+    private string _sessionDisplay = string.Empty;
+
+    private string _draft = string.Empty;
+    private long _lastToolCallSequence;
+    private CancellationTokenSource? _pollingCts;
+    private Task? _pollingTask;
+
+    protected override void OnInitialized()
+    {
+        _sessionDisplay = _sessionKey.Length > 14 ? _sessionKey[..14] : _sessionKey;
+        _pollingCts = new CancellationTokenSource();
+        _pollingTask = PollRuntimeAsync(_pollingCts.Token);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_draft))
+        {
+            return;
+        }
+
+        var prompt = _draft.Trim();
+        _draft = string.Empty;
+
+        var userMessage = new ChatTimelineEntry
+        {
+            IsUser = true,
+            Content = prompt
+        };
+        _timeline.Add(userMessage);
+
+        var pendingMessage = new ThoughtTimelineEntry();
+        _timeline.Add(pendingMessage);
+
+        var maxAttempts = Math.Max(1, RuntimeOptions.Value.DefaultMaxAttempts);
+        var workItem = new MullaiTaskWorkItem
+        {
+            TaskId = Guid.NewGuid().ToString("N"),
+            SessionKey = _sessionKey,
+            AgentName = "Assistant",
+            Prompt = prompt,
+            Source = MullaiTaskSource.Client,
+            MaxAttempts = maxAttempts
+        };
+
+        _pendingAssistantMessages[workItem.TaskId] = pendingMessage;
+
+        try
+        {
+            await TaskQueue.EnqueueAsync(workItem);
+            await StatusStore.MarkQueuedAsync(workItem);
+        }
+        catch (Exception ex)
+        {
+            _timeline.Remove(pendingMessage);
+            var errorMessage = new ChatTimelineEntry
+            {
+                IsUser = false,
+                Content = $"Failed to queue task: {ex.Message}",
+                IsError = true
+            };
+            _timeline.Add(errorMessage);
+            _pendingAssistantMessages.Remove(workItem.TaskId);
+        }
+    }
+
+    private async Task PollRuntimeAsync(CancellationToken cancellationToken)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(350));
+
+        while (await timer.WaitForNextTickAsync(cancellationToken))
+        {
+            try
+            {
+                await InvokeAsync(async () =>
+                {
+                    var changed = await SyncPendingTasksAsync(cancellationToken);
+                    changed |= SyncToolCalls();
+                    if (changed)
+                    {
+                        StateHasChanged();
+                    }
+                });
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch
+            {
+                // Swallow polling errors to keep the chat UI responsive.
+            }
+        }
+    }
+
+    private async Task<bool> SyncPendingTasksAsync(CancellationToken cancellationToken)
+    {
+        if (_pendingAssistantMessages.Count == 0)
+        {
+            return false;
+        }
+
+        var changed = false;
+        foreach (var pair in _pendingAssistantMessages.ToArray())
+        {
+            var status = await StatusStore.GetAsync(pair.Key, cancellationToken);
+            if (status is null)
+            {
+                continue;
+            }
+
+            if (status.State == MullaiTaskState.Succeeded)
+            {
+                _timeline.Remove(pair.Value);
+                var responseMessage = new ChatTimelineEntry
+                {
+                    IsUser = false,
+                    Content = string.IsNullOrWhiteSpace(status.Response)
+                        ? "(No response)"
+                        : status.Response!
+                };
+                _timeline.Add(responseMessage);
+                _pendingAssistantMessages.Remove(pair.Key);
+                changed = true;
+            }
+            else if (status.State == MullaiTaskState.Failed)
+            {
+                _timeline.Remove(pair.Value);
+                var errorMessage = new ChatTimelineEntry
+                {
+                    IsUser = false,
+                    Content = $"Task failed: {status.Error}",
+                    IsError = true
+                };
+                _timeline.Add(errorMessage);
+                _pendingAssistantMessages.Remove(pair.Key);
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    private bool SyncToolCalls()
+    {
+        var feedItems = ToolCallFeed.ReadSince(_lastToolCallSequence, 25);
+        if (feedItems.Count == 0)
+        {
+            return false;
+        }
+
+        var changed = false;
+        foreach (var item in feedItems)
+        {
+            _lastToolCallSequence = item.Sequence;
+
+            if (!string.Equals(item.SessionKey, _sessionKey, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var entry = new ToolTimelineEntry { FeedItem = item };
+            var pendingIndex = _timeline.FindLastIndex(x => x is ThoughtTimelineEntry t && t.IsPending);
+            if (pendingIndex >= 0)
+            {
+                _timeline.Insert(pendingIndex, entry);
+            }
+            else
+            {
+                _timeline.Add(entry);
+            }
+
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    private static string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        var oneLine = text.ReplaceLineEndings(" ");
+        return oneLine.Length <= maxLength ? oneLine : $"{oneLine[..maxLength]}...";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_pollingCts is null)
+        {
+            return;
+        }
+
+        _pollingCts.Cancel();
+        if (_pollingTask is not null)
+        {
+            try
+            {
+                await _pollingTask;
+            }
+            catch (OperationCanceledException)
+            {
+                // Expected during shutdown.
+            }
+        }
+
+        _pollingCts.Dispose();
+    }
+
+    private abstract class TimelineEntry
+    {
+        public string Id { get; } = Guid.NewGuid().ToString("N");
+    }
+
+    private sealed class ChatTimelineEntry : TimelineEntry
+    {
+        public bool IsUser { get; init; }
+        public string Content { get; set; } = string.Empty;
+        public bool IsPending { get; set; }
+        public bool IsError { get; set; }
+    }
+
+    private sealed class ToolTimelineEntry : TimelineEntry
+    {
+        public required ToolCallFeedItem FeedItem { get; init; }
+    }
+
+    private sealed class ThoughtTimelineEntry : TimelineEntry
+    {
+        public bool IsPending { get; set; } = true;
+    }
+}

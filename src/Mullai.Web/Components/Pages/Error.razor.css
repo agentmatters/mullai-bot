@@ -1,0 +1,9 @@
+/* Error States */
+.error-message {
+    background: rgba(180, 35, 24, 0.08);
+    color: var(--danger);
+    border: 1px solid rgba(180, 35, 24, 0.16);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}

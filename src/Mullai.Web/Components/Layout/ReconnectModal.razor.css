@@ -1,3 +1,4 @@
+/* Reconnect modal (migrated from ReconnectModal.razor.css) */
 .components-reconnect-first-attempt-visible,
 .components-reconnect-repeated-attempt-visible,
 .components-reconnect-failed-visible,
@@ -19,36 +20,35 @@
     display: block;
 }
 
-
 #components-reconnect-modal {
-    background-color: white;
-    width: 20rem;
+    background: rgba(255, 255, 255, 0.95);
+    width: 22rem;
     margin: 20vh auto;
-    padding: 2rem;
-    border: 0;
-    border-radius: 0.5rem;
-    box-shadow: 0 3px 6px 2px rgba(0, 0, 0, 0.3);
+    padding: 1.6rem;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
     opacity: 0;
-    transition: display 0.5s allow-discrete, overlay 0.5s allow-discrete;
-    animation: components-reconnect-modal-fadeOutOpacity 0.5s both;
-    &[open]
+    transition: opacity 180ms ease;
+    animation: components-reconnect-modal-fadeOutOpacity 0.45s both;
+}
 
-{
-    animation: components-reconnect-modal-slideUp 1.5s cubic-bezier(.05, .89, .25, 1.02) 0.3s, components-reconnect-modal-fadeInOpacity 0.5s ease-in-out 0.3s;
+#components-reconnect-modal[open] {
+    animation:
+        components-reconnect-modal-slideUp 0.7s cubic-bezier(.05, .89, .25, 1.02) 0.08s,
+        components-reconnect-modal-fadeInOpacity 0.25s ease-in-out 0.08s;
     animation-fill-mode: both;
 }
 
-}
-
 #components-reconnect-modal::backdrop {
-    background-color: rgba(0, 0, 0, 0.4);
-    animation: components-reconnect-modal-fadeInOpacity 0.5s ease-in-out;
+    background-color: rgba(11, 18, 32, 0.42);
+    animation: components-reconnect-modal-fadeInOpacity 0.25s ease-in-out;
     opacity: 1;
 }
 
 @keyframes components-reconnect-modal-slideUp {
     0% {
-        transform: translateY(30px) scale(0.95);
+        transform: translateY(28px) scale(0.97);
     }
 
     100% {
@@ -80,78 +80,71 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 0.9rem;
 }
 
 #components-reconnect-modal p {
     margin: 0;
     text-align: center;
+    color: var(--muted);
 }
 
 #components-reconnect-modal button {
-    border: 0;
-    background-color: #6b9ed2;
-    color: white;
-    padding: 4px 24px;
-    border-radius: 4px;
+    height: 38px;
+    border: 1px solid var(--border);
+    background: rgba(242, 244, 248, 0.8);
+    color: var(--text);
+    padding: 0 1rem;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-    #components-reconnect-modal button:hover {
-        background-color: #3b6ea2;
-    }
-
-    #components-reconnect-modal button:active {
-        background-color: #6b9ed2;
-    }
+#components-reconnect-modal button:hover {
+    background: rgba(238, 241, 246, 0.9);
+    border-color: var(--border-strong);
+}
 
 .components-rejoining-animation {
     position: relative;
-    width: 80px;
-    height: 80px;
+    width: 74px;
+    height: 74px;
 }
 
-    .components-rejoining-animation div {
-        position: absolute;
-        border: 3px solid #0087ff;
-        opacity: 1;
-        border-radius: 50%;
-        animation: components-rejoining-animation 1.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-    }
+.components-rejoining-animation div {
+    position: absolute;
+    border: 3px solid rgba(79, 70, 229, 0.55);
+    opacity: 1;
+    border-radius: 50%;
+    animation: components-rejoining-animation 1.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
 
-        .components-rejoining-animation div:nth-child(2) {
-            animation-delay: -0.5s;
-        }
+.components-rejoining-animation div:nth-child(2) {
+    animation-delay: -0.5s;
+}
 
 @keyframes components-rejoining-animation {
     0% {
-        top: 40px;
-        left: 40px;
-        width: 0;
-        height: 0;
-        opacity: 0;
-    }
-
-    4.9% {
-        top: 40px;
-        left: 40px;
+        top: 37px;
+        left: 37px;
         width: 0;
         height: 0;
         opacity: 0;
     }
 
     5% {
-        top: 40px;
-        left: 40px;
+        top: 37px;
+        left: 37px;
         width: 0;
         height: 0;
         opacity: 1;
     }
 
     100% {
-        top: 0px;
-        left: 0px;
-        width: 80px;
-        height: 80px;
+        top: 0;
+        left: 0;
+        width: 74px;
+        height: 74px;
         opacity: 0;
     }
 }

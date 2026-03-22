@@ -1,0 +1,20 @@
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.brand-mark {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.12);
+}
+
+.brand-name {
+    font-weight: 750;
+    font-size: 1.05rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}

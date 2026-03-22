@@ -1,0 +1,489 @@
+@page "/settings"
+@rendermode InteractiveServer
+@using Mullai.Abstractions.Configuration
+@using Mullai.Abstractions.Models
+@using Mullai.Providers
+
+@inject IMullaiConfigurationManager ConfigManager
+@inject HttpClient HttpClient
+
+<PageTitle>Settings</PageTitle>
+
+<div class="settings">
+    <div class="settings-header">
+        <h1>Settings</h1>
+        <p>Configure providers, models, and API keys used by Mullai.</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="card">
+            <div class="card-body">
+                Loading settings…
+            </div>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrWhiteSpace(_status))
+        {
+            <div class="notice @(_statusKind == NoticeKind.Danger ? "notice-danger" : "notice-success")">@_status</div>
+        }
+        <section class="card">
+            <div class="card-head">
+                <div>
+                    <div class="card-title">Providers</div>
+                    <div class="card-subtitle">Enable providers, manage API keys, and refresh model lists.</div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                @if (_providers.Count == 0)
+                {
+                    <div class="hint">No providers found.</div>
+                }
+                else
+                {
+                    @if (SelectedProvider is not null)
+                    {
+                        var provider = SelectedProvider;
+                        var name = provider.Provider.Name;
+                        var hasKey = provider.HasApiKey();
+                        var masked = provider.GetMaskedApiKey();
+
+                        <div class="credentials-bar">
+                            <div class="credentials-bar-main">
+                                <div class="credentials-bar-title">@name API Key</div>
+                                <div class="credentials-bar-status">
+                                    <span class="pill @(hasKey ? "pill-ok" : "pill-warn")">@(hasKey ? "Configured" : "Missing")</span>
+                                    @if (hasKey && masked is not null)
+                                    {
+                                        <span class="mono">@masked</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="credentials-bar-actions">
+                                @if (!_apiKeyEditMode && !_apiKeyDeleteConfirm)
+                                {
+                                    <button class="btn btn-sm @(hasKey ? "" : "btn-primary")" type="button" @onclick="BeginApiKeyEdit">
+                                        @(hasKey ? "Update" : "Set key")
+                                    </button>
+                                    @if (hasKey)
+                                    {
+                                        <button class="btn btn-sm" type="button" @onclick="BeginApiKeyDeleteConfirm">Delete</button>
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        @if (_apiKeyEditMode)
+                        {
+                            <div class="key-editor">
+                                <div class="key-editor-header">
+                                    <div class="key-editor-title">Update @name API Key</div>
+                                    <div class="hint">Stored locally and never displayed in full.</div>
+                                </div>
+                                <div class="key-editor-form">
+                                    <input class="input" type="password" placeholder="Paste @name API key…" @bind="_apiKeyDraft" @bind:event="oninput" />
+                                    <div class="form-actions">
+                                        <button class="btn btn-primary" type="button" @onclick="() => SaveApiKey(name)" disabled="@string.IsNullOrWhiteSpace(_apiKeyDraft)">Save</button>
+                                        <button class="btn" type="button" @onclick="CancelApiKeyEdit">Cancel</button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        @if (_apiKeyDeleteConfirm)
+                        {
+                            <div class="notice notice-danger">
+                                <div class="key-confirm-title">Delete API key for @name?</div>
+                                <div class="form-actions">
+                                    <button class="btn" type="button" @onclick="() => ConfirmDeleteApiKey(name)">Confirm Delete</button>
+                                    <button class="btn" type="button" @onclick="CancelDeleteApiKey">Cancel</button>
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <div class="settings-split">
+                        <div class="panel">
+                            <div class="panel-head">
+                                <div class="panel-title">Providers</div>
+                                <div class="panel-sub">@_providers.Count total</div>
+                            </div>
+
+                            <div class="list">
+                                @foreach (var providerItem in _providers.OrderBy(p => p.Provider.Priority).ThenBy(p => p.Provider.Name))
+                                {
+                                    var selected = string.Equals(providerItem.Provider.Name, _selectedProviderName, StringComparison.OrdinalIgnoreCase);
+                                    var hasKey = providerItem.HasApiKey();
+                                    <button type="button" class="list-item @(selected ? "selected" : "")" @onclick="() => SelectProvider(providerItem.Provider.Name)">
+                                        <div class="list-item-main">
+                                            <div class="list-item-title">@providerItem.Provider.Name</div>
+                                            <div class="list-item-sub">
+                                                <span class="pill @(hasKey ? "pill-ok" : "pill-warn")" title="@(hasKey ? "API Key is set" : "API Key is missing")">
+                                                    @(hasKey ? "Key set" : "No key")
+                                                </span>
+                                                <span class="dot-separator"></span>
+                                                @providerItem.Provider.Models.Count models
+                                            </div>
+                                        </div>
+                                        <label class="toggle" title="Enable provider" @onclick:stopPropagation="true">
+                                            <input type="checkbox"
+                                                   checked="@providerItem.Enabled"
+                                                   @onclick:stopPropagation="true"
+                                                   @onchange="e => OnProviderToggleChanged(providerItem, e)" />
+                                            <span class="toggle-ui"></span>
+                                        </label>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            @if (SelectedProvider is null)
+                            {
+                                <div class="panel-empty">
+                                    <div class="panel-empty-title">Select a provider</div>
+                                    <div class="panel-empty-sub">Choose a provider on the left to manage its API key and models.</div>
+                                </div>
+                            }
+                            else
+                            {
+                                var provider = SelectedProvider;
+                                <div class="panel-head">
+                                    <div class="panel-title">Models</div>
+                                    <div class="panel-actions">
+                                        <button class="btn btn-sm" type="button" @onclick="() => RefreshModelsAsync(provider)" disabled="@provider.IsRefreshing">
+                                            @(provider.IsRefreshing ? "Refreshing…" : "Refresh")
+                                        </button>
+                                        <button class="btn btn-sm" type="button" @onclick="() => SetAllModelsEnabledAsync(provider, true)" disabled="@provider.IsBulkUpdating">
+                                            Enable all
+                                        </button>
+                                        <button class="btn btn-sm" type="button" @onclick="() => SetAllModelsEnabledAsync(provider, false)" disabled="@provider.IsBulkUpdating">
+                                            Disable all
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="provider-details">
+                                    <div class="detail-section">
+                                        <div class="panel-toolbar">
+                                            <input class="input" placeholder="Filter models by name or id…" @bind="_modelNameFilter" @bind:event="oninput" />
+                                            <button type="button" class="btn @(_showEnabledModelsOnly ? "btn-on" : "")" @onclick="ToggleEnabledOnly">
+                                                Enabled only
+                                            </button>
+                                        </div>
+
+                                        @if (!string.IsNullOrWhiteSpace(provider.RefreshError))
+                                        {
+                                            <div class="notice notice-danger">@provider.RefreshError</div>
+                                        }
+
+                                        <div class="models-scroll">
+                                            <table class="table table-compact">
+                                                <thead>
+                                                <tr>
+                                                    <th>Enabled</th>
+                                                    <th>Model</th>
+                                                    <th>Context</th>
+                                                    <th>Pricing</th>
+                                                </tr>
+                                                </thead>
+                                                <tbody>
+                                                @foreach (var model in FilterModels(provider))
+                                                {
+                                                    var enabled = provider.GetModelEnabled(model);
+                                                    <tr>
+                                                        <td>
+                                                            <label class="toggle" title="Enable model">
+                                                                <input type="checkbox"
+                                                                       checked="@enabled"
+                                                                       @onclick:stopPropagation="true"
+                                                                       @onchange="e => OnModelToggleChanged(provider, model, e)" />
+                                                                <span class="toggle-ui"></span>
+                                                            </label>
+                                                        </td>
+                                                        <td>
+                                                            <div class="model-name">@model.ModelName</div>
+                                                            <div class="model-sub">@model.ModelId</div>
+                                                        </td>
+                                                        <td class="mono">@((model.ContextWindow > 0) ? model.ContextWindow.ToString("N0") : "—")</td>
+                                                        <td class="mono">@FormatPricing(model.Pricing)</td>
+                                                    </tr>
+                                                }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private bool _loading = true;
+    private string? _status;
+    private NoticeKind _statusKind = NoticeKind.Success;
+
+    private MullaiProvidersConfig _providersConfig = new();
+    private List<ProviderVm> _providers = [];
+
+    private string _apiKeyDraft = string.Empty;
+    private bool _apiKeyEditMode;
+    private bool _apiKeyDeleteConfirm;
+
+    private string? _selectedProviderName;
+    private string _modelNameFilter = string.Empty;
+    private bool _showEnabledModelsOnly;
+
+    protected override void OnInitialized()
+    {
+        LoadAll();
+    }
+
+    private void LoadAll()
+    {
+        _providersConfig = ConfigManager.GetProvidersConfig();
+        _providers = _providersConfig.Providers.Select(p => new ProviderVm(p, ConfigManager)).ToList();
+
+        _selectedProviderName ??= _providers.OrderBy(p => p.Provider.Priority).ThenBy(p => p.Provider.Name).FirstOrDefault()?.Provider.Name;
+        _loading = false;
+    }
+
+    private async Task RefreshModelsAsync(ProviderVm provider)
+    {
+        provider.IsRefreshing = true;
+        provider.RefreshError = null;
+        _status = null;
+        StateHasChanged();
+
+        try
+        {
+            var apiKey = ConfigManager.GetApiKey(provider.Provider.Name);
+            var models = await MullaiChatClientFactory.GetModelsForProviderAsync(provider.Provider.Name, HttpClient, apiKey);
+            provider.Provider.Models = models;
+            ConfigManager.SaveProvidersConfig(_providersConfig);
+            SetStatus($"Fetched {models.Count} models for {provider.Provider.Name}.", NoticeKind.Success);
+        }
+        catch (Exception ex)
+        {
+            provider.RefreshError = ex.Message;
+        }
+        finally
+        {
+            provider.IsRefreshing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelApiKeyEdit()
+    {
+        _apiKeyEditMode = false;
+        _apiKeyDeleteConfirm = false;
+        _apiKeyDraft = string.Empty;
+    }
+
+    private void SaveApiKey(string providerName)
+    {
+        if (string.IsNullOrWhiteSpace(_apiKeyDraft))
+        {
+            return;
+        }
+
+        ConfigManager.SaveApiKey(providerName, _apiKeyDraft.Trim());
+        CancelApiKeyEdit();
+        _providers = _providersConfig.Providers.Select(p => new ProviderVm(p, ConfigManager)).ToList();
+        SetStatus($"Saved API key for {providerName}.", NoticeKind.Success);
+    }
+
+    private static string FormatPricing(ModelPricing? pricing)
+    {
+        if (pricing is null)
+        {
+            return "—";
+        }
+
+        return $"{pricing.InputPer1kTokens:F6}/{pricing.OutputPer1kTokens:F6}";
+    }
+
+    private void SetStatus(string message, NoticeKind kind)
+    {
+        _status = message;
+        _statusKind = kind;
+    }
+
+    private enum NoticeKind
+    {
+        Success,
+        Danger
+    }
+
+    private sealed class ProviderVm
+    {
+        private readonly IMullaiConfigurationManager _config;
+        private readonly Dictionary<string, bool> _modelEnabled = new(StringComparer.OrdinalIgnoreCase);
+
+        public ProviderVm(MullaiProviderDescriptor provider, IMullaiConfigurationManager config)
+        {
+            Provider = provider;
+            _config = config;
+            Enabled = _config.IsProviderEnabled(provider.Name, provider.Enabled);
+
+            foreach (var model in provider.Models)
+            {
+                _modelEnabled[model.ModelId] = _config.IsModelEnabled(provider.Name, model.ModelId, model.Enabled);
+            }
+        }
+
+        public MullaiProviderDescriptor Provider { get; }
+        public bool Enabled { get; set; }
+
+        public bool IsRefreshing { get; set; }
+        public string? RefreshError { get; set; }
+        public bool IsBulkUpdating { get; set; }
+
+        public bool GetModelEnabled(MullaiModelDescriptor model)
+        {
+            if (_modelEnabled.TryGetValue(model.ModelId, out var enabled))
+            {
+                return enabled;
+            }
+
+            enabled = _config.IsModelEnabled(Provider.Name, model.ModelId, model.Enabled);
+            _modelEnabled[model.ModelId] = enabled;
+            return enabled;
+        }
+
+        public void SetModelEnabled(MullaiModelDescriptor model, bool enabled)
+            => _modelEnabled[model.ModelId] = enabled;
+
+        public string? GetMaskedApiKey()
+        {
+            var key = _config.GetApiKey(Provider.Name);
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                return null;
+            }
+
+            return key.Length > 10 ? $"{key[..4]}…{key[^4..]}" : "Set";
+        }
+
+        public bool HasApiKey()
+            => !string.IsNullOrWhiteSpace(_config.GetApiKey(Provider.Name));
+    }
+
+    private ProviderVm? SelectedProvider
+        => string.IsNullOrWhiteSpace(_selectedProviderName)
+            ? null
+            : _providers.FirstOrDefault(p => string.Equals(p.Provider.Name, _selectedProviderName, StringComparison.OrdinalIgnoreCase));
+
+    private void SelectProvider(string providerName)
+    {
+        _selectedProviderName = providerName;
+        _modelNameFilter = string.Empty;
+        _showEnabledModelsOnly = false;
+        _status = null;
+        CancelApiKeyEdit();
+    }
+
+    private void ToggleEnabledOnly()
+        => _showEnabledModelsOnly = !_showEnabledModelsOnly;
+
+    private IEnumerable<MullaiModelDescriptor> FilterModels(ProviderVm provider)
+    {
+        IEnumerable<MullaiModelDescriptor> models = provider.Provider.Models;
+
+        var filter = _modelNameFilter.Trim();
+        if (!string.IsNullOrWhiteSpace(filter))
+        {
+            models = models.Where(m =>
+                m.ModelName.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                m.ModelId.Contains(filter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (_showEnabledModelsOnly)
+        {
+            models = models.Where(m => provider.GetModelEnabled(m));
+        }
+
+        return models;
+    }
+
+    private void OnProviderToggleChanged(ProviderVm provider, ChangeEventArgs e)
+    {
+        var enabled = ParseCheckbox(e.Value);
+        provider.Enabled = enabled;
+        ConfigManager.SetProviderEnabled(provider.Provider.Name, enabled);
+        SetStatus($"{provider.Provider.Name} {(enabled ? "enabled" : "disabled")}.", NoticeKind.Success);
+    }
+
+    private void OnModelToggleChanged(ProviderVm provider, MullaiModelDescriptor model, ChangeEventArgs e)
+    {
+        var enabled = ParseCheckbox(e.Value);
+        provider.SetModelEnabled(model, enabled);
+        ConfigManager.SetModelEnabled(provider.Provider.Name, model.ModelId, enabled);
+        SetStatus($"{model.ModelName} {(enabled ? "enabled" : "disabled")}.", NoticeKind.Success);
+    }
+
+    private async Task SetAllModelsEnabledAsync(ProviderVm provider, bool enabled)
+    {
+        provider.IsBulkUpdating = true;
+        _status = null;
+        StateHasChanged();
+
+        try
+        {
+            foreach (var model in provider.Provider.Models)
+            {
+                provider.SetModelEnabled(model, enabled);
+                ConfigManager.SetModelEnabled(provider.Provider.Name, model.ModelId, enabled);
+            }
+
+            SetStatus($"{provider.Provider.Name}: {(enabled ? "enabled" : "disabled")} all models.", NoticeKind.Success);
+        }
+        finally
+        {
+            provider.IsBulkUpdating = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void BeginApiKeyEdit()
+    {
+        _apiKeyDeleteConfirm = false;
+        _apiKeyEditMode = true;
+        _apiKeyDraft = string.Empty;
+    }
+
+    private void BeginApiKeyDeleteConfirm()
+    {
+        _apiKeyEditMode = false;
+        _apiKeyDeleteConfirm = true;
+        _apiKeyDraft = string.Empty;
+    }
+
+    private void CancelDeleteApiKey()
+        => _apiKeyDeleteConfirm = false;
+
+    private void ConfirmDeleteApiKey(string providerName)
+    {
+        ConfigManager.DeleteApiKey(providerName);
+        _providers = _providersConfig.Providers.Select(p => new ProviderVm(p, ConfigManager)).ToList();
+        CancelApiKeyEdit();
+        SetStatus($"Deleted API key for {providerName}.", NoticeKind.Success);
+    }
+
+    private static bool ParseCheckbox(object? value)
+        => value switch
+        {
+            bool b => b,
+            string s when bool.TryParse(s, out var b) => b,
+            _ => false
+        };
+}
