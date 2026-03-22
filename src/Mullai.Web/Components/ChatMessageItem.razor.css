@@ -1,7 +1,7 @@
 .message-item {
     display: flex;
     flex-direction: column;
-    padding: 1.5rem 0;
+    padding: 0.5rem 0;
     animation: fadeIn 0.4s ease-out;
 }
 
@@ -20,7 +20,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.4rem;
 }
 
 .avatar {
@@ -54,8 +54,107 @@
     font-size: 1rem;
     line-height: 1.6;
     color: var(--text);
-    white-space: pre-wrap;
     padding-left: 2.75rem;
+}
+
+.message-content ::deep p {
+    margin: 0 0 0.75rem 0;
+}
+
+.message-content ::deep p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content ::deep pre {
+    background: #0d1117; /* High contrast dark background */
+    color: #e6edf3;
+    padding: 1.25rem;
+    padding-top: 2.25rem;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    margin: 1.25rem 0;
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow-sm);
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    position: relative;
+}
+
+.message-content ::deep pre::before {
+    content: "Code";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 0.25rem 1rem;
+    font-size: 0.7rem;
+    color: #8b949e;
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+}
+
+.message-content ::deep code {
+    font-family: inherit;
+    font-size: inherit;
+}
+
+/* Inline code styles */
+.message-content ::deep :not(pre) > code {
+    background: var(--surface-3);
+    color: var(--accent);
+    padding: 0.2rem 0.4rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.9em;
+    border: 1px solid var(--border);
+}
+
+.message-content ::deep pre code {
+    padding: 0;
+    background: transparent;
+    display: block;
+    width: fit-content;
+    min-width: 100%;
+}
+
+.message-content ::deep ul, .message-content ::deep ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.message-content ::deep li {
+    margin-bottom: 0.5rem;
+}
+
+.message-content ::deep table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.message-content ::deep th, .message-content ::deep td {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.message-content ::deep th {
+    background: var(--surface-2);
+    font-weight: 650;
+    color: var(--text);
+}
+
+.message-content ::deep tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
 }
 
 .user .message-content {

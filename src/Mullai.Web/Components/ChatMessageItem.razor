@@ -1,3 +1,4 @@
+@using Markdig
 @using Mullai.TaskRuntime.Models
 
 <div class="message-item @(IsUser ? "user" : "assistant") @(IsError ? "error" : "") @(IsPending ? "pending" : "")">
@@ -20,7 +21,7 @@
             <span class="author-name">@(IsUser ? "You" : "Mullai")</span>
         </div>
         <div class="message-content">
-            @Content
+            @((MarkupString)Markdown.ToHtml(Content, Pipeline))
             @if (IsPending)
             {
                 <span class="cursor-blink"></span>
@@ -30,6 +31,10 @@
 </div>
 
 @code {
+    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
+        .UseAdvancedExtensions()
+        .Build();
+
     [Parameter] public bool IsUser { get; set; }
     [Parameter] public string Content { get; set; } = string.Empty;
     [Parameter] public bool IsPending { get; set; }
