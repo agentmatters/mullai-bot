@@ -285,6 +285,17 @@
                 continue;
             }
 
+            // Check if we already have this tool call in the timeline
+            var existing = _timeline.OfType<ToolTimelineEntry>()
+                .FirstOrDefault(x => x.FeedItem.Observation.CallId == item.Observation.CallId);
+
+            if (existing != null)
+            {
+                existing.FeedItem = item;
+                changed = true;
+                continue;
+            }
+
             var entry = new ToolTimelineEntry { FeedItem = item };
             ThoughtTimelineEntry? anchor = null;
 
@@ -436,7 +447,7 @@
 
     private sealed class ToolTimelineEntry : TimelineEntry
     {
-        public required ToolCallFeedItem FeedItem { get; init; }
+        public ToolCallFeedItem FeedItem { get; set; } = default!;
     }
 
     private sealed class ThoughtTimelineEntry : TimelineEntry

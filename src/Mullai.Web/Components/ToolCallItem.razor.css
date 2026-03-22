@@ -29,8 +29,18 @@
 .tool-badge:hover {
     background: var(--surface-4);
     border-color: var(--border-strong);
-    color: var(--foreground-1);
+    color: var(--text);
     transform: translateY(-1px);
+}
+
+.tool-badge.pending {
+    border-color: var(--accent-border);
+    background: var(--accent-soft);
+    cursor: default;
+}
+
+.tool-badge.pending:hover {
+    transform: none;
 }
 
 .tool-badge:active {
@@ -58,6 +68,23 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.tool-loader {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--accent);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 0.5rem;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .expand-icon {

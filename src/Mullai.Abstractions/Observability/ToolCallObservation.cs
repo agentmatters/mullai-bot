@@ -6,13 +6,15 @@ namespace Mullai.Abstractions.Observability;
 /// the middleware has zero dependency on the TUI layer.
 /// </summary>
 public record ToolCallObservation(
+    string CallId,
     string ToolName,
     IReadOnlyDictionary<string, object?> Arguments,
     bool Succeeded,
     string? Result,
     string? Error,
     DateTimeOffset StartedAt,
-    DateTimeOffset FinishedAt)
+    DateTimeOffset? FinishedAt)
 {
-    public TimeSpan Elapsed => FinishedAt - StartedAt;
+    public bool IsFinished => FinishedAt.HasValue;
+    public TimeSpan Elapsed => (FinishedAt ?? DateTimeOffset.UtcNow) - StartedAt;
 }

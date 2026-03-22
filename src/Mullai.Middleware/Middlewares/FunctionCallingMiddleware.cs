@@ -43,9 +43,22 @@ public class FunctionCallingMiddleware
             formattedArguments);
 
         var startedAt = DateTimeOffset.UtcNow;
+        var callId = Guid.NewGuid().ToString("N");
         object? result = null;
         string? error = null;
         bool succeeded = false;
+
+        // Emit 'started' observation
+        var startObservation = new ToolCallObservation(
+            CallId: callId,
+            ToolName: context.Function.Name,
+            Arguments: new Dictionary<string, object?>(context.Arguments),
+            Succeeded: false,
+            Result: null,
+            Error: null,
+            StartedAt: startedAt,
+            FinishedAt: null);
+        OnToolCallObserved?.Invoke(startObservation);
 
         try
         {
@@ -60,7 +73,8 @@ public class FunctionCallingMiddleware
         }
         finally
         {
-            var observation = new ToolCallObservation(
+            var finalObservation = new ToolCallObservation(
+                CallId: callId,
                 ToolName: context.Function.Name,
                 Arguments: new Dictionary<string, object?>(context.Arguments),
                 Succeeded: succeeded,
@@ -69,7 +83,7 @@ public class FunctionCallingMiddleware
                 StartedAt: startedAt,
                 FinishedAt: DateTimeOffset.UtcNow);
 
-            OnToolCallObserved?.Invoke(observation);
+            OnToolCallObserved?.Invoke(finalObservation);
         }
 
         return result;
