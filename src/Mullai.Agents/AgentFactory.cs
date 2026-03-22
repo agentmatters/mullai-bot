@@ -16,6 +16,7 @@ using Mullai.Tools.BashTool;
 using Mullai.Tools.CodeSearchTool;
 using Mullai.Tools.TodoTool;
 using Mullai.Tools.WebTool;
+using Mullai.Tools.WorkflowTool;
 using Mullai.Workflows.Abstractions;
 
 namespace Mullai.Agents;
@@ -68,6 +69,7 @@ public class AgentFactory
                                 .. _serviceProvider.GetRequiredService<WebTool>().AsAITools(),
                                 .. _serviceProvider.GetRequiredService<CodeSearchTool>().AsAITools(),
                                 .. _serviceProvider.GetRequiredService<FileSystemTool>().AsAITools(),
+                                .. _serviceProvider.GetRequiredService<WorkflowTool>().AsAITools(),
                                 // .. _serviceProvider.GetRequiredService<WordTool>().AsAITools(),
                             ],
                             AllowMultipleToolCalls = true

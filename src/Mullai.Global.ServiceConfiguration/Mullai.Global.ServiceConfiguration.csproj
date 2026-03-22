@@ -22,6 +22,7 @@
       <ProjectReference Include="..\Mullai.Providers\Mullai.Providers.csproj" />
       <ProjectReference Include="..\Mullai.Skills\Mullai.Skills.csproj" />
       <ProjectReference Include="..\Mullai.Tools\Mullai.Tools.csproj" />
+      <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj" />
     </ItemGroup>
 
     <ItemGroup>

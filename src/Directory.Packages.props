@@ -48,5 +48,6 @@
     <PackageVersion Include="Xunit.SkippableFact" Version="1.5.61" />
     <PackageVersion Include="YamlDotNet" Version="15.1.2" />
     <PackageVersion Include="Cronos" Version="0.8.4" />
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.5" />
   </ItemGroup>
 </Project>

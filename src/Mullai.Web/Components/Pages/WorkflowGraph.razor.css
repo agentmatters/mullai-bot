@@ -1,0 +1,39 @@
+.workflow-graph-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.workflow-graph-header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.workflow-graph-subtitle {
+    margin-top: 0.4rem;
+    color: var(--text-muted, #6f6f6f);
+}
+
+.workflow-graph-card {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid var(--workflow-border, #e3e3e3);
+    background: var(--workflow-surface, #ffffff);
+}
+
+.workflow-graph-title {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.workflow-graph-empty {
+    color: var(--text-muted, #6f6f6f);
+    padding: 1rem;
+}
+
+.mermaid {
+    background: #f8fafc;
+    border-radius: 0.8rem;
+    padding: 1rem;
+}

@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="Cronos" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
     <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj" />
     <ProjectReference Include="..\Mullai.Agents\Mullai.Agents.csproj" />
     <ProjectReference Include="..\Mullai.Global.ServiceConfiguration\Mullai.Global.ServiceConfiguration.csproj" />

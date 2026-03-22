@@ -20,12 +20,12 @@ public static class MullaiTaskRuntimeServiceCollectionExtensions
         services.AddMullaiWorkflows();
 
         services.AddSingleton<IMullaiTaskQueue, InMemoryMullaiTaskQueue>();
-        services.AddSingleton<IMullaiTaskStatusStore, InMemoryMullaiTaskStatusStore>();
+        services.AddSingleton<IMullaiTaskStatusStore, SqliteMullaiTaskStatusStore>();
         services.AddSingleton<IMullaiToolCallFeed, InMemoryMullaiToolCallFeed>();
         services.AddSingleton<IMullaiTaskResponseChannel, MullaiTaskResponseChannel>();
         services.AddSingleton<IMullaiTaskClientFactory, WebMullaiClientFactory>();
         services.AddSingleton<IMullaiTaskExecutor, MullaiTaskExecutor>();
-        services.AddSingleton<IWorkflowOutputFailureStore, InMemoryWorkflowOutputFailureStore>();
+        services.AddSingleton<IWorkflowOutputFailureStore, SqliteWorkflowOutputFailureStore>();
         services.AddSingleton<IWorkflowOutputHandler, LogWorkflowOutputHandler>();
         services.AddSingleton<IWorkflowOutputHandler, WorkflowChainOutputHandler>();
         services.AddSingleton<IWorkflowOutputHandler, WebhookWorkflowOutputHandler>();

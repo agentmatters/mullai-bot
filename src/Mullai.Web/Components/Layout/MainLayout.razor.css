@@ -27,7 +27,8 @@
 
 .app-content {
     flex: 1;
-    overflow: hidden; /* Home.razor handles its own scrolling */
+    overflow: scroll;
+    /* Home.razor handles its own scrolling */
     min-height: 0;
     position: relative;
 }

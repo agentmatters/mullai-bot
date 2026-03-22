@@ -18,8 +18,10 @@ using Mullai.Tools.FileSystemTool;
 using Mullai.Tools.TodoTool;
 using Mullai.Tools.WebTool;
 using Mullai.Tools.WordTool;
+using Mullai.Tools.WorkflowTool;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
+using Mullai.Workflows;
 
 namespace Mullai.Global.ServiceConfiguration
 {
@@ -90,8 +92,10 @@ namespace Mullai.Global.ServiceConfiguration
                 .AddCodeSearchTool()
                 .AddFileSystemTool()
                 .AddWordTool()
+                .AddWorkflowTool()
                 .AddUserMemory()
-                .AddMullaiSkills();
+                .AddMullaiSkills()
+                .AddMullaiWorkflows();
             
             return services;
         }
