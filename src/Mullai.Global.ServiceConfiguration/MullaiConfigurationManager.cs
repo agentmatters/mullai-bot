@@ -102,6 +102,16 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         _settings.ProvidersConfig = config;
         SaveSettings();
     }
+    
+    public void AddModelDescriptor(string providerName, MullaiModelDescriptor model)
+    {
+        var provider = _settings.ProvidersConfig.Providers.FirstOrDefault(p => p.Name.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+        if (provider != null)
+        {
+            provider.Models.Add(model);
+            SaveSettings();
+        }
+    }
 
     public List<CustomProviderDescriptor> GetCustomProviders() => _settings.CustomProviders;
     

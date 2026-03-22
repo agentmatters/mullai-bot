@@ -158,6 +158,9 @@
                                     <button class="btn btn-sm" type="button" @onclick="() => SetAllModelsEnabledAsync(provider, false)" disabled="@provider.IsBulkUpdating">
                                         Disable all
                                     </button>
+                                    <button class="btn btn-sm btn-primary" type="button" @onclick="ToggleModelAddForm">
+                                        Add model
+                                    </button>
                                 </div>
                             </div>
 
@@ -167,6 +170,20 @@
                                     Enabled only
                                 </button>
                             </div>
+
+                            @if (_showModelAddForm)
+                            {
+                                <div class="panel-toolbar" style="background: var(--surface-2); border-top: 1px solid var(--border); padding-top: 0.5rem; padding-bottom: 0.5rem;">
+                                    <input class="input" placeholder="Model ID (e.g. gpt-4o)" @bind="_newModelId" @bind:event="oninput" style="flex: 1;" />
+                                    <input class="input" placeholder="Display Name (optional)" @bind="_newModelName" @bind:event="oninput" style="flex: 1;" />
+                                    <button class="btn btn-sm btn-primary" type="button" @onclick="() => AddModel(provider)" disabled="@string.IsNullOrWhiteSpace(_newModelId)">
+                                        Save
+                                    </button>
+                                    <button class="btn btn-sm" type="button" @onclick="ToggleModelAddForm">
+                                        Cancel
+                                    </button>
+                                </div>
+                            }
 
                             @if (!string.IsNullOrWhiteSpace(provider.RefreshError))
                             {
@@ -236,6 +253,10 @@
     private string? _selectedProviderName;
     private string _modelNameFilter = string.Empty;
     private bool _showEnabledModelsOnly;
+    
+    private bool _showModelAddForm;
+    private string _newModelId = string.Empty;
+    private string _newModelName = string.Empty;
 
     protected override void OnInitialized()
     {
@@ -447,6 +468,34 @@
             provider.IsBulkUpdating = false;
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private void ToggleModelAddForm()
+    {
+        _showModelAddForm = !_showModelAddForm;
+        _newModelId = string.Empty;
+        _newModelName = string.Empty;
+    }
+
+    private void AddModel(ProviderVm provider)
+    {
+        if (string.IsNullOrWhiteSpace(_newModelId)) return;
+
+        var model = new MullaiModelDescriptor
+        {
+            ModelId = _newModelId.Trim(),
+            ModelName = string.IsNullOrWhiteSpace(_newModelName) ? _newModelId.Trim() : _newModelName.Trim(),
+            Enabled = true
+        };
+
+        ConfigManager.AddModelDescriptor(provider.Provider.Name, model);
+        LoadAll(); // To refresh UI
+        
+        SetStatus($"Added model {model.ModelName} to {provider.Provider.Name}.", NoticeKind.Success);
+        
+        _showModelAddForm = false;
+        _newModelId = string.Empty;
+        _newModelName = string.Empty;
     }
 
     private void BeginApiKeyEdit()

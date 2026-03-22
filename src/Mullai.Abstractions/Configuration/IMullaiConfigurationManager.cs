@@ -7,6 +7,7 @@ public interface IMullaiConfigurationManager : ICredentialStorage
     event Action? OnConfigurationChanged;
     MullaiProvidersConfig GetProvidersConfig();
     void SaveProvidersConfig(MullaiProvidersConfig config);
+    void AddModelDescriptor(string providerName, MullaiModelDescriptor model);
     
     List<CustomProviderDescriptor> GetCustomProviders();
     void AddCustomProvider(CustomProviderDescriptor provider);
