@@ -16,6 +16,8 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
     private Dictionary<string, string> _credentials = new();
     private MullaiAppSettings _settings = new();
     
+    public event Action? OnConfigurationChanged;
+    
     private static readonly byte[] Salt = Encoding.UTF8.GetBytes("MullaiSecureSalt");
     private const string EncryptionPrefix = "enc:";
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
@@ -217,11 +219,13 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
     private void SaveCredentials()
     {
         SafeWriteFile(_credentialsPath, JsonSerializer.Serialize(_credentials, JsonOptions));
+        OnConfigurationChanged?.Invoke();
     }
 
     private void SaveSettings()
     {
         SafeWriteFile(_settingsPath, JsonSerializer.Serialize(_settings, JsonOptions));
+        OnConfigurationChanged?.Invoke();
     }
 
     private void SafeWriteFile(string path, string content)

@@ -71,7 +71,7 @@ namespace Mullai.Global.ServiceConfiguration
                 })
                 .AddSingleton<IMullaiConfigurationManager, MullaiConfigurationManager>()
                 .AddSingleton<ICredentialStorage>(sp => sp.GetRequiredService<IMullaiConfigurationManager>())
-                .AddSingleton<IChatClient>(sp => 
+                .AddSingleton<IMullaiChatClient>(sp => 
                 {
                     var httpClient = sp.GetRequiredService<HttpClient>();
                     var logger = sp.GetRequiredService<ILogger<MullaiChatClient>>();
@@ -79,6 +79,7 @@ namespace Mullai.Global.ServiceConfiguration
 
                     return MullaiChatClientFactory.Create(configuration, configManager, httpClient, logger);
                 })
+                .AddSingleton<IChatClient>(sp => sp.GetRequiredService<IMullaiChatClient>())
                 .AddSingleton<AgentFactory>()
                 .AddSingleton<FunctionCallingMiddleware>()
                 .AddWeatherTool()

@@ -4,6 +4,7 @@ namespace Mullai.Abstractions.Configuration;
 
 public interface IMullaiConfigurationManager : ICredentialStorage
 {
+    event Action? OnConfigurationChanged;
     MullaiProvidersConfig GetProvidersConfig();
     void SaveProvidersConfig(MullaiProvidersConfig config);
     

@@ -23,14 +23,47 @@ public class MullaiChatClient : IMullaiChatClient
     private IReadOnlyList<(string Label, IChatClient Client)> _clients;
     private readonly ILogger<MullaiChatClient> _logger;
     private readonly ChatClientMetadata _metadata;
+    private readonly IMullaiConfigurationManager _configManager;
+    private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
+    private readonly HttpClient _httpClient;
 
     public MullaiChatClient(
         IReadOnlyList<(string Label, IChatClient Client)> clients,
-        ILogger<MullaiChatClient> logger)
+        ILogger<MullaiChatClient> logger,
+        IMullaiConfigurationManager configManager,
+        Microsoft.Extensions.Configuration.IConfiguration configuration,
+        HttpClient httpClient)
     {
         _clients = clients ?? Array.Empty<(string, IChatClient)>();
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _metadata = new ChatClientMetadata("MullaiChatClient");
+
+        _configManager.OnConfigurationChanged += RefreshClients;
+    }
+
+    private void RefreshClients()
+    {
+        _logger.LogInformation("Configuration changed. Refreshing MullaiChatClient providers.");
+        try
+        {
+            var config = _configManager.GetProvidersConfig();
+            var customProviders = _configManager.GetCustomProviders();
+            var newClients = MullaiChatClientFactory.BuildOrderedClients(
+                config,
+                customProviders,
+                _configuration,
+                _configManager,
+                _httpClient);
+
+            UpdateClients(newClients);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to refresh MullaiChatClient providers after configuration change.");
+        }
     }
 
     public void UpdateClients(IReadOnlyList<(string Label, IChatClient Client)> newClients)

@@ -37,7 +37,7 @@ public static class MullaiChatClientFactory
         
         var clients = BuildOrderedClients(config, customProviders, configuration, configManager, httpClient);
 
-        return new MullaiChatClient(clients, logger);
+        return new MullaiChatClient(clients, logger, configManager, configuration, httpClient);
     }
 
     public static List<(string Label, IChatClient Client)> BuildOrderedClients(
