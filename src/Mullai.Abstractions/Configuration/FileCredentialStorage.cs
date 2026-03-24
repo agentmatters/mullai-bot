@@ -4,7 +4,7 @@ using Mullai.Abstractions.Configuration;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Mullai.Global.ServiceConfiguration;
+namespace Mullai.Abstractions.Configuration;
 
 public class FileCredentialStorage : ICredentialStorage
 {

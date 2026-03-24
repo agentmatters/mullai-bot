@@ -1,81 +1,142 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Mullai.Providers.Common;
 using Mullai.Abstractions.Models;
+using Mullai.Abstractions.Configuration;
 
 namespace Mullai.Providers.LLMProviders.Mistral;
 
 public class MistralModelAdapter : IModelMetadataAdapter
 {
+    private const string ModelsEndpoint = "https://api.mistral.ai/v1/models";
+    private const string OpenRouterModelsEndpoint = "https://openrouter.ai/api/v1/models";
+
     public string ProviderName => "Mistral";
 
-    public Task<List<MullaiModelDescriptor>> FetchModelsAsync(HttpClient httpClient, string? apiKey = null)
+    public async Task<List<MullaiModelDescriptor>> FetchModelsAsync(HttpClient httpClient, string? apiKey = null)
     {
-        var models = new List<MullaiModelDescriptor>
+        if (string.IsNullOrEmpty(apiKey))
         {
-            new MullaiModelDescriptor { ModelId = "mistral-medium-2505", ModelName = "mistral-medium-2505", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-medium-2508", ModelName = "mistral-medium-2508", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-medium-latest", ModelName = "mistral-medium-2508", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-medium", ModelName = "mistral-medium-2508", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-vibe-cli-with-tools", ModelName = "mistral-medium-2508", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "open-mistral-nemo", ModelName = "open-mistral-nemo", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "open-mistral-nemo-2407", ModelName = "open-mistral-nemo", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-tiny-2407", ModelName = "open-mistral-nemo", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-tiny-latest", ModelName = "open-mistral-nemo", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "codestral-2508", ModelName = "codestral-2508", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "codestral-latest", ModelName = "codestral-2508", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "devstral-2512", ModelName = "devstral-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-vibe-cli-latest", ModelName = "devstral-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "devstral-medium-latest", ModelName = "devstral-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "devstral-latest", ModelName = "devstral-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-small-2603", ModelName = "mistral-small-2603", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-small-latest", ModelName = "mistral-small-2603", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-small-2506", ModelName = "mistral-small-2506", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "labs-mistral-small-creative", ModelName = "labs-mistral-small-creative", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "magistral-medium-2509", ModelName = "magistral-medium-2509", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "magistral-medium-latest", ModelName = "magistral-medium-2509", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "magistral-small-2509", ModelName = "magistral-small-2509", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "magistral-small-latest", ModelName = "magistral-small-2509", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-small-2507", ModelName = "voxtral-small-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-small-latest", ModelName = "voxtral-small-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "labs-leanstral-2603", ModelName = "labs-leanstral-2603", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-large-2512", ModelName = "mistral-large-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-large-latest", ModelName = "mistral-large-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "ministral-3b-2512", ModelName = "ministral-3b-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "ministral-3b-latest", ModelName = "ministral-3b-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "ministral-8b-2512", ModelName = "ministral-8b-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "ministral-8b-latest", ModelName = "ministral-8b-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "ministral-14b-2512", ModelName = "ministral-14b-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "ministral-14b-latest", ModelName = "ministral-14b-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-large-2411", ModelName = "mistral-large-2411", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "pixtral-large-2411", ModelName = "pixtral-large-2411", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "pixtral-large-latest", ModelName = "pixtral-large-2411", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-large-pixtral-2411", ModelName = "pixtral-large-2411", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "devstral-small-2507", ModelName = "devstral-small-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "devstral-medium-2507", ModelName = "devstral-medium-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "labs-devstral-small-2512", ModelName = "labs-devstral-small-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "devstral-small-latest", ModelName = "labs-devstral-small-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-2507", ModelName = "voxtral-mini-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-latest", ModelName = "voxtral-mini-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-squarepoint-2602", ModelName = "mistral-squarepoint-2602", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-embed-2312", ModelName = "mistral-embed-2312", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-embed", ModelName = "mistral-embed-2312", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "codestral-embed", ModelName = "codestral-embed", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "codestral-embed-2505", ModelName = "codestral-embed", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-moderation-2411", ModelName = "mistral-moderation-2411", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-moderation-latest", ModelName = "mistral-moderation-2411", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-ocr-2512", ModelName = "mistral-ocr-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-ocr-latest", ModelName = "mistral-ocr-2512", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-ocr-2503", ModelName = "mistral-ocr-2503", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "mistral-ocr-2505", ModelName = "mistral-ocr-2505", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-2602", ModelName = "voxtral-mini-2602", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-latest", ModelName = "voxtral-mini-2602", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-transcribe-realtime-2602", ModelName = "voxtral-mini-transcribe-realtime-2602", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-realtime-2602", ModelName = "voxtral-mini-transcribe-realtime-2602", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-realtime-latest", ModelName = "voxtral-mini-transcribe-realtime-2602", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-transcribe-2507", ModelName = "voxtral-mini-transcribe-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-2507", ModelName = "voxtral-mini-transcribe-2507", Enabled = true, Priority = 1, Capabilities = ["chat"] },
-            new MullaiModelDescriptor { ModelId = "voxtral-mini-tts-260213", ModelName = "voxtral-mini-tts-260213", Enabled = true, Priority = 1, Capabilities = ["chat"] }
-        };
+            var storage = new FileCredentialStorage();
+            apiKey = storage.GetApiKey(ProviderName);
+        }
 
-        return Task.FromResult(models);
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            return new List<MullaiModelDescriptor>();
+        }
+
+        // Fetch Mistral models
+        using var request = new HttpRequestMessage(HttpMethod.Get, ModelsEndpoint);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+
+        var response = await httpClient.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content.ReadFromJsonAsync<MistralModelsResponse>();
+        
+        if (result?.Data == null)
+        {
+            return new List<MullaiModelDescriptor>();
+        }
+
+        // Fetch OpenRouter models for pricing
+        var orOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
+        var orResponse = await httpClient.GetFromJsonAsync<OpenRouterModelsResponse>(OpenRouterModelsEndpoint, orOptions);
+        var openRouterModels = orResponse?.Data ?? new List<OpenRouterPricingModelData>();
+
+        return result.Data.Select(d => Adapt(d, openRouterModels)).ToList();
+    }
+
+    private MullaiModelDescriptor Adapt(MistralModelData data, List<OpenRouterPricingModelData> openRouterModels)
+    {
+        var capabilities = new List<string>();
+        if (data.Capabilities?.CompletionChat == true) capabilities.Add("chat");
+        if (data.Capabilities?.FunctionCalling == true) capabilities.Add("tools");
+        if (data.Capabilities?.Vision == true) capabilities.Add("vision");
+
+        var openRouterMatch = openRouterModels.FirstOrDefault(m => m.Id.Contains($"mistralai/{string.Join("-", data.Id.Split("-").Take(2))}"));
+
+        return new MullaiModelDescriptor
+        {
+            ModelId = data.Id,
+            ModelName = data.Name ?? data.Id,
+            Description = data.Description ?? string.Empty,
+            ContextWindow = data.MaxContextLength, // Assuming ContextLength was a typo and MaxContextLength is correct based on MistralModelData
+            Priority = 1,
+            Enabled = true,
+            Capabilities = capabilities,
+            Pricing = openRouterMatch?.Pricing != null ? new ModelPricing
+            {
+                InputPer1kTokens = ParsePricing(openRouterMatch.Pricing.Prompt),
+                OutputPer1kTokens = ParsePricing(openRouterMatch.Pricing.Completion)
+            } : null
+        };
+    }
+
+    private decimal ParsePricing(string? pricing)
+    {
+        if (string.IsNullOrEmpty(pricing)) return 0;
+        if (decimal.TryParse(pricing, out var result))
+        {
+            return result * 1000000m;
+        }
+        return 0;
     }
 }
+
+internal class OpenRouterModelsResponse
+{
+    public List<OpenRouterPricingModelData>? Data { get; set; }
+}
+
+internal class OpenRouterPricingModelData
+{
+    public string Id { get; set; } = string.Empty;
+    public OpenRouterPricingData? Pricing { get; set; }
+}
+
+internal class OpenRouterPricingData
+{
+    public string? Prompt { get; set; }
+    public string? Completion { get; set; }
+}
+
+internal class MistralModelsResponse
+{
+    [JsonPropertyName("data")]
+    public List<MistralModelData>? Data { get; set; }
+}
+
+internal class MistralModelData
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+
+    [JsonPropertyName("description")]
+    public string? Description { get; set; }
+
+    [JsonPropertyName("max_context_length")]
+    public int MaxContextLength { get; set; }
+
+    [JsonPropertyName("capabilities")]
+    public MistralCapabilities? Capabilities { get; set; }
+}
+
+internal class MistralCapabilities
+{
+    [JsonPropertyName("completion_chat")]
+    public bool CompletionChat { get; set; }
+
+    [JsonPropertyName("function_calling")]
+    public bool FunctionCalling { get; set; }
+
+    [JsonPropertyName("vision")]
+    public bool Vision { get; set; }
+}
+

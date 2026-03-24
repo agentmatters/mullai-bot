@@ -36,7 +36,7 @@ public class OpenRouterModelAdapter : IModelMetadataAdapter
         {
             ModelId = data.Id,
             ModelName = data.Name,
-            Description = data.Description,
+            Description = data.Description ?? string.Empty,
             ContextWindow = data.ContextLength,
             Priority = 10, // Default dynamic priority
             Enabled = true,
