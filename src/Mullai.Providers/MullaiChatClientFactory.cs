@@ -23,7 +23,8 @@ public static class MullaiChatClientFactory
     private static readonly List<IModelMetadataAdapter> _adapters = new()
     {
         new OpenRouterModelAdapter(),
-        new MistralModelAdapter()
+        new MistralModelAdapter(),
+        new NvidiaModelAdapter()
     };
     
     public static MullaiChatClient Create(
