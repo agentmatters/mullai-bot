@@ -1,5 +1,6 @@
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
+using Mullai.Tools.Registry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Mullai.Agents.Agents;
@@ -21,6 +22,7 @@ using Mullai.Tools.WorkflowStateTool;
 using Mullai.Tools.RestApiTool;
 using Mullai.Tools.HtmlToMarkdownTool;
 using Mullai.Workflows.Abstractions;
+using Mullai.Agents.Middlewares;
 
 namespace Mullai.Agents;
 
@@ -39,6 +41,7 @@ public class AgentFactory
     {
         AIAgent agent;
         var chatClient = _serviceProvider.GetRequiredService<IChatClient>();
+        List<AITool>? agentTools = null;
 
         if (!string.IsNullOrWhiteSpace(agentName) &&
             agentName.StartsWith(WorkflowAgentPrefix, StringComparison.OrdinalIgnoreCase))
@@ -53,26 +56,29 @@ public class AgentFactory
         {
             case "Assistant":
                 var assistant = new Assistant();
-                agent = chatClient.AsAIAgent(
+                
+                agentTools = new List<AITool>();
+                agentTools.AddRange(_serviceProvider.GetRequiredService<FileSystemTool>().AsAITools());
+                agentTools.AddRange(_serviceProvider.GetRequiredService<BashTool>().AsAITools());
+
+                var dynamicLoaderLogger = _serviceProvider.GetRequiredService<ILogger<DynamicToolLoader>>();
+                var dynamicLoader = new DynamicToolLoader(_serviceProvider, agentTools, dynamicLoaderLogger);
+                agentTools.AddRange(dynamicLoader.AsAITools());
+
+                var functionCallingMiddleware = _serviceProvider.GetRequiredService<FunctionCallingMiddleware>();
+
+                // IChatClient-level middleware: merges newly loaded tools on each LLM call within
+                // the tool loop, wrapping them as ObservableAIFunction for middleware callback support
+                var chatClientWithInjection = new ChatClientToolInjectionMiddleware(
+                    chatClient, agentTools, functionCallingMiddleware.InvokeAsync);
+
+                agent = chatClientWithInjection.AsAIAgent(
                     new ChatClientAgentOptions()
                     {
                         ChatOptions = new()
                         {
                             Instructions = assistant.Instructions,
-                            Tools = [
-                                .. _serviceProvider.GetRequiredService<WeatherTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<CliTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<BashTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<TodoTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<WebTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<CodeSearchTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<FileSystemTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<WorkflowTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<WorkflowStateTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<RestApiTool>().AsAITools(),
-                                .. _serviceProvider.GetRequiredService<HtmlToMarkdownTool>().AsAITools(),
-                                // .. _serviceProvider.GetRequiredService<WordTool>().AsAITools(),
-                            ],
+                            Tools = agentTools,
                             AllowMultipleToolCalls = true
                         },
                         Name = assistant.Name,
@@ -82,11 +88,17 @@ public class AgentFactory
                     },
                     _serviceProvider.GetRequiredService<ILoggerFactory>())
                     .AsBuilder()
-                    .Use(_serviceProvider.GetRequiredService<FunctionCallingMiddleware>().InvokeAsync)
+                    // Outermost: inject latest session tools into run options BEFORE wrapping
+                    .Use(ToolCallDynamicInjectionMiddleware.Create(agentTools))
+                    // Middle: wraps tools as MiddlewareEnabledFunction + fires FunctionCallingMiddleware callback
+                    .Use(functionCallingMiddleware.InvokeAsync)
                     .UseOpenTelemetry(
                         sourceName: OpenTelemetrySettings.ServiceName, 
                         configure: (cfg) => cfg.EnableSensitiveData = true)
                     .Build();
+
+                // Set the agent reference now that it's built (deferred init)
+                chatClientWithInjection.SetAgent(agent);
                 break;
             
             default:

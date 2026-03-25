@@ -26,10 +26,14 @@ public class MullaiAgent
         => await _agent.CreateSessionAsync(cancellationToken);
 
     public IAsyncEnumerable<object> RunStreamingAsync(string userInput, AgentSession session, CancellationToken cancellationToken = default)
-        => _agent.RunStreamingAsync(userInput, session, null, cancellationToken);
+    {
+        return _agent.RunStreamingAsync(userInput, session, cancellationToken: cancellationToken);
+    }
 
     public async Task<object> RunAsync(string userInput, AgentSession session, CancellationToken cancellationToken = default)
-        => await _agent.RunAsync(userInput, session, null, cancellationToken);
+    {
+        return await _agent.RunAsync(userInput, session, cancellationToken: cancellationToken);
+    }
 
     public void RefreshClients(Action refreshAction)
     {
