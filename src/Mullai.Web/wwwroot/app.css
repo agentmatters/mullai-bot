@@ -17,6 +17,7 @@
     --accent: #2563eb;
     --accent-2: #1d4ed8;
     --accent-soft: rgba(37, 99, 235, 0.08);
+    --accent-light: rgba(37, 99, 235, 0.08);
     --accent-border: rgba(37, 99, 235, 0.2);
 
     --success: #059669;
@@ -305,6 +306,7 @@ select {
     background: var(--border-strong);
     border-radius: 10px;
 }
+
 :root {
     --workflow-accent: #0f766e;
     --workflow-accent-soft: #e0f2f1;

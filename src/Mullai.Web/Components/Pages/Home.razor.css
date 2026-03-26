@@ -12,7 +12,7 @@
     display: flex;
     flex-direction: column;
     scroll-behavior: smooth;
-    padding-bottom: 200px; /* Space for sticky composer */
+    padding-bottom: 1rem;
 }
 
 /* Hero / Empty State */
@@ -30,8 +30,15 @@
 }
 
 @keyframes fadeInScale {
-    from { opacity: 0; transform: scale(0.98); }
-    to { opacity: 1; transform: scale(1); }
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .hero-title {
@@ -103,12 +110,8 @@
 
 /* Sticky Input Area */
 .chat-composer-outer {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, var(--bg) 80%, transparent);
-    padding-top: 2rem;
+    position: relative;
+    background: var(--bg);
     z-index: 10;
 }
 
@@ -116,11 +119,11 @@
     .hero-title {
         font-size: 2rem;
     }
-    
+
     .hero-subtitle {
         font-size: 1.1rem;
     }
-    
+
     .suggested-prompts {
         grid-template-columns: 1fr;
     }

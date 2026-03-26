@@ -13,16 +13,17 @@
 @inject IMullaiToolCallFeed ToolCallFeed
 @inject IMullaiTaskResponseChannel ResponseChannel
 @inject IOptions<MullaiTaskRuntimeOptions> RuntimeOptions
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Mullai Chat</PageTitle>
 
 <div class="chat-page">
-    <div class="chat-scroll-container">
+    <div class="chat-scroll-container" @ref="_scrollContainer">
         @if (_timeline.Count == 0)
         {
             <div class="hero-container">
-                <h1 class="hero-title">How can I help you today?</h1>
-                <p class="hero-subtitle">Mullai is your intelligent assistant, ready to help with coding, research, and more.</p>
+                <h1 class="hero-title">Design. Deploy. Automate. With Mullai.</h1>
+                <p class="hero-subtitle">Let Mullai handle the heavy lifting. Build your first workflow today.</p>
                 
                 <div class="suggested-prompts">
                     <div class="prompt-card" @onclick="@(() => SetDraftAndSubmit("What is Mullai?"))">
@@ -85,6 +86,8 @@
     private CancellationTokenSource? _pollingCts;
     private Task? _pollingTask;
     private Task? _responseChannelTask;
+    private IJSObjectReference? _homeModule;
+    private ElementReference _scrollContainer;
 
     private async Task SetDraftAndSubmit(string text)
     {
@@ -98,6 +101,29 @@
         _pollingCts = new CancellationTokenSource();
         _pollingTask = PollRuntimeAsync(_pollingCts.Token);
         _responseChannelTask = RunResponseFeedAsync(_pollingCts.Token);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _homeModule = await JSRuntime.InvokeAsync<IJSObjectReference>("import", "./Components/Pages/Home.razor.js");
+        }
+    }
+
+    private async Task ScrollToBottomAsync(bool force = false)
+    {
+        if (_homeModule is not null)
+        {
+            if (force)
+            {
+                await _homeModule.InvokeVoidAsync("scrollToBottom", _scrollContainer);
+            }
+            else
+            {
+                await _homeModule.InvokeVoidAsync("smartScrollToBottom", _scrollContainer);
+            }
+        }
     }
 
     private async Task HandleSubmitAsync(ComposerSubmitArgs? args = null)
@@ -119,6 +145,8 @@
 
         var pendingThought = new ThoughtTimelineEntry();
         _timeline.Add(pendingThought);
+        
+        await ScrollToBottomAsync(true);
 
         var maxAttempts = Math.Max(1, RuntimeOptions.Value.DefaultMaxAttempts);
         var metadata = new Dictionary<string, string>();
@@ -185,6 +213,7 @@
                     if (changed)
                     {
                         StateHasChanged();
+                        _ = ScrollToBottomAsync();
                     }
                 });
             }
@@ -224,7 +253,10 @@
 
             if (UpdatePendingResponse(pending, update.Response, isFinal: false, isError: false))
             {
-                await InvokeAsync(StateHasChanged);
+                await InvokeAsync(async () => {
+                    StateHasChanged();
+                    await ScrollToBottomAsync();
+                });
             }
         }
     }
@@ -408,6 +440,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        if (_homeModule is not null) await _homeModule.DisposeAsync();
         if (_pollingCts is null)
         {
             return;

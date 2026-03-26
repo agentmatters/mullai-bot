@@ -193,9 +193,9 @@
 
         if (_enabledProviders.Any())
         {
-            if (string.IsNullOrEmpty(_selectedProvider) || !_enabledProviders.Any(p => p.Name == _selectedProvider))
+            // Only update models if we already have a provider selected
+            if (!string.IsNullOrEmpty(_selectedProvider) && _enabledProviders.Any(p => p.Name == _selectedProvider))
             {
-                _selectedProvider = _enabledProviders[0].Name;
                 UpdateAvailableModels();
             }
         }
@@ -233,17 +233,19 @@
         _showModelDropdown = false;
     }
 
-    private void SelectProvider(string name)
+    private async Task SelectProvider(string name)
     {
         _selectedProvider = name;
         _showProviderDropdown = false;
         UpdateAvailableModels();
+        if (_module != null) await _module.InvokeVoidAsync("saveToLocalStorage", "mullai_last_provider", name);
     }
 
-    private void SelectModel(string modelId)
+    private async Task SelectModel(string modelId)
     {
         _selectedModel = modelId;
         _showModelDropdown = false;
+        if (_module != null) await _module.InvokeVoidAsync("saveToLocalStorage", "mullai_last_model", modelId);
     }
 
     private void UpdateAvailableModels()
@@ -273,6 +275,32 @@
             _module = await JS.InvokeAsync<IJSObjectReference>("import", "./Components/ChatComposer.razor.js");
             _objRef = DotNetObjectReference.Create(this);
             await _module.InvokeVoidAsync("initialize", _textAreaRef, _objRef);
+
+            // Load from LocalStorage
+            var savedProvider = await _module.InvokeAsync<string?>("loadFromLocalStorage", "mullai_last_provider");
+            var savedModel = await _module.InvokeAsync<string?>("loadFromLocalStorage", "mullai_last_model");
+
+            var providerChanged = false;
+            if (!string.IsNullOrEmpty(savedProvider) && _enabledProviders.Any(p => p.Name == savedProvider))
+            {
+                _selectedProvider = savedProvider;
+                UpdateAvailableModels();
+                providerChanged = true;
+            }
+
+            if (providerChanged && !string.IsNullOrEmpty(savedModel) && _availableModels.Any(m => m.ModelId == savedModel))
+            {
+                _selectedModel = savedModel;
+            }
+
+            // If still no selection, pick defaults
+            if (string.IsNullOrEmpty(_selectedProvider) && _enabledProviders.Any())
+            {
+                _selectedProvider = _enabledProviders[0].Name;
+                UpdateAvailableModels();
+            }
+
+            StateHasChanged();
         }
     }
 
