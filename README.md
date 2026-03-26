@@ -137,26 +137,6 @@ After installation, the Mullai Web service runs automatically. You can manage it
     rm ~/.config/systemd/user/mullai-web.service
     systemctl --user daemon-reload
     ```
-- **Remove Service**:
-  - **macOS**:
-    ```bash
-    launchctl unload ~/Library/LaunchAgents/com.mullai.bot.web.plist
-    rm ~/Library/LaunchAgents/com.mullai.bot.web.plist
-    ```
-  - **Linux (systemd)**:
-    ```bash
-    sudo systemctl stop mullai-web
-    sudo systemctl disable mullai-web
-    sudo rm /etc/systemd/system/mullai-web.service
-    sudo systemctl daemon-reload
-    ```
-  - **Linux (user service)**:
-    ```bash
-    systemctl --user stop mullai-web
-    systemctl --user disable mullai-web
-    rm ~/.config/systemd/user/mullai-web.service
-    systemctl --user daemon-reload
-    ```
 
 ### Windows (PowerShell)
 - **Start**: `Start-Service MullaiWeb`
