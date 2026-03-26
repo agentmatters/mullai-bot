@@ -108,9 +108,55 @@ This will stop and remove the Mullai Web service and delete the installation dir
 After installation, the Mullai Web service runs automatically. You can manage it using the following commands:
 
 ### macOS / Linux
-- **Start**: `sudo systemctl start mullai-web` (Linux) or `launchctl load ~/Library/LaunchAgents/com.mullai.bot.web.plist` (macOS)
-- **Stop**: `sudo systemctl stop mullai-web` (Linux) or `launchctl unload ~/Library/LaunchAgents/com.mullai.bot.web.plist` (macOS)
-- **Restart**: `sudo systemctl restart mullai-web` (Linux) or `launchctl unload ~/Library/LaunchAgents/com.mullai.bot.web.plist && launchctl load ~/Library/LaunchAgents/com.mullai.bot.web.plist` (macOS)
+- **Start**:
+  - **macOS**: `launchctl load ~/Library/LaunchAgents/com.mullai.bot.web.plist`
+  - **Linux**: `sudo systemctl start mullai-web`
+- **Stop**:
+  - **macOS**: `launchctl unload ~/Library/LaunchAgents/com.mullai.bot.web.plist`
+  - **Linux**: `sudo systemctl stop mullai-web`
+- **Restart**:
+  - **macOS**: `launchctl unload ~/Library/LaunchAgents/com.mullai.bot.web.plist && launchctl load ~/Library/LaunchAgents/com.mullai.bot.web.plist`
+  - **Linux**: `sudo systemctl restart mullai-web`
+- **Remove Service**:
+  - **macOS**:
+    ```bash
+    launchctl unload ~/Library/LaunchAgents/com.mullai.bot.web.plist
+    rm ~/Library/LaunchAgents/com.mullai.bot.web.plist
+    ```
+  - **Linux (systemd)**:
+    ```bash
+    sudo systemctl stop mullai-web
+    sudo systemctl disable mullai-web
+    sudo rm /etc/systemd/system/mullai-web.service
+    sudo systemctl daemon-reload
+    ```
+  - **Linux (user service)**:
+    ```bash
+    systemctl --user stop mullai-web
+    systemctl --user disable mullai-web
+    rm ~/.config/systemd/user/mullai-web.service
+    systemctl --user daemon-reload
+    ```
+- **Remove Service**:
+  - **macOS**:
+    ```bash
+    launchctl unload ~/Library/LaunchAgents/com.mullai.bot.web.plist
+    rm ~/Library/LaunchAgents/com.mullai.bot.web.plist
+    ```
+  - **Linux (systemd)**:
+    ```bash
+    sudo systemctl stop mullai-web
+    sudo systemctl disable mullai-web
+    sudo rm /etc/systemd/system/mullai-web.service
+    sudo systemctl daemon-reload
+    ```
+  - **Linux (user service)**:
+    ```bash
+    systemctl --user stop mullai-web
+    systemctl --user disable mullai-web
+    rm ~/.config/systemd/user/mullai-web.service
+    systemctl --user daemon-reload
+    ```
 
 ### Windows (PowerShell)
 - **Start**: `Start-Service MullaiWeb`
