@@ -5,6 +5,7 @@
 @using Mullai.TaskRuntime.Abstractions
 @using Mullai.TaskRuntime.Models
 @using Mullai.TaskRuntime.Options
+@using Mullai.Web.Models
 @implements IAsyncDisposable
 
 @inject IMullaiTaskQueue TaskQueue
@@ -99,14 +100,14 @@
         _responseChannelTask = RunResponseFeedAsync(_pollingCts.Token);
     }
 
-    private async Task HandleSubmitAsync()
+    private async Task HandleSubmitAsync(ComposerSubmitArgs? args = null)
     {
-        if (string.IsNullOrWhiteSpace(_draft))
+        if (string.IsNullOrWhiteSpace(_draft) && args == null)
         {
             return;
         }
 
-        var prompt = _draft.Trim();
+        var prompt = args?.Prompt ?? _draft.Trim();
         _draft = string.Empty;
 
         var userMessage = new ChatTimelineEntry
@@ -120,6 +121,13 @@
         _timeline.Add(pendingThought);
 
         var maxAttempts = Math.Max(1, RuntimeOptions.Value.DefaultMaxAttempts);
+        var metadata = new Dictionary<string, string>();
+        if (args != null)
+        {
+            if (!string.IsNullOrEmpty(args.Provider)) metadata["provider"] = args.Provider;
+            if (!string.IsNullOrEmpty(args.Model)) metadata["model"] = args.Model;
+        }
+
         var workItem = new MullaiTaskWorkItem
         {
             TaskId = Guid.NewGuid().ToString("N"),
@@ -127,7 +135,8 @@
             AgentName = "Assistant",
             Prompt = prompt,
             Source = MullaiTaskSource.Client,
-            MaxAttempts = maxAttempts
+            MaxAttempts = maxAttempts,
+            Metadata = metadata
         };
 
         _pendingAssistantMessages[workItem.TaskId] = new PendingAssistantMessage

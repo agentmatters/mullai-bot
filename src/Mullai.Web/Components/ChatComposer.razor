@@ -1,7 +1,91 @@
 @implements IAsyncDisposable
+@using Mullai.Abstractions.Configuration
+@using Mullai.Abstractions.Models
+@using Mullai.Web.Models
 @inject IJSRuntime JS
+@inject IMullaiConfigurationManager ConfigurationManager
 
 <div class="composer-container">
+    <div class="composer-controls">
+        <div class="selector-group">
+            <span class="selector-label">Provider</span>
+            <div class="premium-dropdown provider-dropdown">
+                <div class="dropdown-trigger" @onclick="ToggleProviderDropdown">
+                    <span class="trigger-text">@_selectedProvider</span>
+                    <svg class="chevron @(_showProviderDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                @if (_showProviderDropdown)
+                {
+                    <div class="dropdown-menu">
+                        <div class="search-container">
+                            <input class="search-input" 
+                                   @bind="_providerSearch" 
+                                   @bind:event="oninput" 
+                                   placeholder="Search providers..." 
+                                   @onclick:stopPropagation="true"
+                                   autofocus />
+                        </div>
+                        <div class="options-list">
+                            @foreach (var provider in FilteredProviders)
+                            {
+                                <div class="option @(provider.Name == _selectedProvider ? "selected" : "")" 
+                                     @onclick="() => SelectProvider(provider.Name)">
+                                    @provider.Name
+                                </div>
+                            }
+                            @if (!FilteredProviders.Any())
+                            {
+                                <div class="no-results">No providers found</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <div class="selector-group">
+            <span class="selector-label">Model</span>
+            <div class="premium-dropdown model-dropdown">
+                <div class="dropdown-trigger @(string.IsNullOrEmpty(_selectedProvider) ? "disabled" : "")" 
+                     @onclick="ToggleModelDropdown">
+                    <span class="trigger-text">@(_availableModels.FirstOrDefault(m => m.ModelId == _selectedModel)?.ModelName ?? "Select Model")</span>
+                    <svg class="chevron @(_showModelDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                @if (_showModelDropdown)
+                {
+                    <div class="dropdown-menu">
+                        <div class="search-container">
+                            <input class="search-input" 
+                                   @bind="_modelSearch" 
+                                   @bind:event="oninput" 
+                                   placeholder="Search models..." 
+                                   @onclick:stopPropagation="true"
+                                   autofocus />
+                        </div>
+                        <div class="options-list">
+                            @foreach (var model in FilteredModels)
+                            {
+                                <div class="option @(model.ModelId == _selectedModel ? "selected" : "")" 
+                                     @onclick="() => SelectModel(model.ModelId)">
+                                    <div class="option-name">@model.ModelName</div>
+                                </div>
+                            }
+                            @if (!FilteredModels.Any())
+                            {
+                                <div class="no-results">No models found</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (_showProviderDropdown || _showModelDropdown)
+    {
+        <div class="dropdown-overlay" @onclick="CloseDropdowns"></div>
+    }
+
     <div class="composer-box">
         <button class="action-btn" type="button" aria-label="Add attachment">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
@@ -31,13 +115,156 @@
 @code {
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
-    [Parameter] public EventCallback OnSubmit { get; set; }
+    [Parameter] public EventCallback<ComposerSubmitArgs> OnSubmit { get; set; }
+
+    private List<MullaiProviderDescriptor> _enabledProviders = [];
+    private List<MullaiModelDescriptor> _availableModels = [];
+    private string _selectedProvider = string.Empty;
+    private string _selectedModel = string.Empty;
+    
+    private string _providerSearch = string.Empty;
+    private string _modelSearch = string.Empty;
+    private bool _showProviderDropdown;
+    private bool _showModelDropdown;
+
+    private IEnumerable<MullaiProviderDescriptor> FilteredProviders => 
+        string.IsNullOrWhiteSpace(_providerSearch) 
+            ? _enabledProviders 
+            : _enabledProviders.Where(p => p.Name.Contains(_providerSearch, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<MullaiModelDescriptor> FilteredModels => 
+        string.IsNullOrWhiteSpace(_modelSearch) 
+            ? _availableModels 
+            : _availableModels.Where(m => m.ModelName.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase) 
+                                       || m.ModelId.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase));
 
     private ElementReference _textAreaRef;
     private IJSObjectReference? _module;
     private DotNetObjectReference<ChatComposer>? _objRef;
 
     private bool IsEmpty => string.IsNullOrWhiteSpace(Value);
+
+    protected override void OnInitialized()
+    {
+        ConfigurationManager.OnConfigurationChanged += HandleConfigurationChanged;
+        LoadProvidersAndModels();
+    }
+
+    private void HandleConfigurationChanged()
+    {
+        InvokeAsync(() =>
+        {
+            LoadProvidersAndModels();
+            StateHasChanged();
+        });
+    }
+
+    private void LoadProvidersAndModels()
+    {
+        var config = ConfigurationManager.GetProvidersConfig();
+        var customProviders = ConfigurationManager.GetCustomProviders();
+
+        _enabledProviders = config.Providers
+            .Where(p => p.Enabled && ConfigurationManager.IsProviderEnabled(p.Name, true))
+            .Select(p => new MullaiProviderDescriptor
+            {
+                Name = p.Name,
+                Enabled = true,
+                Models = p.Models.Where(m => m.Enabled && ConfigurationManager.IsModelEnabled(p.Name, m.ModelId, true)).ToList()
+            })
+            .Where(p => p.Models.Any())
+            .ToList();
+
+        // Add custom providers if they are enabled in Mcp/Custom
+        foreach (var custom in customProviders.Where(cp => cp.Enabled && cp.Models.Any()))
+        {
+            _enabledProviders.Add(new MullaiProviderDescriptor
+            {
+                Name = custom.Name,
+                Enabled = true,
+                Models = custom.Models.Select(m => new MullaiModelDescriptor
+                {
+                    ModelId = m,
+                    ModelName = m,
+                    Enabled = true
+                }).ToList()
+            });
+        }
+
+        if (_enabledProviders.Any())
+        {
+            if (string.IsNullOrEmpty(_selectedProvider) || !_enabledProviders.Any(p => p.Name == _selectedProvider))
+            {
+                _selectedProvider = _enabledProviders[0].Name;
+                UpdateAvailableModels();
+            }
+        }
+    }
+
+    private async Task ToggleProviderDropdown()
+    {
+        _showProviderDropdown = !_showProviderDropdown;
+        if (_showProviderDropdown)
+        {
+            _showModelDropdown = false;
+            _providerSearch = string.Empty;
+            await Task.Delay(50);
+            if (_module != null) await _module.InvokeVoidAsync("scrollToSelected", ".provider-dropdown .options-list");
+        }
+    }
+
+    private async Task ToggleModelDropdown()
+    {
+        if (string.IsNullOrEmpty(_selectedProvider)) return;
+        
+        _showModelDropdown = !_showModelDropdown;
+        if (_showModelDropdown)
+        {
+            _showProviderDropdown = false;
+            _modelSearch = string.Empty;
+            await Task.Delay(50);
+            if (_module != null) await _module.InvokeVoidAsync("scrollToSelected", ".model-dropdown .options-list");
+        }
+    }
+
+    private void CloseDropdowns()
+    {
+        _showProviderDropdown = false;
+        _showModelDropdown = false;
+    }
+
+    private void SelectProvider(string name)
+    {
+        _selectedProvider = name;
+        _showProviderDropdown = false;
+        UpdateAvailableModels();
+    }
+
+    private void SelectModel(string modelId)
+    {
+        _selectedModel = modelId;
+        _showModelDropdown = false;
+    }
+
+    private void UpdateAvailableModels()
+    {
+        var provider = _enabledProviders.FirstOrDefault(p => p.Name == _selectedProvider);
+        if (provider != null)
+        {
+            _availableModels = provider.Models.Where(m => m.Enabled).ToList();
+            if (_availableModels.Any())
+            {
+                if (string.IsNullOrEmpty(_selectedModel) || !_availableModels.Any(m => m.ModelId == _selectedModel))
+                {
+                    _selectedModel = _availableModels[0].ModelId;
+                }
+            }
+            else
+            {
+                _selectedModel = string.Empty;
+            }
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -65,7 +292,13 @@
     {
         if (!IsEmpty)
         {
-            await OnSubmit.InvokeAsync();
+            var args = new ComposerSubmitArgs
+            {
+                Prompt = Value,
+                Provider = _selectedProvider,
+                Model = _selectedModel
+            };
+            await OnSubmit.InvokeAsync(args);
         }
     }
 
@@ -73,6 +306,7 @@
     {
         try
         {
+            ConfigurationManager.OnConfigurationChanged -= HandleConfigurationChanged;
             if (_module is not null) await _module.DisposeAsync();
             _objRef?.Dispose();
         }

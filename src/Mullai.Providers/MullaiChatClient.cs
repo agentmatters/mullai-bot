@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using System.Text;
+using System.Collections.Concurrent;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
 using Mullai.OpenTelemetry.OpenTelemetry;
 using Mullai.Abstractions.Configuration;
+using Mullai.Abstractions;
 using Mullai.Providers.Common.Models;
 using System.Text.Json;
 
@@ -26,6 +28,7 @@ public class MullaiChatClient : IMullaiChatClient
     private readonly IMullaiConfigurationManager _configManager;
     private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
     private readonly HttpClient _httpClient;
+    private readonly ConcurrentDictionary<string, IChatClient> _onDemandClients = new();
 
     public MullaiChatClient(
         IReadOnlyList<(string Label, IChatClient Client)> clients,
@@ -118,6 +121,12 @@ public class MullaiChatClient : IMullaiChatClient
             options?.Tools?.Count ?? 0,
             messageList.Count);
 
+        var (overrideLabel, overrideClient) = await GetEffectiveClientAsync(options, cancellationToken);
+        if (overrideClient != null)
+        {
+            return await ExecuteWithClientAsync(overrideLabel, overrideClient, messageList, options, parentActivity, 1, 1, cancellationToken);
+        }
+
         Exception? lastException = null;
         int attemptIndex = 0;
 
@@ -138,47 +147,17 @@ public class MullaiChatClient : IMullaiChatClient
                 "MullaiChatClient attempt {Attempt}/{Total} → Provider: {Provider}, Model: {Model}",
                 attemptIndex, _clients.Count, providerName, modelId);
 
-            var sw = Stopwatch.StartNew();
             try
             {
-                var response = await client.GetResponseAsync(messageList, options, cancellationToken);
-                sw.Stop();
-
-                attemptActivity?.SetTag("mullai.success", true);
-                attemptActivity?.SetTag("mullai.duration_ms", sw.ElapsedMilliseconds);
-                parentActivity?.SetTag("mullai.winning_provider", providerName);
-                parentActivity?.SetTag("mullai.winning_model", modelId);
-                parentActivity?.SetTag("mullai.winning_attempt", attemptIndex);
-
-                _logger.LogInformation(
-                    "MullaiChatClient succeeded on attempt {Attempt} — Provider: {Provider}, Model: {Model}, Duration: {DurationMs}ms",
-                    attemptIndex, providerName, modelId, sw.ElapsedMilliseconds);
-
-                return response;
+                return await ExecuteWithClientAsync(label, client, messageList, options, parentActivity, attemptIndex, _clients.Count, cancellationToken);
             }
             catch (OperationCanceledException)
             {
-                sw.Stop();
-                _logger.LogWarning(
-                    "MullaiChatClient cancelled on attempt {Attempt} — Provider: {Provider}, Model: {Model}",
-                    attemptIndex, providerName, modelId);
-
-                attemptActivity?.SetStatus(ActivityStatusCode.Error, "Cancelled");
                 throw;
             }
             catch (Exception ex)
             {
-                sw.Stop();
                 lastException = ex;
-
-                attemptActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                attemptActivity?.SetTag("mullai.success", false);
-                attemptActivity?.SetTag("mullai.error_type", ex.GetType().Name);
-                attemptActivity?.SetTag("mullai.duration_ms", sw.ElapsedMilliseconds);
-
-                _logger.LogWarning(ex,
-                    "MullaiChatClient attempt {Attempt}/{Total} failed — Provider: {Provider}, Model: {Model}, Error: {ErrorType}: {ErrorMessage}. Trying next.",
-                    attemptIndex, _clients.Count, providerName, modelId, ex.GetType().Name, ex.Message);
             }
         }
 
@@ -211,9 +190,29 @@ public class MullaiChatClient : IMullaiChatClient
 
         if (_clients.Count == 0)
             throw new InvalidOperationException("No AI providers are configured.");
-        
-        var (client, providerName, modelId, attemptIndex) =
-            await SelectClientAsync(messageList, options, cancellationToken);
+
+        var (overrideLabel, overrideClient) = await GetEffectiveClientAsync(options, cancellationToken);
+        IChatClient client;
+        string providerName;
+        string modelId;
+        int attemptIndex;
+
+        if (overrideClient != null)
+        {
+            client = overrideClient;
+            var parts = ParseLabel(overrideLabel);
+            providerName = parts.Provider;
+            modelId = parts.Model;
+            attemptIndex = 1;
+        }
+        else
+        {
+            var selected = await SelectClientAsync(messageList, options, cancellationToken);
+            client = selected.client;
+            providerName = selected.providerName;
+            modelId = selected.modelId;
+            attemptIndex = selected.attemptIndex;
+        }
 
         var sw = Stopwatch.StartNew();
         var chunkCount = 0;
@@ -317,6 +316,108 @@ public class MullaiChatClient : IMullaiChatClient
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
+
+    private async Task<ChatResponse> ExecuteWithClientAsync(
+        string label,
+        IChatClient client,
+        IList<ChatMessage> messages,
+        ChatOptions? options,
+        Activity? parentActivity,
+        int attemptIndex,
+        int totalAttempts,
+        CancellationToken cancellationToken)
+    {
+        var (providerName, modelId) = ParseLabel(label);
+
+        using var attemptActivity = ActivitySource.StartActivity(
+            $"MullaiChatClient.Attempt",
+            ActivityKind.Client);
+
+        attemptActivity?.SetTag("mullai.provider", providerName);
+        attemptActivity?.SetTag("mullai.model", modelId);
+        attemptActivity?.SetTag("mullai.attempt", attemptIndex);
+
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            var response = await client.GetResponseAsync(messages, options, cancellationToken);
+            sw.Stop();
+
+            attemptActivity?.SetTag("mullai.success", true);
+            attemptActivity?.SetTag("mullai.duration_ms", sw.ElapsedMilliseconds);
+            parentActivity?.SetTag("mullai.winning_provider", providerName);
+            parentActivity?.SetTag("mullai.winning_model", modelId);
+            parentActivity?.SetTag("mullai.winning_attempt", attemptIndex);
+
+            _logger.LogInformation(
+                "MullaiChatClient succeeded on attempt {Attempt} — Provider: {Provider}, Model: {Model}, Duration: {DurationMs}ms",
+                attemptIndex, providerName, modelId, sw.ElapsedMilliseconds);
+
+            return response;
+        }
+        catch (OperationCanceledException)
+        {
+            sw.Stop();
+            _logger.LogWarning(
+                "MullaiChatClient cancelled on attempt {Attempt} — Provider: {Provider}, Model: {Model}",
+                attemptIndex, providerName, modelId);
+
+            attemptActivity?.SetStatus(ActivityStatusCode.Error, "Cancelled");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+
+            attemptActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            attemptActivity?.SetTag("mullai.success", false);
+            attemptActivity?.SetTag("mullai.error_type", ex.GetType().Name);
+            attemptActivity?.SetTag("mullai.duration_ms", sw.ElapsedMilliseconds);
+
+            _logger.LogWarning(ex,
+                "MullaiChatClient attempt {Attempt}/{Total} failed — Provider: {Provider}, Model: {Model}, Error: {ErrorType}: {ErrorMessage}. Trying next.",
+                attemptIndex, totalAttempts, providerName, modelId, ex.GetType().Name, ex.Message);
+            throw;
+        }
+    }
+
+    private async Task<(string Label, IChatClient? Client)> GetEffectiveClientAsync(ChatOptions? options, CancellationToken cancellationToken)
+    {
+        var context = MullaiRequestContext.Current;
+        var providerOverride = context?.Provider;
+        var modelOverride = context?.Model ?? options?.ModelId;
+
+        // If no model override, we might still have a provider override, but usually both are needed for a specific pick.
+        if (string.IsNullOrEmpty(modelOverride))
+        {
+            return (string.Empty, null);
+        }
+
+        // Try to find in priority list first if provider is specified or if we can find a unique match for modelId
+        foreach (var (label, client) in _clients)
+        {
+            var (p, m) = ParseLabel(label);
+            if (m == modelOverride && (providerOverride == null || p == providerOverride))
+            {
+                return (label, client);
+            }
+        }
+
+        // If not in standard list, try creating on demand if provider is specified
+        if (!string.IsNullOrEmpty(providerOverride))
+        {
+            var label = $"{providerOverride}/{modelOverride}";
+            var client = _onDemandClients.GetOrAdd(label, l => 
+                MullaiChatClientFactory.TryCreateClient(providerOverride, modelOverride, _configuration, _configManager, _httpClient)!);
+
+            if (client != null)
+            {
+                return (label, client);
+            }
+        }
+
+        return (string.Empty, null);
+    }
 
     /// <summary>Splits "ProviderName/model-id" label into its two parts.</summary>
     private static (string Provider, string Model) ParseLabel(string label)

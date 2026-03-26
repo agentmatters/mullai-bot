@@ -6,7 +6,7 @@ public interface IMullaiClient
     string ModelName { get; }
 
     Task InitialiseAsync(CancellationToken cancellationToken = default);
-    IAsyncEnumerable<string> RunStreamingAsync(string userInput, CancellationToken cancellationToken = default);
-    Task<string> RunAsync(string userInput, CancellationToken cancellationToken = default);
+    IAsyncEnumerable<string> RunStreamingAsync(string userInput, string? provider = null, string? model = null, CancellationToken cancellationToken = default);
+    Task<string> RunAsync(string userInput, string? provider = null, string? model = null, CancellationToken cancellationToken = default);
     void RefreshClients();
 }

@@ -50,6 +50,8 @@ public abstract class BaseMullaiClient : IMullaiClient
 
     public async IAsyncEnumerable<string> RunStreamingAsync(
         string userInput,
+        string? provider = null,
+        string? model = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         await InitialiseAsync(cancellationToken).ConfigureAwait(false);
@@ -60,7 +62,7 @@ public abstract class BaseMullaiClient : IMullaiClient
             var agent = _agent!;
             var session = _session!;
 
-            await foreach (var update in agent.RunStreamingAsync(userInput, session, cancellationToken))
+            await foreach (var update in agent.RunStreamingAsync(userInput, session, provider, model, cancellationToken))
             {
                 var text = update?.ToString();
                 if (!string.IsNullOrEmpty(text))
@@ -75,14 +77,14 @@ public abstract class BaseMullaiClient : IMullaiClient
         }
     }
 
-    public async Task<string> RunAsync(string userInput, CancellationToken cancellationToken = default)
+    public async Task<string> RunAsync(string userInput, string? provider = null, string? model = null, CancellationToken cancellationToken = default)
     {
         await InitialiseAsync(cancellationToken).ConfigureAwait(false);
         await _executionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
-            var response = await _agent!.RunAsync(userInput, _session!, cancellationToken).ConfigureAwait(false);
+            var response = await _agent!.RunAsync(userInput, _session!, provider, model, cancellationToken).ConfigureAwait(false);
             return response?.ToString() ?? string.Empty;
         }
         finally

@@ -21,7 +21,12 @@ public class MullaiTaskExecutor : IMullaiTaskExecutor
         var client = _clientFactory.GetClient(workItem.SessionKey, workItem.AgentName);
         var responseAccumulator = new StringBuilder();
 
-        await foreach (var chunk in client.RunStreamingAsync(workItem.Prompt, cancellationToken))
+        string? provider = null;
+        string? model = null;
+        workItem.Metadata?.TryGetValue("provider", out provider);
+        workItem.Metadata?.TryGetValue("model", out model);
+
+        await foreach (var chunk in client.RunStreamingAsync(workItem.Prompt, provider, model, cancellationToken))
         {
             if (string.IsNullOrEmpty(chunk))
             {

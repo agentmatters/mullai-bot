@@ -94,7 +94,7 @@ public static class MullaiChatClientFactory
         return result;
     }
 
-    private static IChatClient? TryCreateClient(
+    internal static IChatClient? TryCreateClient(
         string providerName,
         string modelId,
         IConfiguration configuration,
