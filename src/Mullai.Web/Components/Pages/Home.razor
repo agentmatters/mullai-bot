@@ -71,7 +71,10 @@
     </div>
 
     <div class="chat-composer-outer">
-        <ChatComposer @bind-Value="_draft" OnSubmit="HandleSubmitAsync" />
+        <ChatComposer @bind-Value="_draft" 
+                      @bind-SelectedProvider="_selectedProvider"
+                      @bind-SelectedModel="_selectedModel"
+                      OnSubmit="HandleSubmitAsync" />
     </div>
 </div>
 
@@ -82,6 +85,8 @@
     private string _sessionDisplay = string.Empty;
 
     private string _draft = string.Empty;
+    private string _selectedProvider = string.Empty;
+    private string _selectedModel = string.Empty;
     private long _lastToolCallSequence;
     private CancellationTokenSource? _pollingCts;
     private Task? _pollingTask;
@@ -92,7 +97,13 @@
     private async Task SetDraftAndSubmit(string text)
     {
         _draft = text;
-        await HandleSubmitAsync();
+        var args = new ComposerSubmitArgs
+        {
+            Prompt = text,
+            Provider = _selectedProvider,
+            Model = _selectedModel
+        };
+        await HandleSubmitAsync(args);
     }
 
     protected override void OnInitialized()

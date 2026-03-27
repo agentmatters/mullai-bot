@@ -20,13 +20,25 @@ public class MullaiAgent
 
     public string Name => _agent.Name;
     
-    public string ProviderName => (_client as IMullaiChatClient)?.ActiveLabel?.Split('/')[0] ?? "Unknown";
-    public string ModelName => (_client as IMullaiChatClient)?.ActiveLabel?.Split('/').ElementAtOrDefault(1) ?? "Unknown";
+    public string ProviderName => 
+        MullaiRequestContext.Current?.Provider ?? 
+        (_client as IMullaiChatClient)?.ActiveLabel?.Split('/')[0] ?? 
+        "Unknown";
+
+    public string ModelName => 
+        MullaiRequestContext.Current?.Model ?? 
+        (_client as IMullaiChatClient)?.ActiveLabel?.Split('/').ElementAtOrDefault(1) ?? 
+        "Unknown";
 
     public async Task<AgentSession> CreateSessionAsync(CancellationToken cancellationToken = default) 
         => await _agent.CreateSessionAsync(cancellationToken);
 
-    public IAsyncEnumerable<object> RunStreamingAsync(string userInput, AgentSession session, string? provider = null, string? model = null, CancellationToken cancellationToken = default)
+    public async IAsyncEnumerable<object> RunStreamingAsync(
+        string userInput, 
+        AgentSession session, 
+        string? provider = null, 
+        string? model = null, 
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (provider != null || model != null)
         {
@@ -35,13 +47,18 @@ public class MullaiAgent
 
         try
         {
-            return _agent.RunStreamingAsync(userInput, session, cancellationToken: cancellationToken);
+            await foreach (var update in _agent.RunStreamingAsync(userInput, session, cancellationToken: cancellationToken))
+            {
+                yield return update;
+            }
         }
         finally
         {
-            // Note: We don't clear MullaiRequestContext.Current here because the 
-            // IAsyncEnumerable might still be being iterated. AsyncLocal 
-            // will naturally be scoped to the execution flow.
+            // Reset context after enumeration if we set it
+            if (provider != null || model != null)
+            {
+                MullaiRequestContext.Current = null;
+            }
         }
     }
 

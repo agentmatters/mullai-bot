@@ -92,7 +92,23 @@ public class MullaiChatClient : IMullaiChatClient
     }
 
     public ChatClientMetadata Metadata => _metadata;
-    public string ActiveLabel => _clients.Count > 0 ? _clients[0].Label : "No Providers Configured";
+    public string ActiveLabel
+    {
+        get
+        {
+            var context = MullaiRequestContext.Current;
+            if (context != null)
+            {
+                var provider = context.Provider;
+                var model = context.Model;
+                if (!string.IsNullOrEmpty(provider) && !string.IsNullOrEmpty(model))
+                {
+                    return $"{provider}/{model} (Override)";
+                }
+            }
+            return _clients.Count > 0 ? _clients[0].Label : "No Providers Configured";
+        }
+    }
 
     // ── GetResponseAsync ───────────────────────────────────────────────────
     public async Task<ChatResponse> GetResponseAsync(
@@ -144,7 +160,7 @@ public class MullaiChatClient : IMullaiChatClient
             attemptActivity?.SetTag("mullai.attempt", attemptIndex);
 
             _logger.LogInformation(
-                "MullaiChatClient attempt {Attempt}/{Total} → Provider: {Provider}, Model: {Model}",
+                "MullaiChatClient attempt {Attempt}/{Total} — Provider: {Provider}, Model: {Model}",
                 attemptIndex, _clients.Count, providerName, modelId);
 
             try
@@ -397,8 +413,10 @@ public class MullaiChatClient : IMullaiChatClient
         foreach (var (label, client) in _clients)
         {
             var (p, m) = ParseLabel(label);
-            if (m == modelOverride && (providerOverride == null || p == providerOverride))
+            if (string.Equals(m, modelOverride, StringComparison.OrdinalIgnoreCase) && 
+                (providerOverride == null || string.Equals(p, providerOverride, StringComparison.OrdinalIgnoreCase)))
             {
+                _logger.LogInformation("MullaiChatClient using client override from standard list: {Label}", label);
                 return (label, client);
             }
         }
@@ -407,14 +425,19 @@ public class MullaiChatClient : IMullaiChatClient
         if (!string.IsNullOrEmpty(providerOverride))
         {
             var label = $"{providerOverride}/{modelOverride}";
+            
+            _logger.LogInformation("MullaiChatClient using on-demand client override: {Label}", label);
+            
             var client = _onDemandClients.GetOrAdd(label, l => 
-                MullaiChatClientFactory.TryCreateClient(providerOverride, modelOverride, _configuration, _configManager, _httpClient)!);
+                MullaiChatClientFactory.TryCreateClient(providerOverride, modelOverride!, _configuration, _configManager, _httpClient)!);
 
             if (client != null)
             {
                 return (label, client);
             }
         }
+        
+        _logger.LogDebug("MullaiChatClient: No effective client override found for Provider={Provider}, Model={Model}. Using default chain.", providerOverride, modelOverride);
 
         return (string.Empty, null);
     }

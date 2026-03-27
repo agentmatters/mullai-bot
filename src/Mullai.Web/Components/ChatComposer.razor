@@ -116,6 +116,10 @@
     [Parameter] public string Value { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public EventCallback<ComposerSubmitArgs> OnSubmit { get; set; }
+    [Parameter] public string SelectedProvider { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> SelectedProviderChanged { get; set; }
+    [Parameter] public string SelectedModel { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> SelectedModelChanged { get; set; }
 
     private List<MullaiProviderDescriptor> _enabledProviders = [];
     private List<MullaiModelDescriptor> _availableModels = [];
@@ -193,11 +197,36 @@
 
         if (_enabledProviders.Any())
         {
-            // Only update models if we already have a provider selected
-            if (!string.IsNullOrEmpty(_selectedProvider) && _enabledProviders.Any(p => p.Name == _selectedProvider))
+            // If already have a provider selected, ensure it's still valid
+            if (!string.IsNullOrEmpty(_selectedProvider))
             {
-                UpdateAvailableModels();
+                var existing = _enabledProviders.FirstOrDefault(p => p.Name.Equals(_selectedProvider, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    _selectedProvider = existing.Name; // Use canonical name
+                    UpdateAvailableModels();
+                }
+                else
+                {
+                    _selectedProvider = string.Empty;
+                }
             }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        var changed = false;
+        if (!string.IsNullOrEmpty(SelectedProvider) && SelectedProvider != _selectedProvider)
+        {
+            _selectedProvider = SelectedProvider;
+            UpdateAvailableModels();
+            changed = true;
+        }
+        if (!string.IsNullOrEmpty(SelectedModel) && SelectedModel != _selectedModel)
+        {
+            _selectedModel = SelectedModel;
+            changed = true;
         }
     }
 
@@ -238,13 +267,17 @@
         _selectedProvider = name;
         _showProviderDropdown = false;
         UpdateAvailableModels();
+        await SelectedProviderChanged.InvokeAsync(name);
+        await SelectedModelChanged.InvokeAsync(_selectedModel);
         if (_module != null) await _module.InvokeVoidAsync("saveToLocalStorage", "mullai_last_provider", name);
+        if (_module != null) await _module.InvokeVoidAsync("saveToLocalStorage", "mullai_last_model", _selectedModel);
     }
 
     private async Task SelectModel(string modelId)
     {
         _selectedModel = modelId;
         _showModelDropdown = false;
+        await SelectedModelChanged.InvokeAsync(modelId);
         if (_module != null) await _module.InvokeVoidAsync("saveToLocalStorage", "mullai_last_model", modelId);
     }
 
@@ -280,17 +313,26 @@
             var savedProvider = await _module.InvokeAsync<string?>("loadFromLocalStorage", "mullai_last_provider");
             var savedModel = await _module.InvokeAsync<string?>("loadFromLocalStorage", "mullai_last_model");
 
-            var providerChanged = false;
-            if (!string.IsNullOrEmpty(savedProvider) && _enabledProviders.Any(p => p.Name == savedProvider))
+            if (!string.IsNullOrEmpty(savedProvider))
             {
-                _selectedProvider = savedProvider;
-                UpdateAvailableModels();
-                providerChanged = true;
-            }
+                var provider = _enabledProviders.FirstOrDefault(p => p.Name.Equals(savedProvider, StringComparison.OrdinalIgnoreCase));
+                if (provider != null)
+                {
+                    _selectedProvider = provider.Name;
+                    UpdateAvailableModels();
 
-            if (providerChanged && !string.IsNullOrEmpty(savedModel) && _availableModels.Any(m => m.ModelId == savedModel))
-            {
-                _selectedModel = savedModel;
+                    if (!string.IsNullOrEmpty(savedModel))
+                    {
+                        var model = _availableModels.FirstOrDefault(m => m.ModelId.Equals(savedModel, StringComparison.OrdinalIgnoreCase));
+                        if (model != null)
+                        {
+                            _selectedModel = model.ModelId;
+                        }
+                    }
+                    
+                    await SelectedProviderChanged.InvokeAsync(_selectedProvider);
+                    await SelectedModelChanged.InvokeAsync(_selectedModel);
+                }
             }
 
             // If still no selection, pick defaults
@@ -298,6 +340,8 @@
             {
                 _selectedProvider = _enabledProviders[0].Name;
                 UpdateAvailableModels();
+                await SelectedProviderChanged.InvokeAsync(_selectedProvider);
+                await SelectedModelChanged.InvokeAsync(_selectedModel);
             }
 
             StateHasChanged();
