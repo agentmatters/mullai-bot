@@ -16,7 +16,7 @@ public class LLMRequestLoggingHandler : DelegatingHandler
         _logger.LogInformation("Request: {Method} {Uri}", request.Method, request.RequestUri);
         
         // Log request payload
-        if (true)
+        if (request.Content != null && _logger.IsEnabled(LogLevel.Debug))
         {
             using var stream = new MemoryStream();
             await request.Content.CopyToAsync(stream, null, cancellationToken);
