@@ -1,4 +1,5 @@
 using Mullai.Abstractions.Clients;
+using Mullai.Abstractions.Models;
 using Mullai.CLI.State;
 
 namespace Mullai.CLI.Controllers;
@@ -56,10 +57,14 @@ public class ChatOrchestrator
             var firstUpdate = true;
             await foreach (var update in _mullaiClient.RunStreamingAsync(userInput))
             {
-                if (!string.IsNullOrEmpty(update))
+                if (update is string text && !string.IsNullOrEmpty(text))
                 {
-                    _state.AppendUpdate(update, firstUpdate);
+                    _state.AppendUpdate(text, firstUpdate);
                     if (firstUpdate) firstUpdate = false;
+                }
+                else if (update is MullaiUsage usage)
+                {
+                    // Optionally handle usage in CLI if desired, but for now just resolving the build error
                 }
             }
         }
