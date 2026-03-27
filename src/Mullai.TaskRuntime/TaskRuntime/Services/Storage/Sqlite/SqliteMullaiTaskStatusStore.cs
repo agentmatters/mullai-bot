@@ -1,5 +1,7 @@
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Mullai.Abstractions.Models;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
@@ -20,6 +22,9 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
             max_attempts INTEGER NOT NULL,
             response TEXT,
             error TEXT,
+            input_tokens INTEGER NOT NULL DEFAULT 0,
+            output_tokens INTEGER NOT NULL DEFAULT 0,
+            total_tokens INTEGER NOT NULL DEFAULT 0,
             updated_at_utc TEXT NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_task_status_updated ON task_status(updated_at_utc DESC);
@@ -39,22 +44,42 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
         using var command = connection.CreateCommand();
         command.CommandText = InitSql;
         command.ExecuteNonQuery();
+
+        // Migration: check if columns exist
+        using var checkCommand = connection.CreateCommand();
+        checkCommand.CommandText = "PRAGMA table_info(task_status)";
+        using var reader = checkCommand.ExecuteReader();
+        var hasInputTokens = false;
+        while (reader.Read())
+        {
+            if (reader.GetString(1) == "input_tokens") hasInputTokens = true;
+        }
+        if (!hasInputTokens)
+        {
+            using var migrateCommand = connection.CreateCommand();
+            migrateCommand.CommandText = """
+                ALTER TABLE task_status ADD COLUMN input_tokens INTEGER NOT NULL DEFAULT 0;
+                ALTER TABLE task_status ADD COLUMN output_tokens INTEGER NOT NULL DEFAULT 0;
+                ALTER TABLE task_status ADD COLUMN total_tokens INTEGER NOT NULL DEFAULT 0;
+                """;
+            migrateCommand.ExecuteNonQuery();
+        }
     }
 
     public Task MarkQueuedAsync(MullaiTaskWorkItem workItem, CancellationToken cancellationToken = default)
-        => UpsertAsync(workItem, MullaiTaskState.Queued, null, null, cancellationToken);
+        => UpsertAsync(workItem, MullaiTaskState.Queued, null, null, null, cancellationToken);
 
-    public Task MarkRunningAsync(MullaiTaskWorkItem workItem, string? response = null, CancellationToken cancellationToken = default)
-        => UpsertAsync(workItem, MullaiTaskState.Running, response, null, cancellationToken);
+    public Task MarkRunningAsync(MullaiTaskWorkItem workItem, string? response = null, MullaiUsage? usage = null, CancellationToken cancellationToken = default)
+        => UpsertAsync(workItem, MullaiTaskState.Running, response, null, usage, cancellationToken);
 
     public Task MarkRetryScheduledAsync(MullaiTaskWorkItem workItem, string error, CancellationToken cancellationToken = default)
-        => UpsertAsync(workItem, MullaiTaskState.RetryScheduled, null, error, cancellationToken);
+        => UpsertAsync(workItem, MullaiTaskState.RetryScheduled, null, error, null, cancellationToken);
 
-    public Task MarkSucceededAsync(MullaiTaskWorkItem workItem, string response, CancellationToken cancellationToken = default)
-        => UpsertAsync(workItem, MullaiTaskState.Succeeded, response, null, cancellationToken);
+    public Task MarkSucceededAsync(MullaiTaskWorkItem workItem, string response, MullaiUsage? usage = null, CancellationToken cancellationToken = default)
+        => UpsertAsync(workItem, MullaiTaskState.Succeeded, response, null, usage, cancellationToken);
 
     public Task MarkFailedAsync(MullaiTaskWorkItem workItem, string error, CancellationToken cancellationToken = default)
-        => UpsertAsync(workItem, MullaiTaskState.Failed, null, error, cancellationToken);
+        => UpsertAsync(workItem, MullaiTaskState.Failed, null, error, null, cancellationToken);
 
     public Task<MullaiTaskStatusSnapshot?> GetAsync(string taskId, CancellationToken cancellationToken = default)
     {
@@ -88,6 +113,24 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
         return Task.FromResult<IReadOnlyCollection<MullaiTaskStatusSnapshot>>(results);
     }
 
+    public Task<MullaiUsage> GetTotalUsageAsync(string sessionKey, CancellationToken cancellationToken = default)
+    {
+        using var connection = SqliteStoreHelper.CreateConnection();
+        using var command = connection.CreateCommand();
+        command.CommandText = "SELECT SUM(input_tokens), SUM(output_tokens), SUM(total_tokens) FROM task_status WHERE session_key = $sessionKey";
+        command.Parameters.AddWithValue("$sessionKey", sessionKey);
+        using var reader = command.ExecuteReader();
+        if (!reader.Read() || reader.IsDBNull(0))
+        {
+            return Task.FromResult(new MullaiUsage(0, 0, 0));
+        }
+
+        return Task.FromResult(new MullaiUsage(
+            reader.GetInt64(0),
+            reader.GetInt64(1),
+            reader.GetInt64(2)));
+    }
+
     private static MullaiTaskStatusSnapshot ReadSnapshot(SqliteDataReader reader)
     {
         return new MullaiTaskStatusSnapshot
@@ -112,6 +155,9 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
             Error = reader.IsDBNull(reader.GetOrdinal("error"))
                 ? null
                 : reader.GetString(reader.GetOrdinal("error")),
+            InputTokenCount = reader.GetInt64(reader.GetOrdinal("input_tokens")),
+            OutputTokenCount = reader.GetInt64(reader.GetOrdinal("output_tokens")),
+            TotalTokenCount = reader.GetInt64(reader.GetOrdinal("total_tokens")),
             UpdatedAtUtc = DateTimeOffset.Parse(reader.GetString(reader.GetOrdinal("updated_at_utc")))
         };
     }
@@ -121,6 +167,7 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
         MullaiTaskState state,
         string? response,
         string? error,
+        MullaiUsage? usage,
         CancellationToken cancellationToken)
     {
         string? workflowId = null;
@@ -139,6 +186,9 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
                 max_attempts,
                 response,
                 error,
+                input_tokens,
+                output_tokens,
+                total_tokens,
                 updated_at_utc
             ) VALUES (
                 $taskId,
@@ -151,6 +201,9 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
                 $maxAttempts,
                 $response,
                 $error,
+                $inputTokens,
+                $outputTokens,
+                $totalTokens,
                 $updatedAtUtc
             )
             ON CONFLICT(task_id) DO UPDATE SET
@@ -163,6 +216,9 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
                 max_attempts = excluded.max_attempts,
                 response = excluded.response,
                 error = excluded.error,
+                input_tokens = excluded.input_tokens,
+                output_tokens = excluded.output_tokens,
+                total_tokens = excluded.total_tokens,
                 updated_at_utc = excluded.updated_at_utc;
             """;
         command.Parameters.AddWithValue("$taskId", workItem.TaskId);
@@ -175,6 +231,9 @@ public sealed class SqliteMullaiTaskStatusStore : IMullaiTaskStatusStore
         command.Parameters.AddWithValue("$maxAttempts", workItem.MaxAttempts);
         command.Parameters.AddWithValue("$response", (object?)response ?? DBNull.Value);
         command.Parameters.AddWithValue("$error", (object?)error ?? DBNull.Value);
+        command.Parameters.AddWithValue("$inputTokens", usage?.InputTokenCount ?? 0);
+        command.Parameters.AddWithValue("$outputTokens", usage?.OutputTokenCount ?? 0);
+        command.Parameters.AddWithValue("$totalTokens", usage?.TotalTokenCount ?? 0);
         command.Parameters.AddWithValue("$updatedAtUtc", DateTimeOffset.UtcNow.ToString("O"));
         command.ExecuteNonQuery();
 

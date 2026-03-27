@@ -79,6 +79,28 @@
                 }
             </div>
         </div>
+
+        @if (InputTokenCount > 0 || OutputTokenCount > 0)
+        {
+            <div class="usage-stats">
+                <div class="usage-item" title="Input tokens">
+                    <svg class="usage-icon up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 11l-5-5-5 5M17 18l-5-5-5 5"/></svg>
+                    <span>@InputTokenCount</span>
+                </div>
+                <div class="usage-item" title="Output tokens">
+                    <svg class="usage-icon down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+                    <span>@OutputTokenCount</span>
+                </div>
+                @if (ActiveModel != null)
+                {
+                    <div class="usage-item context-usage" title="Context Usage: @(ContextUsagePercent.ToString("F1"))% (@(InputTokenCount + OutputTokenCount) / @(ActiveModel.ContextWindow > 0 ? ActiveModel.ContextWindow.ToString() : "Unknown") tokens)">
+                         <div class="context-progress-mini">
+                             <div class="context-progress-fill" style="width: @(ContextUsagePercent.ToString("F1"))%; background-color: @GetProgressColor(); --bar-color: @GetProgressColor();"></div>
+                         </div>
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     @if (_showProviderDropdown || _showModelDropdown)
@@ -120,6 +142,8 @@
     [Parameter] public EventCallback<string> SelectedProviderChanged { get; set; }
     [Parameter] public string SelectedModel { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> SelectedModelChanged { get; set; }
+    [Parameter] public long InputTokenCount { get; set; }
+    [Parameter] public long OutputTokenCount { get; set; }
 
     private List<MullaiProviderDescriptor> _enabledProviders = [];
     private List<MullaiModelDescriptor> _availableModels = [];
@@ -141,6 +165,29 @@
             ? _availableModels 
             : _availableModels.Where(m => m.ModelName.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase) 
                                        || m.ModelId.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase));
+
+    private MullaiModelDescriptor? ActiveModel => 
+        _availableModels.FirstOrDefault(m => string.Equals(m.ModelId, _selectedModel, StringComparison.OrdinalIgnoreCase));
+
+    private double ContextUsagePercent
+    {
+        get
+        {
+            var model = ActiveModel;
+            if (model == null || model.ContextWindow <= 0) return 0;
+            var total = InputTokenCount + OutputTokenCount;
+            // Cap at 100%
+            return Math.Min(100.0, (double)total / model.ContextWindow * 100.0);
+        }
+    }
+
+    private string GetProgressColor()
+    {
+        var pct = ContextUsagePercent;
+        if (pct < 50) return "var(--accent)";
+        if (pct < 85) return "#f59e0b"; // Amber
+        return "#ef4444"; // Red
+    }
 
     private ElementReference _textAreaRef;
     private IJSObjectReference? _module;

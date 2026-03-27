@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Mullai.Abstractions.Models;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 
@@ -14,9 +15,9 @@ public class InMemoryMullaiTaskStatusStore : IMullaiTaskStatusStore
         return Task.CompletedTask;
     }
 
-    public Task MarkRunningAsync(MullaiTaskWorkItem workItem, string? response = null, CancellationToken cancellationToken = default)
+    public Task MarkRunningAsync(MullaiTaskWorkItem workItem, string? response = null, MullaiUsage? usage = null, CancellationToken cancellationToken = default)
     {
-        Upsert(workItem, MullaiTaskState.Running, response: response);
+        Upsert(workItem, MullaiTaskState.Running, response: response, usage: usage);
         return Task.CompletedTask;
     }
 
@@ -26,9 +27,9 @@ public class InMemoryMullaiTaskStatusStore : IMullaiTaskStatusStore
         return Task.CompletedTask;
     }
 
-    public Task MarkSucceededAsync(MullaiTaskWorkItem workItem, string response, CancellationToken cancellationToken = default)
+    public Task MarkSucceededAsync(MullaiTaskWorkItem workItem, string response, MullaiUsage? usage = null, CancellationToken cancellationToken = default)
     {
-        Upsert(workItem, MullaiTaskState.Succeeded, response: response);
+        Upsert(workItem, MullaiTaskState.Succeeded, response: response, usage: usage);
         return Task.CompletedTask;
     }
 
@@ -55,11 +56,24 @@ public class InMemoryMullaiTaskStatusStore : IMullaiTaskStatusStore
         return Task.FromResult<IReadOnlyCollection<MullaiTaskStatusSnapshot>>(result);
     }
 
+    public Task<MullaiUsage> GetTotalUsageAsync(string sessionKey, CancellationToken cancellationToken = default)
+    {
+        var snapshots = _status.Values
+            .Where(s => string.Equals(s.SessionKey, sessionKey, StringComparison.Ordinal));
+
+        var input = snapshots.Sum(s => s.InputTokenCount);
+        var output = snapshots.Sum(s => s.OutputTokenCount);
+        var total = snapshots.Sum(s => s.TotalTokenCount);
+
+        return Task.FromResult(new MullaiUsage(input, output, total));
+    }
+
     private void Upsert(
         MullaiTaskWorkItem workItem,
         MullaiTaskState state,
         string? response = null,
-        string? error = null)
+        string? error = null,
+        MullaiUsage? usage = null)
     {
         string? workflowId = null;
         workItem.Metadata?.TryGetValue("workflowId", out workflowId);
@@ -75,6 +89,9 @@ public class InMemoryMullaiTaskStatusStore : IMullaiTaskStatusStore
             MaxAttempts = workItem.MaxAttempts,
             Response = response,
             Error = error,
+            InputTokenCount = usage?.InputTokenCount ?? 0,
+            OutputTokenCount = usage?.OutputTokenCount ?? 0,
+            TotalTokenCount = usage?.TotalTokenCount ?? 0,
             UpdatedAtUtc = DateTimeOffset.UtcNow
         };
 

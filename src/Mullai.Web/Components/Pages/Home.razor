@@ -74,6 +74,8 @@
         <ChatComposer @bind-Value="_draft" 
                       @bind-SelectedProvider="_selectedProvider"
                       @bind-SelectedModel="_selectedModel"
+                      InputTokenCount="_inputTokens"
+                      OutputTokenCount="_outputTokens"
                       OnSubmit="HandleSubmitAsync" />
     </div>
 </div>
@@ -87,6 +89,8 @@
     private string _draft = string.Empty;
     private string _selectedProvider = string.Empty;
     private string _selectedModel = string.Empty;
+    private long _inputTokens;
+    private long _outputTokens;
     private long _lastToolCallSequence;
     private CancellationTokenSource? _pollingCts;
     private Task? _pollingTask;
@@ -264,6 +268,12 @@
 
             if (UpdatePendingResponse(pending, update.Response, isFinal: false, isError: false))
             {
+                if (update.CumulativeInputTokenCount > 0 || update.CumulativeOutputTokenCount > 0)
+                {
+                    _inputTokens = update.CumulativeInputTokenCount;
+                    _outputTokens = update.CumulativeOutputTokenCount;
+                }
+                
                 await InvokeAsync(async () => {
                     StateHasChanged();
                     await ScrollToBottomAsync();
@@ -311,6 +321,14 @@
                 finalContent,
                 isFinal: true,
                 isError: status.State != MullaiTaskState.Succeeded);
+
+            var totalUsage = await StatusStore.GetTotalUsageAsync(_sessionKey, cancellationToken);
+            if (totalUsage.InputTokenCount > 0 || totalUsage.OutputTokenCount > 0)
+            {
+                _inputTokens = totalUsage.InputTokenCount;
+                _outputTokens = totalUsage.OutputTokenCount;
+                changed = true;
+            }
 
             _timeline.Remove(pending.ThoughtEntry);
             _pendingAssistantMessages.Remove(pair.Key);

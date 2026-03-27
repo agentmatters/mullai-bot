@@ -99,11 +99,11 @@ public class MullaiTaskWorkerService : BackgroundService
                 },
                 cancellationToken).ConfigureAwait(false);
             using var scope = MullaiTaskExecutionContext.BeginScope(workItem.TaskId, workItem.SessionKey);
-            var response = await _executor.ExecuteAsync(
+            var result = await _executor.ExecuteAsync(
                 workItem,
                 async responseSoFar =>
                 {
-                    await _statusStore.MarkRunningAsync(workItem, responseSoFar, cancellationToken).ConfigureAwait(false);
+                    await _statusStore.MarkRunningAsync(workItem, responseSoFar, cancellationToken: cancellationToken).ConfigureAwait(false);
                     await AppendRunEventAsync(
                         workflowId,
                         workItem.TaskId,
@@ -113,26 +113,51 @@ public class MullaiTaskWorkerService : BackgroundService
                             response = responseSoFar
                         },
                         cancellationToken).ConfigureAwait(false);
+                    var totalUsage = await _statusStore.GetTotalUsageAsync(workItem.SessionKey, cancellationToken).ConfigureAwait(false);
                     var feedItem = new TaskResponseFeedItem
                     {
                         TaskId = workItem.TaskId,
                         SessionKey = workItem.SessionKey,
-                        Response = responseSoFar
+                        Response = responseSoFar,
+                        CumulativeInputTokenCount = totalUsage.InputTokenCount,
+                        CumulativeOutputTokenCount = totalUsage.OutputTokenCount,
+                        CumulativeTotalTokenCount = totalUsage.TotalTokenCount
                     };
                     await _responseChannel.Writer.WriteAsync(feedItem, cancellationToken).ConfigureAwait(false);
                 },
                 cancellationToken).ConfigureAwait(false);
-            await _statusStore.MarkSucceededAsync(workItem, response, cancellationToken).ConfigureAwait(false);
+            
+            await _statusStore.MarkSucceededAsync(workItem, result.Response, result.Usage, cancellationToken).ConfigureAwait(false);
             await AppendRunEventAsync(
                 workflowId,
                 workItem.TaskId,
                 "response_final",
                 new
                 {
-                    response
+                    response = result.Response,
+                    usage = result.Usage
                 },
                 cancellationToken).ConfigureAwait(false);
-            await DispatchWorkflowOutputsAsync(workItem, response, cancellationToken).ConfigureAwait(false);
+            
+            if (result.Usage != null)
+            {
+                var totalUsageAfterSuccess = await _statusStore.GetTotalUsageAsync(workItem.SessionKey, cancellationToken).ConfigureAwait(false);
+                var finalFeedItem = new TaskResponseFeedItem
+                {
+                    TaskId = workItem.TaskId,
+                    SessionKey = workItem.SessionKey,
+                    Response = result.Response,
+                    InputTokenCount = result.Usage.InputTokenCount,
+                    OutputTokenCount = result.Usage.OutputTokenCount,
+                    TotalTokenCount = result.Usage.TotalTokenCount,
+                    CumulativeInputTokenCount = totalUsageAfterSuccess.InputTokenCount,
+                    CumulativeOutputTokenCount = totalUsageAfterSuccess.OutputTokenCount,
+                    CumulativeTotalTokenCount = totalUsageAfterSuccess.TotalTokenCount
+                };
+                await _responseChannel.Writer.WriteAsync(finalFeedItem, cancellationToken).ConfigureAwait(false);
+            }
+
+            await DispatchWorkflowOutputsAsync(workItem, result.Response, cancellationToken).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

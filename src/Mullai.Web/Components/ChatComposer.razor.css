@@ -15,6 +15,29 @@
     padding: 0.75rem 1rem;
     box-shadow: var(--shadow-lg);
     transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+}
+
+.context-progress-mini {
+    width: 60px;
+    height: 6px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.context-progress-fill {
+    height: 100%;
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.6s ease;
+    box-shadow: 0 0 8px var(--bar-color);
+    border-radius: 999px;
+}
+
+.context-usage {
+    margin-left: 0.5rem;
 }
 
 .composer-box:focus-within {
@@ -273,4 +296,43 @@
     .composer-container {
         padding: 1rem;
     }
+}
+
+.usage-stats {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-left: auto;
+    padding: 0 1rem;
+    border-left: 1px solid var(--border);
+    animation: fadeIn 0.3s ease-out;
+}
+
+.usage-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--subtle);
+    font-family: var(--font-mono);
+}
+
+.usage-icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 2.5px;
+}
+
+.usage-icon.down {
+    color: var(--accent);
+}
+
+.usage-icon.up {
+    color: #10b981; /* Emerald-500 for output */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
 }

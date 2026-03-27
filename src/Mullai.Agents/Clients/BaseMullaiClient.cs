@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Microsoft.Agents.AI;
 using Mullai.Abstractions.Clients;
+using Mullai.Abstractions.Models;
 
 namespace Mullai.Agents.Clients;
 
@@ -48,7 +49,7 @@ public abstract class BaseMullaiClient : IMullaiClient
         }
     }
 
-    public async IAsyncEnumerable<string> RunStreamingAsync(
+    public async IAsyncEnumerable<object> RunStreamingAsync(
         string userInput,
         string? provider = null,
         string? model = null,
@@ -64,10 +65,17 @@ public abstract class BaseMullaiClient : IMullaiClient
 
             await foreach (var update in agent.RunStreamingAsync(userInput, session, provider, model, cancellationToken))
             {
-                var text = update?.ToString();
-                if (!string.IsNullOrEmpty(text))
+                if (update is string || update is MullaiUsage)
                 {
-                    yield return text;
+                    yield return update;
+                }
+                else
+                {
+                    var text = update?.ToString();
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        yield return text;
+                    }
                 }
             }
         }

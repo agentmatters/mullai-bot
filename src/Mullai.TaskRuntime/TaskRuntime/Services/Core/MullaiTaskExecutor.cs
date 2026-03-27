@@ -1,4 +1,5 @@
 using System.Text;
+using Mullai.Abstractions.Models;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 
@@ -13,13 +14,14 @@ public class MullaiTaskExecutor : IMullaiTaskExecutor
         _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
     }
 
-    public async Task<string> ExecuteAsync(
+    public async Task<MullaiTaskExecutionResult> ExecuteAsync(
         MullaiTaskWorkItem workItem,
         Func<string, Task>? onResponseFragment = null,
         CancellationToken cancellationToken = default)
     {
         var client = _clientFactory.GetClient(workItem.SessionKey, workItem.AgentName);
         var responseAccumulator = new StringBuilder();
+        MullaiUsage? finalUsage = null;
 
         string? provider = null;
         string? model = null;
@@ -28,12 +30,19 @@ public class MullaiTaskExecutor : IMullaiTaskExecutor
 
         await foreach (var chunk in client.RunStreamingAsync(workItem.Prompt, provider, model, cancellationToken))
         {
-            if (string.IsNullOrEmpty(chunk))
+            if (chunk is MullaiUsage usage)
+            {
+                finalUsage = usage;
+                continue;
+            }
+
+            var text = chunk?.ToString();
+            if (string.IsNullOrEmpty(text))
             {
                 continue;
             }
 
-            responseAccumulator.Append(chunk);
+            responseAccumulator.Append(text);
 
             if (onResponseFragment is not null)
             {
@@ -41,6 +50,6 @@ public class MullaiTaskExecutor : IMullaiTaskExecutor
             }
         }
 
-        return responseAccumulator.ToString();
+        return new MullaiTaskExecutionResult(responseAccumulator.ToString(), finalUsage);
     }
 }

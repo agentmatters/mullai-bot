@@ -2,6 +2,7 @@ using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Mullai.Abstractions;
 using Mullai.Abstractions.Configuration;
+using Mullai.Abstractions.Models;
 
 namespace Mullai.Agents;
 
@@ -45,10 +46,12 @@ public class MullaiAgent
             MullaiRequestContext.Current = new MullaiRequestInfo { Provider = provider, Model = model };
         }
 
+        List<AgentResponseUpdate> updates = [];
         try
         {
             await foreach (var update in _agent.RunStreamingAsync(userInput, session, cancellationToken: cancellationToken))
             {
+                updates.Add(update);
                 yield return update;
             }
         }
@@ -58,6 +61,19 @@ public class MullaiAgent
             if (provider != null || model != null)
             {
                 MullaiRequestContext.Current = null;
+            }
+        }
+
+        if (updates.Any())
+        {
+            AgentResponse collectedResponseFromStreaming = updates.ToAgentResponse();
+            if (collectedResponseFromStreaming.Usage != null)
+            {
+                var usage = new MullaiUsage(
+                    collectedResponseFromStreaming.Usage.InputTokenCount ?? 0,
+                    collectedResponseFromStreaming.Usage.OutputTokenCount ?? 0,
+                    collectedResponseFromStreaming.Usage.TotalTokenCount ?? 0);
+                yield return usage;
             }
         }
     }
@@ -71,7 +87,8 @@ public class MullaiAgent
 
         try
         {
-            return await _agent.RunAsync(userInput, session, cancellationToken: cancellationToken);
+            var response = await _agent.RunAsync(userInput, session, cancellationToken: cancellationToken);
+            return response;
         }
         finally
         {
