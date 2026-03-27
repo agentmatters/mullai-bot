@@ -21,7 +21,6 @@ builder.Host.UseSystemd();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddMullaiTaskRuntime(builder.Configuration);
-builder.Services.AddSingleton<HttpClient>();
 builder.Services.AddSingleton<IMullaiConfigurationManager, MullaiConfigurationManager>();
 
 var app = builder.Build();
