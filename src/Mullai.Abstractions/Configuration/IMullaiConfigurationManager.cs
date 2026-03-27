@@ -18,6 +18,7 @@ public interface IMullaiConfigurationManager : ICredentialStorage
     
     McpConfiguration GetMcpConfiguration();
     void SaveMcpConfiguration(McpConfiguration configuration);
+    void DeleteMcpServer(string serverName);
 }
 
 public class CustomProviderDescriptor

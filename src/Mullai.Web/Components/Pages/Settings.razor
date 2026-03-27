@@ -233,6 +233,123 @@
                 </div>
             </div>
         </section>
+
+        <section class="card" style="margin-top: 2rem;">
+            <div class="card-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1.5rem;">
+                <div style="flex: 1; min-width: 200px;">
+                    <div class="card-title">MCP Servers</div>
+                    <div class="card-subtitle" style="margin-top: 0.25rem;">Manage Model Context Protocol (MCP) servers to provide additional tools to Mullai.</div>
+                </div>
+                <div class="panel-actions">
+                    <button class="btn btn-sm btn-primary" type="button" @onclick="ToggleMcpAddForm">
+                        @(_showMcpAddForm ? "Cancel" : "Add MCP Server")
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                @if (_showMcpAddForm)
+                {
+                    <div class="key-editor" style="margin-bottom: 2rem; border: 1px solid var(--border); padding: 1.5rem; border-radius: 8px;">
+                        <div class="key-editor-header">
+                            <div class="key-editor-title">@(_editingMcpName == null ? "Add New" : "Edit") MCP Server</div>
+                        </div>
+                        <div class="key-editor-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label class="label">Server Name</label>
+                                <input class="input" placeholder="e.g. MyLocalTools" @bind="_mcpNameDraft" />
+                            </div>
+                            <div class="form-group">
+                                <label class="label">Connection Type</label>
+                                <select class="input" @bind="_mcpTypeDraft">
+                                    <option value="stdio">stdio (Local Command)</option>
+                                    <option value="sse">sse (Remote URL)</option>
+                                </select>
+                            </div>
+                            @if (_mcpTypeDraft == "stdio")
+                            {
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label class="label">Executable Command</label>
+                                    <input class="input" placeholder="e.g. node, python, /path/to/binary" @bind="_mcpCommandDraft" />
+                                </div>
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label class="label">Arguments (comma separated)</label>
+                                    <input class="input" placeholder="e.g. server.js, --quiet" @bind="_mcpArgsDraft" />
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="form-group" style="grid-column: span 2;">
+                                    <label class="label">Server URL</label>
+                                    <input class="input" placeholder="https://example.com/mcp" @bind="_mcpUrlDraft" />
+                                </div>
+                            }
+                            <div style="grid-column: span 2; display: flex; gap: 0.5rem; margin-top: 1rem;">
+                                <button class="btn btn-primary" type="button" @onclick="SaveMcpServer" disabled="@string.IsNullOrWhiteSpace(_mcpNameDraft)">Save Server</button>
+                                <button class="btn" type="button" @onclick="ToggleMcpAddForm">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @if (_mcpConfig.Servers.Count == 0)
+                {
+                    <div class="panel-empty">
+                        <p class="card-subtitle">No MCP servers configured. Add one to extend Mullai's capabilities.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="models-scroll" style="max-height: none;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">On</th>
+                                    <th>Server</th>
+                                    <th>Type</th>
+                                    <th>Details</th>
+                                    <th class="text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var server in _mcpConfig.Servers)
+                                {
+                                    <tr>
+                                        <td>
+                                            <label class="toggle">
+                                                <input type="checkbox"
+                                                       checked="@server.Enabled"
+                                                       @onchange="e => OnMcpToggleChanged(server, e)" />
+                                                <span class="toggle-ui"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="model-name">@server.Name</div>
+                                        </td>
+                                        <td>
+                                            <span class="pill">@server.Type</span>
+                                        </td>
+                                        <td class="mono" style="font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            @if (server.Type == "stdio")
+                                            {
+                                                <span>@server.Command @(string.Join(" ", server.Args))</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@server.Url</span>
+                                            }
+                                        </td>
+                                        <td class="text-right">
+                                            <button class="btn btn-sm" type="button" @onclick="() => EditMcpServer(server)">Edit</button>
+                                            <button class="btn btn-sm" style="color: #dc2626" type="button" @onclick="() => DeleteMcpServer(server.Name)">Delete</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </section>
     }
 </div>
 
@@ -258,6 +375,15 @@
     private string _newModelId = string.Empty;
     private string _newModelName = string.Empty;
 
+    private McpConfiguration _mcpConfig = new();
+    private bool _showMcpAddForm;
+    private string? _editingMcpName;
+    private string _mcpNameDraft = string.Empty;
+    private string _mcpTypeDraft = "stdio";
+    private string _mcpCommandDraft = string.Empty;
+    private string _mcpArgsDraft = string.Empty;
+    private string _mcpUrlDraft = string.Empty;
+
     protected override void OnInitialized()
     {
         LoadAll();
@@ -267,6 +393,7 @@
     {
         _providersConfig = ConfigManager.GetProvidersConfig();
         _providers = _providersConfig.Providers.Select(p => new ProviderVm(p, ConfigManager)).ToList();
+        _mcpConfig = ConfigManager.GetMcpConfiguration();
 
         _selectedProviderName ??= _providers.OrderBy(p => p.Provider.Priority).ThenBy(p => p.Provider.Name).FirstOrDefault()?.Provider.Name;
         _loading = false;
@@ -521,6 +648,75 @@
         _providers = _providersConfig.Providers.Select(p => new ProviderVm(p, ConfigManager)).ToList();
         CancelApiKeyEdit();
         SetStatus($"Deleted API key for {providerName}.", NoticeKind.Success);
+    }
+
+    private void ToggleMcpAddForm()
+    {
+        _showMcpAddForm = !_showMcpAddForm;
+        if (!_showMcpAddForm)
+        {
+            _editingMcpName = null;
+            ResetMcpDrafts();
+        }
+    }
+
+    private void ResetMcpDrafts()
+    {
+        _mcpNameDraft = "";
+        _mcpTypeDraft = "stdio";
+        _mcpCommandDraft = "";
+        _mcpArgsDraft = "";
+        _mcpUrlDraft = "";
+    }
+
+    private void EditMcpServer(McpServerDescriptor server)
+    {
+        _editingMcpName = server.Name;
+        _mcpNameDraft = server.Name;
+        _mcpTypeDraft = server.Type;
+        _mcpCommandDraft = server.Command;
+        _mcpArgsDraft = string.Join(", ", server.Args);
+        _mcpUrlDraft = server.Url;
+        _showMcpAddForm = true;
+    }
+
+    private void SaveMcpServer()
+    {
+        if (string.IsNullOrWhiteSpace(_mcpNameDraft)) return;
+
+        var server = _mcpConfig.Servers.FirstOrDefault(s => s.Name.Equals(_editingMcpName ?? _mcpNameDraft, StringComparison.OrdinalIgnoreCase));
+        if (server == null)
+        {
+            server = new McpServerDescriptor { Name = _mcpNameDraft };
+            _mcpConfig.Servers.Add(server);
+        }
+
+        server.Name = _mcpNameDraft;
+        server.Type = _mcpTypeDraft;
+        server.Command = _mcpCommandDraft;
+        server.Args = _mcpArgsDraft.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        server.Url = _mcpUrlDraft;
+
+        ConfigManager.SaveMcpConfiguration(_mcpConfig);
+        SetStatus($"Saved MCP server {server.Name}.", NoticeKind.Success);
+        
+        _showMcpAddForm = false;
+        _editingMcpName = null;
+        ResetMcpDrafts();
+    }
+
+    private void DeleteMcpServer(string name)
+    {
+        ConfigManager.DeleteMcpServer(name);
+        _mcpConfig = ConfigManager.GetMcpConfiguration();
+        SetStatus($"Deleted MCP server {name}.", NoticeKind.Success);
+    }
+
+    private void OnMcpToggleChanged(McpServerDescriptor server, ChangeEventArgs e)
+    {
+        server.Enabled = ParseCheckbox(e.Value);
+        ConfigManager.SaveMcpConfiguration(_mcpConfig);
+        SetStatus($"{server.Name} {(server.Enabled ? "enabled" : "disabled")}.", NoticeKind.Success);
     }
 
     private static bool ParseCheckbox(object? value)

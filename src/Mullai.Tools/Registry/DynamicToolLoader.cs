@@ -13,6 +13,8 @@ using Mullai.Tools.WorkflowTool;
 using Mullai.Tools.WorkflowStateTool;
 using Mullai.Tools.RestApiTool;
 using Mullai.Tools.HtmlToMarkdownTool;
+using Mullai.Abstractions.Configuration;
+using ModelContextProtocol.Client;
 
 namespace Mullai.Tools.Registry;
 
@@ -22,13 +24,19 @@ public class DynamicToolLoader
     private readonly IServiceProvider _serviceProvider;
     private readonly IList<AITool> _sessionTools;
     private readonly ILogger<DynamicToolLoader> _logger;
+    private readonly IMullaiConfigurationManager _configManager;
     private readonly HashSet<string> _loadedToolGroups = new(StringComparer.OrdinalIgnoreCase);
 
-    public DynamicToolLoader(IServiceProvider serviceProvider, IList<AITool> sessionTools, ILogger<DynamicToolLoader> logger)
+    public DynamicToolLoader(
+        IServiceProvider serviceProvider, 
+        IList<AITool> sessionTools, 
+        ILogger<DynamicToolLoader> logger,
+        IMullaiConfigurationManager configManager)
     {
         _serviceProvider = serviceProvider;
         _sessionTools = sessionTools;
         _logger = logger;
+        _configManager = configManager;
         
         // Track initially loaded tool groups based on assumptions we make in AgentFactory
         _loadedToolGroups.Add("FileSystemTool");
@@ -53,7 +61,11 @@ public class DynamicToolLoader
             "HtmlToMarkdownTool"
         };
         
-        return allTools;
+        var mcpServers = _configManager.GetMcpConfiguration().Servers
+            .Where(s => s.Enabled)
+            .Select(s => $"MCP:{s.Name}");
+        
+        return allTools.Concat(mcpServers);
     }
 
     [Description("Gets the list of tools that are currently loaded and active in the session.")]
@@ -62,8 +74,8 @@ public class DynamicToolLoader
         return _loadedToolGroups;
     }
 
-    [Description("Loads a specific tool group (e.g., 'WeatherTool') into the current session so it can be used in subsequent requests.")]
-    public string LoadToolGroup([Description("The exact name of the tool group to load, as retrieved from GetAvailableTools.")] string toolGroupName)
+    [Description("Loads a specific tool group (e.g., 'WeatherTool' or 'MCP:MyServer') into the current session so it can be used in subsequent requests.")]
+    public async Task<string> LoadToolGroup([Description("The exact name of the tool group to load, as retrieved from GetAvailableTools.")] string toolGroupName)
     {
         if (string.IsNullOrWhiteSpace(toolGroupName))
         {
@@ -92,6 +104,7 @@ public class DynamicToolLoader
                 "WorkflowStateTool" => _serviceProvider.GetRequiredService<WorkflowStateTool.WorkflowStateTool>().AsAITools(),
                 "RestApiTool" => _serviceProvider.GetRequiredService<RestApiTool.RestApiTool>().AsAITools(),
                 "HtmlToMarkdownTool" => _serviceProvider.GetRequiredService<HtmlToMarkdownTool.HtmlToMarkdownTool>().AsAITools(),
+                _ when toolGroupName.StartsWith("MCP:", StringComparison.OrdinalIgnoreCase) => await LoadMcpToolsAsync(toolGroupName[4..]),
                 _ => Array.Empty<AITool>()
             };
         }
@@ -115,6 +128,48 @@ public class DynamicToolLoader
         _logger.LogInformation("Successfully loaded tool group {ToolGroupName} into session", toolGroupName);
 
         return $"Successfully loaded {toolGroupName}. The functions from this tool group are now available for you to call.";
+    }
+
+    private async Task<IEnumerable<AITool>> LoadMcpToolsAsync(string serverName)
+    {
+        var server = _configManager.GetMcpConfiguration().Servers
+            .FirstOrDefault(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase));
+
+        if (server == null)
+        {
+            _logger.LogWarning("MCP Server {ServerName} not found in configuration", serverName);
+            return Array.Empty<AITool>();
+        }
+
+        try
+        {
+            McpClient mcpClient;
+            if (server.Type == "stdio")
+            {
+                mcpClient = await McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions
+                {
+                    Command = server.Command,
+                    Arguments = server.Args
+                }));
+            }
+            else
+            {
+                mcpClient = await McpClient.CreateAsync(new HttpClientTransport(new HttpClientTransportOptions
+                {
+                    TransportMode = HttpTransportMode.StreamableHttp,
+                    Endpoint = new Uri(server.Url)
+                }));
+            }
+
+            var tools = await mcpClient.ListToolsAsync();
+            _logger.LogInformation("Successfully loaded {Count} tools from MCP server {ServerName}", tools.Count, serverName);
+            return tools.Cast<AITool>();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load tools from MCP server {ServerName}", serverName);
+            throw; // Will be caught by the caller
+        }
     }
 
     public IEnumerable<AITool> AsAITools()

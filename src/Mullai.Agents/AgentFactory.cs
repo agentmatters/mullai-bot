@@ -3,6 +3,7 @@ using Microsoft.Extensions.AI;
 using Mullai.Tools.Registry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Mullai.Abstractions.Configuration;
 using Mullai.Agents.Agents;
 using Mullai.Memory.SystemContext;
 using Mullai.Tools.WeatherTool;
@@ -37,7 +38,7 @@ public class AgentFactory
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
     
-    public MullaiAgent GetAgent(string agentName)
+    public async Task<MullaiAgent> GetAgent(string agentName)
     {
         AIAgent agent;
         var chatClient = _serviceProvider.GetRequiredService<IChatClient>();
@@ -56,13 +57,14 @@ public class AgentFactory
         {
             case "Assistant":
                 var assistant = new Assistant();
+                var configManager = _serviceProvider.GetRequiredService<IMullaiConfigurationManager>();
                 
                 agentTools = new List<AITool>();
                 agentTools.AddRange(_serviceProvider.GetRequiredService<FileSystemTool>().AsAITools());
                 agentTools.AddRange(_serviceProvider.GetRequiredService<BashTool>().AsAITools());
 
                 var dynamicLoaderLogger = _serviceProvider.GetRequiredService<ILogger<DynamicToolLoader>>();
-                var dynamicLoader = new DynamicToolLoader(_serviceProvider, agentTools, dynamicLoaderLogger);
+                var dynamicLoader = new DynamicToolLoader(_serviceProvider, agentTools, dynamicLoaderLogger, configManager);
                 agentTools.AddRange(dynamicLoader.AsAITools());
 
                 var functionCallingMiddleware = _serviceProvider.GetRequiredService<FunctionCallingMiddleware>();

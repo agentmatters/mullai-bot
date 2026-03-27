@@ -40,7 +40,7 @@ public abstract class BaseMullaiClient : IMullaiClient
                 return;
             }
 
-            _agent = _agentFactory.GetAgent(_agentName);
+            _agent = await _agentFactory.GetAgent(_agentName);
             _session = await _agent.CreateSessionAsync(cancellationToken).ConfigureAwait(false);
         }
         finally

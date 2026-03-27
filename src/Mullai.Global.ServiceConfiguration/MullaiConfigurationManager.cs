@@ -146,6 +146,14 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         SaveSettings();
     }
 
+    public void DeleteMcpServer(string serverName)
+    {
+        if (_settings.Mcp.Servers.RemoveAll(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase)) > 0)
+        {
+            SaveSettings();
+        }
+    }
+
     private void Load()
     {
         if (!Directory.Exists(_configDir))
