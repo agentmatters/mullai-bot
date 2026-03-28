@@ -1,4 +1,6 @@
 using System.ComponentModel;
+using Mullai.Abstractions.Configuration;
+
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
@@ -11,6 +13,8 @@ using ModelContextProtocol;
 namespace Mullai.MCP.SerpApi.Tools;
 
 [McpServerToolType]
+[McpConfigurationRequirement("SerpApiKey", "SerpAPI API Key", isSecret: true, HelpUrl = "https://serpapi.com/manage-api-key")]
+
 public sealed class SerpApiTools
 {
     private readonly IConfiguration _configuration;
@@ -32,13 +36,18 @@ public sealed class SerpApiTools
     public async Task<string> GoogleSearch(
         HttpClient client,
         [Description("Search query")] 
-        string query,
-        [Description("SerpAPI API key")] 
-        string apiKey)
+        string query)
     {
         try
         {
+            var apiKey = _configuration["SerpApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new McpException("SerpApiKey is not configured. Please set it in Settings.");
+            }
+
             _logger.LogInformation("Executing Google Search for: {Query}", query);
+
 
             var searchParameters = new Dictionary<string, string>
             {
@@ -71,14 +80,19 @@ public sealed class SerpApiTools
         HttpClient client,
         [Description("Search query for images")] 
         string query,
-        [Description("SerpAPI API key")] 
-        string apiKey,
         [Description("Number of results to return"), DefaultValue(10)]
         int numResults = 10)
     {
         try
         {
+            var apiKey = _configuration["SerpApiKey"];
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                throw new McpException("SerpApiKey is not configured. Please set it in Settings.");
+            }
+
             _logger.LogInformation("Executing Google Image Search for: {Query}", query);
+
 
             var searchParameters = new Dictionary<string, string>
             {

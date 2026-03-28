@@ -22,8 +22,11 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
     private const string EncryptionPrefix = "enc:";
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    public MullaiConfigurationManager()
+    private readonly IBuiltInMcpProvider? _builtInMcpProvider;
+
+    public MullaiConfigurationManager(IBuiltInMcpProvider? builtInMcpProvider = null)
     {
+        _builtInMcpProvider = builtInMcpProvider;
         var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         _configDir = Path.Combine(homeDir, ".mullai");
         _credentialsPath = Path.Combine(_configDir, "credentials.json");
@@ -31,6 +34,8 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
         Load();
     }
+
+
 
     // ICredentialStorage Implementation
     public string? GetApiKey(string providerName)
@@ -138,7 +143,34 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         SaveSettings();
     }
 
-    public McpConfiguration GetMcpConfiguration() => _settings.Mcp;
+    public McpConfiguration GetMcpConfiguration()
+    {
+        var config = _settings.Mcp;
+        
+        if (_builtInMcpProvider != null)
+        {
+            var builtInServers = _builtInMcpProvider.GetBuiltInServers();
+            foreach (var builtIn in builtInServers)
+            {
+                var existing = config.Servers.FirstOrDefault(s => s.Name.Equals(builtIn.Name, StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    existing.IsBuiltIn = true;
+                    // Keep existing Enabled state from user config
+                    // but ensure Command/Args are from built-in definition
+                    existing.Command = builtIn.Command;
+                    existing.Args = builtIn.Args;
+                    existing.Type = builtIn.Type;
+                }
+                else
+                {
+                    config.Servers.Add(builtIn);
+                }
+            }
+        }
+        
+        return config;
+    }
     
     public void SaveMcpConfiguration(McpConfiguration configuration)
     {
@@ -148,11 +180,37 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
     public void DeleteMcpServer(string serverName)
     {
+        var server = _settings.Mcp.Servers.FirstOrDefault(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase));
+        if (server != null && server.IsBuiltIn)
+        {
+            // Do not delete built-in servers from the configuration list,
+            // but we can allow them to be disabled (which is handled by SaveMcpConfiguration).
+            return;
+        }
+
         if (_settings.Mcp.Servers.RemoveAll(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase)) > 0)
         {
             SaveSettings();
         }
     }
+
+    public string? GetMcpSecret(string key)
+    {
+        var secretKey = $"McpSecret:{key}";
+        if (_credentials.TryGetValue(secretKey, out var value))
+        {
+            return DecryptIfNeeded(value);
+        }
+        return null;
+    }
+
+    public void SaveMcpSecret(string key, string value)
+    {
+        var secretKey = $"McpSecret:{key}";
+        _credentials[secretKey] = Encrypt(value);
+        SaveCredentials();
+    }
+
 
     private void Load()
     {

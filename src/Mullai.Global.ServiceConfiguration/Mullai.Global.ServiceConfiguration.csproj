@@ -17,7 +17,9 @@
     <ItemGroup>
       <ProjectReference Include="..\Mullai.Agents\Mullai.Agents.csproj" />
       <ProjectReference Include="..\Mullai.Logging\Mullai.Logging.csproj" />
-      <ProjectReference Include="..\Mullai.Memory\Mullai.Memory.csproj" />
+      <ProjectReference Include="..\Mullai.LocalMcp\Mullai.LocalMcp.csproj" />
+    <ProjectReference Include="..\Mullai.Memory\Mullai.Memory.csproj" />
+
       <ProjectReference Include="..\Mullai.Middleware\Mullai.Middleware.csproj" />
       <ProjectReference Include="..\Mullai.Providers\Mullai.Providers.csproj" />
       <ProjectReference Include="..\Mullai.Skills\Mullai.Skills.csproj" />

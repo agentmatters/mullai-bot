@@ -111,8 +111,9 @@ public class DynamicToolLoader
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to load tool group {ToolGroupName}", toolGroupName);
-            return $"Error: Required services for {toolGroupName} could not be resolved. Please ensure they are registered.";
+            return $"Error: Failed to load tool group {toolGroupName}. Details: {ex.Message}";
         }
+
 
         if (!newTools.Any())
         {
@@ -146,12 +147,24 @@ public class DynamicToolLoader
             McpClient mcpClient;
             if (server.Type == "stdio")
             {
+                var envVars = new Dictionary<string, string>();
+                foreach (var req in server.Requirements)
+                {
+                    var val = _configManager.GetMcpSecret(req.Key);
+                    if (!string.IsNullOrEmpty(val))
+                    {
+                        envVars[req.Key] = val;
+                    }
+                }
+
                 mcpClient = await McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions
                 {
                     Command = server.Command,
-                    Arguments = server.Args
+                    Arguments = server.Args,
+                    EnvironmentVariables = envVars
                 }));
             }
+
             else
             {
                 mcpClient = await McpClient.CreateAsync(new HttpClientTransport(new HttpClientTransportOptions

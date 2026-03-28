@@ -19,7 +19,11 @@ public interface IMullaiConfigurationManager : ICredentialStorage
     McpConfiguration GetMcpConfiguration();
     void SaveMcpConfiguration(McpConfiguration configuration);
     void DeleteMcpServer(string serverName);
+    
+    string? GetMcpSecret(string key);
+    void SaveMcpSecret(string key, string value);
 }
+
 
 public class CustomProviderDescriptor
 {
@@ -48,4 +52,8 @@ public class McpServerDescriptor
     public string[] Args { get; set; } = [];
     public string Url { get; set; } = string.Empty; // for sse
     public bool Enabled { get; set; } = true;
+    public bool IsBuiltIn { get; set; } = false;
+    public List<McpConfigurationRequirement> Requirements { get; set; } = [];
 }
+
+

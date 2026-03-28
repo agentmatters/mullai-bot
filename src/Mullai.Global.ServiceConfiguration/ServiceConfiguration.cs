@@ -102,7 +102,10 @@ namespace Mullai.Global.ServiceConfiguration
                 .AddHtmlToMarkdownTool()
                 .AddUserMemory()
                 .AddMullaiSkills()
-                .AddMullaiWorkflows();
+                .AddMullaiWorkflows()
+                .AddSingleton<IBuiltInMcpProvider, Mullai.LocalMcp.LocalMcpProvider>();
+
+
 
             services.AddSingleton<IWorkflowToolsProvider, WorkflowToolsProvider>();
             
