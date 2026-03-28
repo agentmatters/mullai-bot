@@ -1,30 +1,30 @@
 using System.ComponentModel;
-using Mullai.Abstractions.Configuration;
-
 using System.Globalization;
 using System.Net.Http;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using ModelContextProtocol;
+using Mullai.Abstractions.Configuration;
 
 namespace Mullai.MCP.SerpApi.Tools;
 
+/// <summary>
+/// Tool for interacting with the SerpAPI to perform searches.
+/// </summary>
 [McpServerToolType]
 [McpConfigurationRequirement("SerpApiKey", "SerpAPI API Key", isSecret: true, HelpUrl = "https://serpapi.com/manage-api-key")]
-
 public sealed class SerpApiTools
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<SerpApiTools> _logger;
     private readonly HttpClient _httpClient;
 
-    public SerpApiTools(
-        HttpClient httpClient,
-        IConfiguration configuration,
-        ILogger<SerpApiTools> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SerpApiTools"/> class.
+    /// </summary>
+    public SerpApiTools(HttpClient httpClient, IConfiguration configuration, ILogger<SerpApiTools> logger)
     {
         _httpClient = httpClient;
         _configuration = configuration;
@@ -32,11 +32,17 @@ public sealed class SerpApiTools
         _httpClient.BaseAddress = new Uri("https://serpapi.com");
     }
 
+    /// <summary>
+    /// Performs a Google search using SerpAPI.
+    /// </summary>
     [McpServerTool, Description("Search Google using SerpAPI")]
     public async Task<string> GoogleSearch(
-        HttpClient client,
-        [Description("Search query")] 
-        string query)
+        [Description("Search query")] string query,
+        [Description("Location for the search"), DefaultValue("")] string location = "",
+        [Description("Device type: desktop, tablet, or mobile"), DefaultValue("desktop")] string device = "desktop",
+        [Description("Country code for the search"), DefaultValue("us")] string gl = "us",
+        [Description("Language code for the search"), DefaultValue("en")] string hl = "en",
+        [Description("Start index for pagination"), DefaultValue(0)] int start = 0)
     {
         try
         {
@@ -48,15 +54,18 @@ public sealed class SerpApiTools
 
             _logger.LogInformation("Executing Google Search for: {Query}", query);
 
-
             var searchParameters = new Dictionary<string, string>
             {
                 {"q", query},
-                {"api_key", apiKey}
+                {"api_key", apiKey},
+                {"location", location},
+                {"device", device},
+                {"gl", gl},
+                {"hl", hl},
+                {"start", start.ToString(CultureInfo.InvariantCulture)}
             };
 
-            var requestUrl = $"/search.json?{string.Join('&', searchParameters
-                .Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"))}";
+            var requestUrl = $"/search.json?{BuildQueryString(searchParameters)}";
 
             _logger.LogDebug("Request URL: {Url}", requestUrl);
 
@@ -75,13 +84,17 @@ public sealed class SerpApiTools
         }
     }
 
+    /// <summary>
+    /// Performs a Google Image search using SerpAPI.
+    /// </summary>
     [McpServerTool, Description("Search Google Images using SerpAPI")]
     public async Task<string> GoogleImageSearch(
-        HttpClient client,
-        [Description("Search query for images")] 
-        string query,
-        [Description("Number of results to return"), DefaultValue(10)]
-        int numResults = 10)
+        [Description("Search query for images")] string query,
+        [Description("Number of results to return"), DefaultValue(10)] int numResults = 10,
+        [Description("Location for the search"), DefaultValue("")] string location = "",
+        [Description("Device type: desktop, tablet, or mobile"), DefaultValue("desktop")] string device = "desktop",
+        [Description("Country code for the search"), DefaultValue("us")] string gl = "us",
+        [Description("Language code for the search"), DefaultValue("en")] string hl = "en")
     {
         try
         {
@@ -93,19 +106,20 @@ public sealed class SerpApiTools
 
             _logger.LogInformation("Executing Google Image Search for: {Query}", query);
 
-
             var searchParameters = new Dictionary<string, string>
             {
                 {"q", query},
                 {"api_key", apiKey},
                 {"engine", "google_images"},
                 {"ijn", "0"},
-                {"start", "0"},
-                {"num", numResults.ToString(CultureInfo.InvariantCulture)}
+                {"num", numResults.ToString(CultureInfo.InvariantCulture)},
+                {"location", location},
+                {"device", device},
+                {"gl", gl},
+                {"hl", hl}
             };
 
-            var requestUrl = $"/search.json?{string.Join('&', searchParameters
-                .Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"))}";
+            var requestUrl = $"/search.json?{BuildQueryString(searchParameters)}";
 
             _logger.LogDebug("Request URL: {Url}", requestUrl);
 
@@ -123,16 +137,14 @@ public sealed class SerpApiTools
             throw new McpException($"Failed to perform Google Image Search: {ex.Message}");
         }
     }
-}
 
-// Extension method for HttpClient
-public static class HttpClientExtensions
-{
-    public static async Task<JsonDocument> ReadJsonDocumentAsync(this HttpClient client, string requestUri)
+    /// <summary>
+    /// Builds a query string from a dictionary of parameters.
+    /// </summary>
+    private static string BuildQueryString(IDictionary<string, string> parameters)
     {
-        var response = await client.GetAsync(requestUri);
-        response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync();
-        return JsonDocument.Parse(json);
+        return string.Join('&', parameters
+            .Where(kvp => !string.IsNullOrEmpty(kvp.Value))
+            .Select(kvp => $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value)}"));
     }
 }
