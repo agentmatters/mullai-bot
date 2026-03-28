@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/MCPServers/">
+    <Project Path="ToolKits/Search/Mullai.MCP.SerpApi/Mullai.MCP.SerpApi.csproj" />
+  </Folder>
   <Project Path="Mullai.Abstractions/Mullai.Abstractions.csproj" />
   <Project Path="Mullai.Agents/Mullai.Agents.csproj" />
   <Project Path="Mullai.Channels.Api/Mullai.Channels.Api.csproj" />
