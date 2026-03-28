@@ -19,14 +19,15 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" />
   </ItemGroup>
 
-  <Target Name="PublishMcpToolkits" AfterTargets="Build">
+  <Target Name="PublishMcpToolkits" AfterTargets="Build;Publish">
     <ItemGroup>
-      <McpToolkitProjects Include="..\ToolKits\**\Mullai.MCP.*.csproj" />
+      <McpToolkitProjects Include="$(ProjectDir)..\ToolKits\**\Mullai.MCP.*.csproj" />
     </ItemGroup>
-    <Message Importance="high" Text="Publishing MCP Toolkits: @(McpToolkitProjects)" />
+    <Message Importance="high" Text="Publishing MCP Toolkits for configuration $(Configuration): @(McpToolkitProjects)" />
     <MSBuild Projects="@(McpToolkitProjects)" 
              Targets="Publish" 
-             Properties="PublishDir=$(ProjectDir)$(OutputPath)McpToolkits\%(Filename)\;SelfContained=false;RuntimeIdentifier=" />
+             Properties="Configuration=$(Configuration);PublishDir=$(ProjectDir)$(OutputPath)McpToolkits\%(Filename)\;SelfContained=false;RuntimeIdentifier=" />
   </Target>
+
 </Project>
 
