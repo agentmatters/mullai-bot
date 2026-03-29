@@ -211,6 +211,57 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         SaveCredentials();
     }
 
+    public List<AgentDefinition> GetAgents()
+    {
+        if (_settings.Agents.Count == 0)
+        {
+            _settings.Agents = GetDefaultAgents();
+            SaveSettings();
+        }
+        return _settings.Agents;
+    }
+
+    public void SaveAgent(AgentDefinition agent)
+    {
+        _settings.Agents.RemoveAll(a => a.Id == agent.Id);
+        _settings.Agents.Add(agent);
+        SaveSettings();
+    }
+
+    public void DeleteAgent(string agentId)
+    {
+        if (_settings.Agents.RemoveAll(a => a.Id == agentId) > 0)
+        {
+            SaveSettings();
+        }
+    }
+
+    private List<AgentDefinition> GetDefaultAgents()
+    {
+        return new List<AgentDefinition>
+        {
+            new AgentDefinition
+            {
+                Id = "assistant",
+                Name = "Assistant",
+                Instructions = """
+                               You are a helpful assistant that helps people find information. 
+                               You can access the user machine via execute commands.
+                               You can read/write files via the tools you are provided with.
+                               The user is working in a mac environment.
+                               The user is in a CLI environment responses must be CLI friendly with no markdown syntax.
+                               IMPORTANT: You have a DynamicToolLoader available. If you need a tool (like Weather, WebSearch, Todo etc) that is not currently in your loaded tools list, you MUST call `GetAvailableTools` to discover what tool groups exist, and then call `LoadToolGroup` to load the exact tool group you need. After loading it, you can use the newly loaded tools in your subsequent responses.
+                               """,
+                Tools = new List<AgentToolDefinition>
+                {
+                    new AgentToolDefinition { Name = "FileSystemTool", IsDefault = true },
+                    new AgentToolDefinition { Name = "BashTool", IsDefault = true },
+                    new AgentToolDefinition { Name = "DynamicToolLoader", IsDefault = true }
+                }
+            }
+        };
+    }
+
 
     private void Load()
     {
@@ -377,4 +428,5 @@ internal class MullaiAppSettings
     public List<CustomProviderDescriptor> CustomProviders { get; set; } = [];
     public SkillConfiguration Skills { get; set; } = new();
     public McpConfiguration Mcp { get; set; } = new();
+    public List<AgentDefinition> Agents { get; set; } = [];
 }

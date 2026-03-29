@@ -20,102 +20,32 @@
     min-width: 0;
 }
 
-.topbar-title {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.topbar-title-text {
-    font-weight: 760;
-    font-size: 0.95rem;
-    color: var(--text);
-    line-height: 1.1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.topbar-title-sub {
-    font-size: 0.78rem;
-    color: var(--subtle);
-    line-height: 1.1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.topbar-right {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-}
-
 .icon-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
     border: 1px solid var(--border);
     background: rgba(255, 255, 255, 0.55);
     color: var(--muted);
     cursor: pointer;
-    transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .icon-btn:hover {
-    background: rgba(238, 241, 246, 0.8);
-    border-color: var(--border-strong);
-    color: var(--text);
+    background: var(--surface-2);
+    border-color: var(--accent-border);
+    color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
-.topbar-menu {
-    display: none;
+.icon-btn:active {
+    transform: translateY(0);
 }
 
-.session-badge {
-    padding: 0.28rem 0.55rem;
-    background: rgba(242, 244, 248, 0.8);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 0.78rem;
-    font-weight: 650;
-    color: var(--subtle);
-    max-width: 14rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.28rem 0.55rem;
-    background: rgba(242, 244, 248, 0.75);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    font-size: 0.78rem;
-    font-weight: 650;
-    color: var(--muted);
-}
-
-.status-indicator {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--success);
-    box-shadow: 0 0 0 3px var(--success-soft);
-}
-
-@media (max-width: 960px) {
-    .topbar-menu {
-        display: inline-flex;
-    }
-
-    .session-badge {
-        display: none;
-    }
+@media (max-width: 1024px) {
+    /* Use global mobile-menu-btn display rules */
 }

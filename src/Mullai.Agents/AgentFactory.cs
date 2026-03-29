@@ -53,62 +53,90 @@ public class AgentFactory
             return new MullaiAgent(agent, chatClient);
         }
 
-        switch (agentName)
+        var configManager = _serviceProvider.GetRequiredService<IMullaiConfigurationManager>();
+        var agents = configManager.GetAgents();
+        
+        var agentDef = agents.FirstOrDefault(a => a.Id.Equals(agentName, StringComparison.OrdinalIgnoreCase) || 
+                                                  a.Name.Equals(agentName, StringComparison.OrdinalIgnoreCase));
+
+        // Use the first enabled agent as default if the requested name doesn't match
+        if (agentDef == null)
         {
-            case "Assistant":
-                var assistant = new Assistant();
-                var configManager = _serviceProvider.GetRequiredService<IMullaiConfigurationManager>();
-                
-                agentTools = new List<AITool>();
-                agentTools.AddRange(_serviceProvider.GetRequiredService<FileSystemTool>().AsAITools());
-                agentTools.AddRange(_serviceProvider.GetRequiredService<BashTool>().AsAITools());
-
-                var dynamicLoaderLogger = _serviceProvider.GetRequiredService<ILogger<DynamicToolLoader>>();
-                var dynamicLoader = new DynamicToolLoader(_serviceProvider, agentTools, dynamicLoaderLogger, configManager);
-                agentTools.AddRange(dynamicLoader.AsAITools());
-
-                var functionCallingMiddleware = _serviceProvider.GetRequiredService<FunctionCallingMiddleware>();
-
-                // IChatClient-level middleware: merges newly loaded tools on each LLM call within
-                // the tool loop, wrapping them as ObservableAIFunction for middleware callback support
-                var chatClientWithInjection = new ChatClientToolInjectionMiddleware(
-                    chatClient, agentTools, functionCallingMiddleware.InvokeAsync);
-
-                agent = chatClientWithInjection.AsAIAgent(
-                    new ChatClientAgentOptions()
-                    {
-                        ChatOptions = new()
-                        {
-                            Instructions = assistant.Instructions,
-                            Tools = agentTools,
-                            AllowMultipleToolCalls = true
-                        },
-                        Name = assistant.Name,
-                        AIContextProviders = [
-                            _serviceProvider.GetRequiredService<CurrentFolderContext>(),
-                        ],
-                    },
-                    _serviceProvider.GetRequiredService<ILoggerFactory>())
-                    .AsBuilder()
-                    // Outermost: inject latest session tools into run options BEFORE wrapping
-                    .Use(ToolCallDynamicInjectionMiddleware.Create(agentTools))
-                    // Middle: wraps tools as MiddlewareEnabledFunction + fires FunctionCallingMiddleware callback
-                    .Use(functionCallingMiddleware.InvokeAsync)
-                    .UseOpenTelemetry(
-                        sourceName: OpenTelemetrySettings.ServiceName, 
-                        configure: (cfg) => cfg.EnableSensitiveData = true)
-                    .Build();
-
-                // Set the agent reference now that it's built (deferred init)
-                chatClientWithInjection.SetAgent(agent);
-                break;
-            
-            default:
-                var defaultAgent = new Joker();
-                agent = chatClient.AsAIAgent(defaultAgent.Instructions, defaultAgent.Name);
-                break;
+            agentDef = agents.FirstOrDefault(a => a.Id == "assistant") ?? agents.FirstOrDefault(a => a.Enabled) ?? agents.FirstOrDefault();
         }
 
+        if (agentDef == null)
+        {
+            throw new Exception($"Agent '{agentName}' not found and no defaults available.");
+        }
+
+        agentTools = new List<AITool>();
+        
+        // Add default tools from definition
+        foreach (var toolDef in agentDef.Tools.Where(t => t.IsDefault))
+        {
+            agentTools.AddRange(ResolveTool(toolDef.Name, agentTools, configManager));
+        }
+
+        var functionCallingMiddleware = _serviceProvider.GetRequiredService<FunctionCallingMiddleware>();
+
+        // IChatClient-level middleware: merges newly loaded tools on each LLM call within
+        // the tool loop, wrapping them as ObservableAIFunction for middleware callback support
+        var chatClientWithInjection = new ChatClientToolInjectionMiddleware(
+            chatClient, agentTools, functionCallingMiddleware.InvokeAsync);
+
+        agent = chatClientWithInjection.AsAIAgent(
+            new ChatClientAgentOptions()
+            {
+                ChatOptions = new()
+                {
+                    Instructions = agentDef.Instructions,
+                    Tools = agentTools,
+                    AllowMultipleToolCalls = true
+                },
+                Name = agentDef.Name,
+                AIContextProviders = [
+                    _serviceProvider.GetRequiredService<CurrentFolderContext>(),
+                ],
+            },
+            _serviceProvider.GetRequiredService<ILoggerFactory>())
+            .AsBuilder()
+            // Outermost: inject latest session tools into run options BEFORE wrapping
+            .Use(ToolCallDynamicInjectionMiddleware.Create(agentTools))
+            // Middle: wraps tools as MiddlewareEnabledFunction + fires FunctionCallingMiddleware callback
+            .Use(functionCallingMiddleware.InvokeAsync)
+            .UseOpenTelemetry(
+                sourceName: OpenTelemetrySettings.ServiceName, 
+                configure: (cfg) => cfg.EnableSensitiveData = true)
+            .Build();
+
+        // Set the agent reference now that it's built (deferred init)
+        chatClientWithInjection.SetAgent(agent);
+
         return new MullaiAgent(agent, chatClient);
+    }
+
+    private IEnumerable<AITool> ResolveTool(string toolName, List<AITool> sessionTools, IMullaiConfigurationManager configManager)
+    {
+        return toolName switch
+        {
+            "FileSystemTool" => _serviceProvider.GetRequiredService<Mullai.Tools.FileSystemTool.FileSystemTool>().AsAITools(),
+            "BashTool" => _serviceProvider.GetRequiredService<Mullai.Tools.BashTool.BashTool>().AsAITools(),
+            "WeatherTool" => _serviceProvider.GetRequiredService<Mullai.Tools.WeatherTool.WeatherTool>().AsAITools(),
+            "CliTool" => _serviceProvider.GetRequiredService<Mullai.Tools.CliTool.CliTool>().AsAITools(),
+            "TodoTool" => _serviceProvider.GetRequiredService<Mullai.Tools.TodoTool.TodoTool>().AsAITools(),
+            "WebTool" => _serviceProvider.GetRequiredService<Mullai.Tools.WebTool.WebTool>().AsAITools(),
+            "CodeSearchTool" => _serviceProvider.GetRequiredService<Mullai.Tools.CodeSearchTool.CodeSearchTool>().AsAITools(),
+            "WorkflowTool" => _serviceProvider.GetRequiredService<Mullai.Tools.WorkflowTool.WorkflowTool>().AsAITools(),
+            "WorkflowStateTool" => _serviceProvider.GetRequiredService<Mullai.Tools.WorkflowStateTool.WorkflowStateTool>().AsAITools(),
+            "RestApiTool" => _serviceProvider.GetRequiredService<Mullai.Tools.RestApiTool.RestApiTool>().AsAITools(),
+            "HtmlToMarkdownTool" => _serviceProvider.GetRequiredService<Mullai.Tools.HtmlToMarkdownTool.HtmlToMarkdownTool>().AsAITools(),
+            "DynamicToolLoader" => new DynamicToolLoader(
+                _serviceProvider, 
+                sessionTools, 
+                _serviceProvider.GetRequiredService<ILogger<DynamicToolLoader>>(), 
+                configManager).AsAITools(),
+            _ => Enumerable.Empty<AITool>()
+        };
     }
 }

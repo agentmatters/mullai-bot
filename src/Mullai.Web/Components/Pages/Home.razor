@@ -74,6 +74,7 @@
         <ChatComposer @bind-Value="_draft" 
                       @bind-SelectedProvider="_selectedProvider"
                       @bind-SelectedModel="_selectedModel"
+                      @bind-SelectedAgent="_selectedAgent"
                       InputTokenCount="_inputTokens"
                       OutputTokenCount="_outputTokens"
                       OnSubmit="HandleSubmitAsync" />
@@ -89,6 +90,7 @@
     private string _draft = string.Empty;
     private string _selectedProvider = string.Empty;
     private string _selectedModel = string.Empty;
+    private string _selectedAgent = string.Empty;
     private long _inputTokens;
     private long _outputTokens;
     private long _lastToolCallSequence;
@@ -105,7 +107,8 @@
         {
             Prompt = text,
             Provider = _selectedProvider,
-            Model = _selectedModel
+            Model = _selectedModel,
+            Agent = _selectedAgent
         };
         await HandleSubmitAsync(args);
     }
@@ -169,13 +172,14 @@
         {
             if (!string.IsNullOrEmpty(args.Provider)) metadata["provider"] = args.Provider;
             if (!string.IsNullOrEmpty(args.Model)) metadata["model"] = args.Model;
+            if (!string.IsNullOrEmpty(args.Agent)) metadata["agent"] = args.Agent;
         }
 
         var workItem = new MullaiTaskWorkItem
         {
             TaskId = Guid.NewGuid().ToString("N"),
             SessionKey = _sessionKey,
-            AgentName = "Assistant",
+            AgentName = args?.Agent ?? "Assistant",
             Prompt = prompt,
             Source = MullaiTaskSource.Client,
             MaxAttempts = maxAttempts,

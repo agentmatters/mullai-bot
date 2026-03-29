@@ -14,23 +14,9 @@
 
 .settings-header {
     margin-bottom: 1.5rem;
-}
-
-.mobile-menu-btn {
-    display: none;
+    display: flex;
     align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    color: var(--text);
-    padding: 0;
-    cursor: pointer;
-}
-
-@media (max-width: 960px) {
-    .mobile-menu-btn {
-        display: flex;
-    }
+    gap: 0.75rem;
 }
 
 .settings-header h1 {

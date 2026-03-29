@@ -3,7 +3,7 @@
         @if (ShowSidebarToggle)
         {
             <button type="button"
-                    class="icon-btn topbar-menu"
+                    class="icon-btn mobile-menu-btn"
                     aria-label="Toggle navigation"
                     @onclick="OnToggleSidebar">
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
@@ -11,23 +11,7 @@
                 </svg>
             </button>
         }
-
-        @* <div class="topbar-title"> *@
-        @*     <div class="topbar-title-text">@Title</div> *@
-        @*     @if (!string.IsNullOrWhiteSpace(Subtitle)) *@
-        @*     { *@
-        @*         <div class="topbar-title-sub">@Subtitle</div> *@
-        @*     } *@
-        @* </div> *@
     </div>
-
-    @* <div class="topbar-right"> *@
-    @*     <div class="status-pill"> *@
-    @*         <span class="status-indicator" aria-hidden="true"></span> *@
-    @*         @Status *@
-    @*     </div> *@
-    @*     <div class="session-badge">@SessionId</div> *@
-    @* </div> *@
 </header>
 
 @code {

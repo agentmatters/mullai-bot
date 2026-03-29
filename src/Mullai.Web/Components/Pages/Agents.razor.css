@@ -1,0 +1,254 @@
+.agents-page {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.agents-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--text-1) 0%, var(--text-3) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.agents-header p {
+    color: var(--text-3);
+    font-size: 1.1rem;
+}
+
+.agents-content {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 2rem;
+    min-height: 600px;
+}
+
+.agents-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.sidebar-actions .btn-block {
+    width: 100%;
+}
+
+.agent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.agent-item {
+    padding: 1rem;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.agent-item:hover {
+    border-color: var(--accent);
+    background: var(--surface-2);
+}
+
+.agent-item.active {
+    background: var(--accent-subtle);
+    border-color: var(--accent);
+}
+
+.agent-item-info {
+    flex: 1;
+}
+
+.agent-name {
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 0.25rem;
+}
+
+.agent-meta {
+    font-size: 0.8rem;
+    color: var(--text-3);
+}
+
+.delete-btn {
+    opacity: 0;
+    padding: 0.5rem;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.agent-item:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+}
+
+.agent-details .card {
+    height: 100%;
+}
+
+.card-header-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.card-header-actions .actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.card-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-2);
+}
+
+.input {
+    padding: 0.75rem 1rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-1);
+    font-family: inherit;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+textarea.input {
+    min-height: 320px;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.input-sm {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+.hint {
+    font-size: 0.85rem;
+    color: var(--text-3);
+}
+
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.tool-card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.tool-card.selected {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+}
+
+.tool-header {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.tool-name {
+    color: var(--text-2);
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 4rem;
+    background: var(--surface-1);
+    border: 2px dashed var(--border);
+    border-radius: 24px;
+    text-align: center;
+    color: var(--text-3);
+    gap: 1rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state h3 {
+    margin: 0;
+    color: var(--text-2);
+}
+
+@media (max-width: 1024px) {
+    .agents-content {
+        grid-template-columns: 1fr;
+    }
+}

@@ -80,6 +80,42 @@
             </div>
         </div>
 
+        <div class="selector-group">
+            <span class="selector-label">Agent</span>
+            <div class="premium-dropdown agent-dropdown">
+                <div class="dropdown-trigger" @onclick="ToggleAgentDropdown">
+                    <span class="trigger-text">@(_enabledAgents.FirstOrDefault(a => a.Id == _selectedAgent)?.Name ?? "Select Agent")</span>
+                    <svg class="chevron @(_showAgentDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </div>
+                @if (_showAgentDropdown)
+                {
+                    <div class="dropdown-menu">
+                        <div class="search-container">
+                            <input class="search-input" 
+                                   @bind="_agentSearch" 
+                                   @bind:event="oninput" 
+                                   placeholder="Search agents..." 
+                                   @onclick:stopPropagation="true"
+                                   autofocus />
+                        </div>
+                        <div class="options-list">
+                            @foreach (var agent in FilteredAgents)
+                            {
+                                <div class="option @(agent.Id == _selectedAgent ? "selected" : "")" 
+                                     @onclick="() => SelectAgent(agent.Id)">
+                                    <div class="option-name">@agent.Name</div>
+                                </div>
+                            }
+                            @if (!FilteredAgents.Any())
+                            {
+                                <div class="no-results">No agents found</div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
         @if (InputTokenCount > 0 || OutputTokenCount > 0)
         {
             <div class="usage-stats">
@@ -103,7 +139,7 @@
         }
     </div>
 
-    @if (_showProviderDropdown || _showModelDropdown)
+    @if (_showProviderDropdown || _showModelDropdown || _showAgentDropdown)
     {
         <div class="dropdown-overlay" @onclick="CloseDropdowns"></div>
     }
@@ -142,6 +178,8 @@
     [Parameter] public EventCallback<string> SelectedProviderChanged { get; set; }
     [Parameter] public string SelectedModel { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> SelectedModelChanged { get; set; }
+    [Parameter] public string SelectedAgent { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> SelectedAgentChanged { get; set; }
     [Parameter] public long InputTokenCount { get; set; }
     [Parameter] public long OutputTokenCount { get; set; }
 
@@ -149,11 +187,15 @@
     private List<MullaiModelDescriptor> _availableModels = [];
     private string _selectedProvider = string.Empty;
     private string _selectedModel = string.Empty;
+    private string _selectedAgent = string.Empty;
     
+    private List<AgentDefinition> _enabledAgents = [];
     private string _providerSearch = string.Empty;
     private string _modelSearch = string.Empty;
+    private string _agentSearch = string.Empty;
     private bool _showProviderDropdown;
     private bool _showModelDropdown;
+    private bool _showAgentDropdown;
 
     private IEnumerable<MullaiProviderDescriptor> FilteredProviders => 
         string.IsNullOrWhiteSpace(_providerSearch) 
@@ -165,6 +207,11 @@
             ? _availableModels 
             : _availableModels.Where(m => m.ModelName.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase) 
                                        || m.ModelId.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase));
+
+    private IEnumerable<AgentDefinition> FilteredAgents => 
+        string.IsNullOrWhiteSpace(_agentSearch) 
+            ? _enabledAgents 
+            : _enabledAgents.Where(a => a.Name.Contains(_agentSearch, StringComparison.OrdinalIgnoreCase));
 
     private MullaiModelDescriptor? ActiveModel => 
         _availableModels.FirstOrDefault(m => string.Equals(m.ModelId, _selectedModel, StringComparison.OrdinalIgnoreCase));
@@ -242,6 +289,8 @@
             });
         }
 
+        _enabledAgents = ConfigurationManager.GetAgents().Where(a => a.Enabled).ToList();
+
         if (_enabledProviders.Any())
         {
             // If already have a provider selected, ensure it's still valid
@@ -263,17 +312,18 @@
 
     protected override void OnParametersSet()
     {
-        var changed = false;
         if (!string.IsNullOrEmpty(SelectedProvider) && SelectedProvider != _selectedProvider)
         {
             _selectedProvider = SelectedProvider;
             UpdateAvailableModels();
-            changed = true;
         }
         if (!string.IsNullOrEmpty(SelectedModel) && SelectedModel != _selectedModel)
         {
             _selectedModel = SelectedModel;
-            changed = true;
+        }
+        if (!string.IsNullOrEmpty(SelectedAgent) && SelectedAgent != _selectedAgent)
+        {
+            _selectedAgent = SelectedAgent;
         }
     }
 
@@ -303,10 +353,24 @@
         }
     }
 
+    private async Task ToggleAgentDropdown()
+    {
+        _showAgentDropdown = !_showAgentDropdown;
+        if (_showAgentDropdown)
+        {
+            _showProviderDropdown = false;
+            _showModelDropdown = false;
+            _agentSearch = string.Empty;
+            await Task.Delay(50);
+            if (_module != null) await _module.InvokeVoidAsync("scrollToSelected", ".agent-dropdown .options-list");
+        }
+    }
+
     private void CloseDropdowns()
     {
         _showProviderDropdown = false;
         _showModelDropdown = false;
+        _showAgentDropdown = false;
     }
 
     private async Task SelectProvider(string name)
@@ -326,6 +390,14 @@
         _showModelDropdown = false;
         await SelectedModelChanged.InvokeAsync(modelId);
         if (_module != null) await _module.InvokeVoidAsync("saveToLocalStorage", "mullai_last_model", modelId);
+    }
+
+    private async Task SelectAgent(string agentId)
+    {
+        _selectedAgent = agentId;
+        _showAgentDropdown = false;
+        await SelectedAgentChanged.InvokeAsync(agentId);
+        if (_module != null) await _module.InvokeVoidAsync("saveToLocalStorage", "mullai_last_agent", agentId);
     }
 
     private void UpdateAvailableModels()
@@ -382,6 +454,23 @@
                 }
             }
 
+            var savedAgent = await _module.InvokeAsync<string?>("loadFromLocalStorage", "mullai_last_agent");
+            if (!string.IsNullOrEmpty(savedAgent))
+            {
+                var agent = _enabledAgents.FirstOrDefault(a => a.Id.Equals(savedAgent, StringComparison.OrdinalIgnoreCase));
+                if (agent != null)
+                {
+                    _selectedAgent = agent.Id;
+                    await SelectedAgentChanged.InvokeAsync(_selectedAgent);
+                }
+            }
+            
+            if (string.IsNullOrEmpty(_selectedAgent) && _enabledAgents.Any())
+            {
+                _selectedAgent = _enabledAgents[0].Id;
+                await SelectedAgentChanged.InvokeAsync(_selectedAgent);
+            }
+
             // If still no selection, pick defaults
             if (string.IsNullOrEmpty(_selectedProvider) && _enabledProviders.Any())
             {
@@ -415,7 +504,8 @@
             {
                 Prompt = Value,
                 Provider = _selectedProvider,
-                Model = _selectedModel
+                Model = _selectedModel,
+                Agent = _selectedAgent
             };
             await OnSubmit.InvokeAsync(args);
         }

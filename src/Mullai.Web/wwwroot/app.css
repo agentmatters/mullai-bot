@@ -314,3 +314,38 @@ select {
     --workflow-surface-muted: #f7f7f7;
     --workflow-border: #e3e3e3;
 }
+/* Premium Mobile Menu Button */
+.mobile-menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    margin-right: 0.75rem;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--surface-2);
+    border-color: var(--accent-border);
+    color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.mobile-menu-btn:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 1024px) {
+    .mobile-menu-btn {
+        display: flex;
+    }
+}

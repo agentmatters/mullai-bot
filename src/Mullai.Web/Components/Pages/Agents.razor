@@ -1,0 +1,267 @@
+@page "/agents"
+@rendermode InteractiveServer
+@using Mullai.Abstractions.Configuration
+@inject IMullaiConfigurationManager ConfigManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Agents</PageTitle>
+
+<div class="agents-page">
+    <div class="agents-header">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <button type="button" class="mobile-menu-btn" @onclick="() => Layout?.ToggleSidebar()">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            </button>
+            <h1>Agents</h1>
+        </div>
+        <p>Define and manage custom AI agents with specific instructions and tools.</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="hint">Loading agents…</div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="agents-content">
+            <div class="agents-sidebar">
+                <div class="sidebar-actions">
+                    <button class="btn btn-primary btn-block" @onclick="CreateNewAgent">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" style="margin-right: 0.5rem;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Create Agent
+                    </button>
+                </div>
+                <div class="agent-list">
+                    @foreach (var agent in _agents.OrderBy(a => a.Name))
+                    {
+                        <div class="agent-item @(SelectedAgent?.Id == agent.Id ? "active" : "")" @onclick="() => SelectAgent(agent)">
+                            <div class="agent-item-info">
+                                <div class="agent-name">@agent.Name</div>
+                                <div class="agent-meta">@(agent.Tools.Count) tools • @(agent.Enabled ? "Enabled" : "Disabled")</div>
+                            </div>
+                            @if (agent.Id != "assistant")
+                            {
+                                <button class="delete-btn" @onclick="() => DeleteAgent(agent.Id)" @onclick:stopPropagation="true">
+                                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="agent-details">
+                @if (SelectedAgent != null)
+                {
+                    <div class="card">
+                        <div class="card-header-actions">
+                             <h2 class="card-title">@(IsNewAgent ? "New Agent" : "Edit " + SelectedAgent.Name)</h2>
+                             <div class="actions">
+                                 <button class="btn" @onclick="CancelEdit">Cancel</button>
+                                 <button class="btn btn-primary" @onclick="SaveAgent">Save Changes</button>
+                             </div>
+                        </div>
+                        
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="label">Agent Name</label>
+                                <input type="text" class="input" @bind="SelectedAgent.Name" placeholder="e.g. My Custom Assistant" />
+                            </div>
+
+                            <div class="form-group">
+                                <label class="label">Instructions (System Prompt)</label>
+                                <textarea class="input" @bind="SelectedAgent.Instructions" rows="10" placeholder="Define how the agent should behave..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="label">Tools</label>
+                                <p class="hint">Select tools available to this agent. Default tools are loaded immediately. On-demand tools are loaded by the agent when needed.</p>
+                                
+                                <div class="tools-grid">
+                                    @foreach (var toolName in _availableTools)
+                                    {
+                                        var toolDef = SelectedAgent.Tools.FirstOrDefault(t => t.Name == toolName);
+                                        var isSelected = toolDef != null;
+                                        var isDefault = toolDef?.IsDefault ?? false;
+
+                                        <div class="tool-card @(isSelected ? "selected" : "")">
+                                            <div class="tool-header">
+                                                <label class="toggle">
+                                                    <input type="checkbox" checked="@isSelected" @onchange="e => ToggleTool(toolName, e)" />
+                                                    <span class="toggle-ui"></span>
+                                                    <span class="tool-name" style="margin-left: 0.75rem;">@toolName</span>
+                                                </label>
+                                            </div>
+                                            @if (isSelected)
+                                            {
+                                                <div class="tool-settings">
+                                                    <select class="input input-sm" @onchange="e => SetToolLoadType(toolName, e)">
+                                                        <option value="default" selected="@isDefault">Default Loaded</option>
+                                                        <option value="ondemand" selected="@(!isDefault)">On Demand</option>
+                                                    </select>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="toggle">
+                                    <input type="checkbox" @bind="SelectedAgent.Enabled" />
+                                    <span class="toggle-ui"></span>
+                                    <span class="label" style="margin-left: 0.75rem; margin-bottom: 0;">Enabled</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <div class="empty-icon">🤖</div>
+                        <h3>No Agent Selected</h3>
+                        <p>Select an agent from the list or create a new one to get started.</p>
+                        <button class="btn btn-primary" @onclick="CreateNewAgent">Create New Agent</button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public Layout.MainLayout? Layout { get; set; }
+
+    private bool _loading = true;
+    private List<AgentDefinition> _agents = [];
+    private AgentDefinition? SelectedAgent;
+    private bool IsNewAgent;
+
+    private readonly List<string> _availableTools = new()
+    {
+        "FileSystemTool",
+        "BashTool",
+        "WeatherTool",
+        "CliTool",
+        "TodoTool",
+        "WebTool",
+        "CodeSearchTool",
+        "WorkflowTool",
+        "WorkflowStateTool",
+        "RestApiTool",
+        "HtmlToMarkdownTool",
+        "DynamicToolLoader"
+    };
+
+    protected override void OnInitialized()
+    {
+        LoadAgents();
+    }
+
+    private void LoadAgents()
+    {
+        _agents = ConfigManager.GetAgents();
+        _loading = false;
+        
+        if (SelectedAgent != null)
+        {
+            SelectedAgent = _agents.FirstOrDefault(a => a.Id == SelectedAgent.Id);
+        }
+    }
+
+    private void SelectAgent(AgentDefinition agent)
+    {
+        // Clone for editing
+        SelectedAgent = new AgentDefinition
+        {
+            Id = agent.Id,
+            Name = agent.Name,
+            Instructions = agent.Instructions,
+            Enabled = agent.Enabled,
+            Tools = agent.Tools.Select(t => new AgentToolDefinition { Name = t.Name, IsDefault = t.IsDefault }).ToList()
+        };
+        IsNewAgent = false;
+    }
+
+    private void CreateNewAgent()
+    {
+        SelectedAgent = new AgentDefinition
+        {
+            Id = Guid.NewGuid().ToString(),
+            Name = "New Agent",
+            Instructions = "You are a helpful assistant.",
+            Tools = new List<AgentToolDefinition>()
+        };
+        IsNewAgent = true;
+    }
+
+    private void CancelEdit()
+    {
+        SelectedAgent = null;
+        IsNewAgent = false;
+    }
+
+    private void SaveAgent()
+    {
+        if (SelectedAgent == null) return;
+        
+        if (string.IsNullOrWhiteSpace(SelectedAgent.Name))
+        {
+            // Simple validation
+            return;
+        }
+
+        ConfigManager.SaveAgent(SelectedAgent);
+        LoadAgents();
+        
+        // Find the saved one to keep it selected
+        var savedId = SelectedAgent.Id;
+        SelectedAgent = _agents.FirstOrDefault(a => a.Id == savedId);
+        IsNewAgent = false;
+    }
+
+    private void DeleteAgent(string agentId)
+    {
+        ConfigManager.DeleteAgent(agentId);
+        if (SelectedAgent?.Id == agentId)
+        {
+            SelectedAgent = null;
+        }
+        LoadAgents();
+    }
+
+    private void ToggleTool(string toolName, ChangeEventArgs e)
+    {
+        if (SelectedAgent == null) return;
+        
+        var isChecked = (bool)(e.Value ?? false);
+        if (isChecked)
+        {
+            if (!SelectedAgent.Tools.Any(t => t.Name == toolName))
+            {
+                SelectedAgent.Tools.Add(new AgentToolDefinition { Name = toolName, IsDefault = true });
+            }
+        }
+        else
+        {
+            SelectedAgent.Tools.RemoveAll(t => t.Name == toolName);
+        }
+    }
+
+    private void SetToolLoadType(string toolName, ChangeEventArgs e)
+    {
+        if (SelectedAgent == null) return;
+        
+        var toolDef = SelectedAgent.Tools.FirstOrDefault(t => t.Name == toolName);
+        if (toolDef != null)
+        {
+            var value = e.Value?.ToString();
+            toolDef.IsDefault = value == "default";
+        }
+    }
+}
