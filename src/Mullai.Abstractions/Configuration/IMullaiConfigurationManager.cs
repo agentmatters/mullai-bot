@@ -26,6 +26,8 @@ public interface IMullaiConfigurationManager : ICredentialStorage
     List<AgentDefinition> GetAgents();
     void SaveAgent(AgentDefinition agent);
     void DeleteAgent(string agentId);
+    
+    List<string> GetAllAvailableToolGroups();
 }
 
 

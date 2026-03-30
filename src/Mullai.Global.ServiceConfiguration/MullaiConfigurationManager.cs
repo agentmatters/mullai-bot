@@ -236,6 +236,36 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         }
     }
 
+    public List<string> GetAllAvailableToolGroups()
+    {
+        var tools = new List<string>
+        {
+            "FileSystemTool",
+            "BashTool",
+            "WeatherTool",
+            "CliTool",
+            "TodoTool",
+            "WebTool",
+            "CodeSearchTool",
+            "WorkflowTool",
+            "WorkflowStateTool",
+            "RestApiTool",
+            "HtmlToMarkdownTool",
+            "DynamicToolLoader"
+        };
+        
+        var mcpConfig = GetMcpConfiguration();
+        foreach (var server in mcpConfig.Servers)
+        {
+            if (server.Enabled)
+            {
+                tools.Add($"MCP:{server.Name}");
+            }
+        }
+        
+        return tools;
+    }
+
     private List<AgentDefinition> GetDefaultAgents()
     {
         return new List<AgentDefinition>

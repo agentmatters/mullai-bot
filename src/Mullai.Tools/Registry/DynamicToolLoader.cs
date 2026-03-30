@@ -26,18 +26,25 @@ public class DynamicToolLoader
     private readonly ILogger<DynamicToolLoader> _logger;
     private readonly IMullaiConfigurationManager _configManager;
     private readonly HashSet<string> _loadedToolGroups = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _allowedDynamicTools = new(StringComparer.OrdinalIgnoreCase);
 
     public DynamicToolLoader(
         IServiceProvider serviceProvider, 
         IList<AITool> sessionTools, 
         ILogger<DynamicToolLoader> logger,
-        IMullaiConfigurationManager configManager)
+        IMullaiConfigurationManager configManager,
+        IEnumerable<string>? allowedDynamicTools = null)
     {
         _serviceProvider = serviceProvider;
         _sessionTools = sessionTools;
         _logger = logger;
         _configManager = configManager;
         
+        if (allowedDynamicTools != null)
+        {
+            foreach (var tool in allowedDynamicTools) _allowedDynamicTools.Add(tool);
+        }
+
         // Track initially loaded tool groups based on assumptions we make in AgentFactory
         _loadedToolGroups.Add("FileSystemTool");
         _loadedToolGroups.Add("BashTool");
@@ -46,26 +53,10 @@ public class DynamicToolLoader
     [Description("Gets a list of all available tool groups that can be dynamically loaded into the current session.")]
     public IEnumerable<string> GetAvailableTools()
     {
-        var allTools = new[]
-        {
-            "WeatherTool",
-            "CliTool",
-            "BashTool",
-            "TodoTool",
-            "WebTool",
-            "CodeSearchTool",
-            "FileSystemTool",
-            "WorkflowTool",
-            "WorkflowStateTool",
-            "RestApiTool",
-            "HtmlToMarkdownTool"
-        };
+        var allAvailable = _configManager.GetAllAvailableToolGroups();
         
-        var mcpServers = _configManager.GetMcpConfiguration().Servers
-            .Where(s => s.Enabled)
-            .Select(s => $"MCP:{s.Name}");
-        
-        return allTools.Concat(mcpServers);
+        // Only show tools that are in the allowed dynamic list for this agent
+        return allAvailable.Where(t => _allowedDynamicTools.Contains(t));
     }
 
     [Description("Gets the list of tools that are currently loaded and active in the session.")]
@@ -85,6 +76,11 @@ public class DynamicToolLoader
         if (_loadedToolGroups.Contains(toolGroupName))
         {
             return $"Tool group {toolGroupName} is already loaded in the current session. You can use its functions immediately.";
+        }
+
+        if (!_allowedDynamicTools.Contains(toolGroupName))
+        {
+            return $"Error: Tool group '{toolGroupName}' is not authorized for dynamic loading in this agent's configuration.";
         }
 
         IEnumerable<AITool> newTools;
@@ -131,7 +127,7 @@ public class DynamicToolLoader
         return $"Successfully loaded {toolGroupName}. The functions from this tool group are now available for you to call.";
     }
 
-    private async Task<IEnumerable<AITool>> LoadMcpToolsAsync(string serverName)
+    public async Task<IEnumerable<AITool>> LoadMcpToolsAsync(string serverName)
     {
         var server = _configManager.GetMcpConfiguration().Servers
             .FirstOrDefault(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase));

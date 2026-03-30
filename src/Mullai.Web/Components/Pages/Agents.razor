@@ -142,25 +142,17 @@
     private AgentDefinition? SelectedAgent;
     private bool IsNewAgent;
 
-    private readonly List<string> _availableTools = new()
-    {
-        "FileSystemTool",
-        "BashTool",
-        "WeatherTool",
-        "CliTool",
-        "TodoTool",
-        "WebTool",
-        "CodeSearchTool",
-        "WorkflowTool",
-        "WorkflowStateTool",
-        "RestApiTool",
-        "HtmlToMarkdownTool",
-        "DynamicToolLoader"
-    };
+    private List<string> _availableTools = [];
 
     protected override void OnInitialized()
     {
         LoadAgents();
+        LoadAvailableTools();
+    }
+
+    private void LoadAvailableTools()
+    {
+        _availableTools = ConfigManager.GetAllAvailableToolGroups();
     }
 
     private void LoadAgents()

@@ -75,7 +75,8 @@ public class AgentFactory
         // Add default tools from definition
         foreach (var toolDef in agentDef.Tools.Where(t => t.IsDefault))
         {
-            agentTools.AddRange(ResolveTool(toolDef.Name, agentTools, configManager));
+            var tools = await ResolveTool(toolDef.Name, agentDef, agentTools, configManager);
+            agentTools.AddRange(tools);
         }
 
         var functionCallingMiddleware = _serviceProvider.GetRequiredService<FunctionCallingMiddleware>();
@@ -116,8 +117,21 @@ public class AgentFactory
         return new MullaiAgent(agent, chatClient);
     }
 
-    private IEnumerable<AITool> ResolveTool(string toolName, List<AITool> sessionTools, IMullaiConfigurationManager configManager)
+    private async Task<IEnumerable<AITool>> ResolveTool(string toolName, AgentDefinition agentDef, List<AITool> sessionTools, IMullaiConfigurationManager configManager)
     {
+        var dynamicTools = agentDef.Tools.Where(t => !t.IsDefault).Select(t => t.Name).ToList();
+
+        if (toolName.StartsWith("MCP:", StringComparison.OrdinalIgnoreCase))
+        {
+            var loader = new DynamicToolLoader(
+                _serviceProvider, 
+                sessionTools, 
+                _serviceProvider.GetRequiredService<ILogger<DynamicToolLoader>>(), 
+                configManager,
+                dynamicTools);
+            return await loader.LoadMcpToolsAsync(toolName[4..]);
+        }
+
         return toolName switch
         {
             "FileSystemTool" => _serviceProvider.GetRequiredService<Mullai.Tools.FileSystemTool.FileSystemTool>().AsAITools(),
@@ -135,7 +149,8 @@ public class AgentFactory
                 _serviceProvider, 
                 sessionTools, 
                 _serviceProvider.GetRequiredService<ILogger<DynamicToolLoader>>(), 
-                configManager).AsAITools(),
+                configManager,
+                dynamicTools).AsAITools(),
             _ => Enumerable.Empty<AITool>()
         };
     }
