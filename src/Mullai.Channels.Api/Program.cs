@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddOpenApi();
+// builder.Services.AddOpenApi();
 
 var config = new ConfigurationBuilder()
     .SetBasePath(AppContext.BaseDirectory)
@@ -25,7 +25,7 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    // app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
