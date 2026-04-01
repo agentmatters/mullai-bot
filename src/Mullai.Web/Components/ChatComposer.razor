@@ -1,7 +1,7 @@
-@implements IAsyncDisposable
 @using Mullai.Abstractions.Configuration
 @using Mullai.Abstractions.Models
 @using Mullai.Web.Models
+@implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject IMullaiConfigurationManager ConfigurationManager
 
@@ -12,23 +12,26 @@
             <div class="premium-dropdown provider-dropdown">
                 <div class="dropdown-trigger" @onclick="ToggleProviderDropdown">
                     <span class="trigger-text">@_selectedProvider</span>
-                    <svg class="chevron @(_showProviderDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                    <svg class="chevron @(_showProviderDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
                 </div>
                 @if (_showProviderDropdown)
                 {
                     <div class="dropdown-menu">
                         <div class="search-container">
-                            <input class="search-input" 
-                                   @bind="_providerSearch" 
-                                   @bind:event="oninput" 
-                                   placeholder="Search providers..." 
+                            <input class="search-input"
+                                   @bind="_providerSearch"
+                                   @bind:event="oninput"
+                                   placeholder="Search providers..."
                                    @onclick:stopPropagation="true"
-                                   autofocus />
+                                   autofocus/>
                         </div>
                         <div class="options-list">
                             @foreach (var provider in FilteredProviders)
                             {
-                                <div class="option @(provider.Name == _selectedProvider ? "selected" : "")" 
+                                <div class="option @(provider.Name == _selectedProvider ? "selected" : "")"
                                      @onclick="() => SelectProvider(provider.Name)">
                                     @provider.Name
                                 </div>
@@ -42,30 +45,34 @@
                 }
             </div>
         </div>
-        
+
         <div class="selector-group">
             <span class="selector-label">Model</span>
             <div class="premium-dropdown model-dropdown">
-                <div class="dropdown-trigger @(string.IsNullOrEmpty(_selectedProvider) ? "disabled" : "")" 
+                <div class="dropdown-trigger @(string.IsNullOrEmpty(_selectedProvider) ? "disabled" : "")"
                      @onclick="ToggleModelDropdown">
-                    <span class="trigger-text">@(_availableModels.FirstOrDefault(m => m.ModelId == _selectedModel)?.ModelName ?? "Select Model")</span>
-                    <svg class="chevron @(_showModelDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                    <span
+                        class="trigger-text">@(_availableModels.FirstOrDefault(m => m.ModelId == _selectedModel)?.ModelName ?? "Select Model")</span>
+                    <svg class="chevron @(_showModelDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
                 </div>
                 @if (_showModelDropdown)
                 {
                     <div class="dropdown-menu">
                         <div class="search-container">
-                            <input class="search-input" 
-                                   @bind="_modelSearch" 
-                                   @bind:event="oninput" 
-                                   placeholder="Search models..." 
+                            <input class="search-input"
+                                   @bind="_modelSearch"
+                                   @bind:event="oninput"
+                                   placeholder="Search models..."
                                    @onclick:stopPropagation="true"
-                                   autofocus />
+                                   autofocus/>
                         </div>
                         <div class="options-list">
                             @foreach (var model in FilteredModels)
                             {
-                                <div class="option @(model.ModelId == _selectedModel ? "selected" : "")" 
+                                <div class="option @(model.ModelId == _selectedModel ? "selected" : "")"
                                      @onclick="() => SelectModel(model.ModelId)">
                                     <div class="option-name">@model.ModelName</div>
                                 </div>
@@ -84,24 +91,28 @@
             <span class="selector-label">Agent</span>
             <div class="premium-dropdown agent-dropdown">
                 <div class="dropdown-trigger" @onclick="ToggleAgentDropdown">
-                    <span class="trigger-text">@(_enabledAgents.FirstOrDefault(a => a.Id == _selectedAgent)?.Name ?? "Select Agent")</span>
-                    <svg class="chevron @(_showAgentDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                    <span
+                        class="trigger-text">@(_enabledAgents.FirstOrDefault(a => a.Id == _selectedAgent)?.Name ?? "Select Agent")</span>
+                    <svg class="chevron @(_showAgentDropdown ? "open" : "")" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2">
+                        <path d="M6 9l6 6 6-6"/>
+                    </svg>
                 </div>
                 @if (_showAgentDropdown)
                 {
                     <div class="dropdown-menu">
                         <div class="search-container">
-                            <input class="search-input" 
-                                   @bind="_agentSearch" 
-                                   @bind:event="oninput" 
-                                   placeholder="Search agents..." 
+                            <input class="search-input"
+                                   @bind="_agentSearch"
+                                   @bind:event="oninput"
+                                   placeholder="Search agents..."
                                    @onclick:stopPropagation="true"
-                                   autofocus />
+                                   autofocus/>
                         </div>
                         <div class="options-list">
                             @foreach (var agent in FilteredAgents)
                             {
-                                <div class="option @(agent.Id == _selectedAgent ? "selected" : "")" 
+                                <div class="option @(agent.Id == _selectedAgent ? "selected" : "")"
                                      @onclick="() => SelectAgent(agent.Id)">
                                     <div class="option-name">@agent.Name</div>
                                 </div>
@@ -120,19 +131,25 @@
         {
             <div class="usage-stats">
                 <div class="usage-item" title="Input tokens">
-                    <svg class="usage-icon up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 11l-5-5-5 5M17 18l-5-5-5 5"/></svg>
+                    <svg class="usage-icon up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 11l-5-5-5 5M17 18l-5-5-5 5"/>
+                    </svg>
                     <span>@InputTokenCount</span>
                 </div>
                 <div class="usage-item" title="Output tokens">
-                    <svg class="usage-icon down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>
+                    <svg class="usage-icon down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M7 13l5 5 5-5M7 6l5 5 5-5"/>
+                    </svg>
                     <span>@OutputTokenCount</span>
                 </div>
                 @if (ActiveModel != null)
                 {
-                    <div class="usage-item context-usage" title="Context Usage: @(ContextUsagePercent.ToString("F1"))% (@(InputTokenCount + OutputTokenCount) / @(ActiveModel.ContextWindow > 0 ? ActiveModel.ContextWindow.ToString() : "Unknown") tokens)">
-                         <div class="context-progress-mini">
-                             <div class="context-progress-fill" style="width: @(ContextUsagePercent.ToString("F1"))%; background-color: @GetProgressColor(); --bar-color: @GetProgressColor();"></div>
-                         </div>
+                    <div class="usage-item context-usage"
+                         title="Context Usage: @(ContextUsagePercent.ToString("F1"))% (@(InputTokenCount + OutputTokenCount) / @(ActiveModel.ContextWindow > 0 ? ActiveModel.ContextWindow.ToString() : "Unknown") tokens)">
+                        <div class="context-progress-mini">
+                            <div class="context-progress-fill"
+                                 style="width: @(ContextUsagePercent.ToString("F1"))%; background-color: @GetProgressColor(); --bar-color: @GetProgressColor();"></div>
+                        </div>
                     </div>
                 }
             </div>
@@ -146,23 +163,29 @@
 
     <div class="composer-box">
         <button class="action-btn" type="button" aria-label="Add attachment">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                    d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+            </svg>
         </button>
-        
+
         <textarea @ref="_textAreaRef"
-                  class="composer-input" 
+                  class="composer-input"
                   placeholder="Ask Mullai anything..."
                   value="@Value"
                   @oninput="HandleInput"
                   rows="1"
                   spellcheck="false"></textarea>
-        
-        <button class="send-btn @(IsEmpty ? "disabled" : "")" 
-                type="button" 
+
+        <button class="send-btn @(IsEmpty ? "disabled" : "")"
+                type="button"
                 @onclick="HandleSubmit"
                 disabled="@IsEmpty"
                 aria-label="Send message">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
         </button>
     </div>
     <div class="composer-footer">
@@ -188,7 +211,7 @@
     private string _selectedProvider = string.Empty;
     private string _selectedModel = string.Empty;
     private string _selectedAgent = string.Empty;
-    
+
     private List<AgentDefinition> _enabledAgents = [];
     private string _providerSearch = string.Empty;
     private string _modelSearch = string.Empty;
@@ -197,23 +220,23 @@
     private bool _showModelDropdown;
     private bool _showAgentDropdown;
 
-    private IEnumerable<MullaiProviderDescriptor> FilteredProviders => 
-        string.IsNullOrWhiteSpace(_providerSearch) 
-            ? _enabledProviders 
+    private IEnumerable<MullaiProviderDescriptor> FilteredProviders =>
+        string.IsNullOrWhiteSpace(_providerSearch)
+            ? _enabledProviders
             : _enabledProviders.Where(p => p.Name.Contains(_providerSearch, StringComparison.OrdinalIgnoreCase));
 
-    private IEnumerable<MullaiModelDescriptor> FilteredModels => 
-        string.IsNullOrWhiteSpace(_modelSearch) 
-            ? _availableModels 
-            : _availableModels.Where(m => m.ModelName.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase) 
-                                       || m.ModelId.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase));
+    private IEnumerable<MullaiModelDescriptor> FilteredModels =>
+        string.IsNullOrWhiteSpace(_modelSearch)
+            ? _availableModels
+            : _availableModels.Where(m => m.ModelName.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase)
+                                          || m.ModelId.Contains(_modelSearch, StringComparison.OrdinalIgnoreCase));
 
-    private IEnumerable<AgentDefinition> FilteredAgents => 
-        string.IsNullOrWhiteSpace(_agentSearch) 
-            ? _enabledAgents 
+    private IEnumerable<AgentDefinition> FilteredAgents =>
+        string.IsNullOrWhiteSpace(_agentSearch)
+            ? _enabledAgents
             : _enabledAgents.Where(a => a.Name.Contains(_agentSearch, StringComparison.OrdinalIgnoreCase));
 
-    private MullaiModelDescriptor? ActiveModel => 
+    private MullaiModelDescriptor? ActiveModel =>
         _availableModels.FirstOrDefault(m => string.Equals(m.ModelId, _selectedModel, StringComparison.OrdinalIgnoreCase));
 
     private double ContextUsagePercent
@@ -317,10 +340,12 @@
             _selectedProvider = SelectedProvider;
             UpdateAvailableModels();
         }
+
         if (!string.IsNullOrEmpty(SelectedModel) && SelectedModel != _selectedModel)
         {
             _selectedModel = SelectedModel;
         }
+
         if (!string.IsNullOrEmpty(SelectedAgent) && SelectedAgent != _selectedAgent)
         {
             _selectedAgent = SelectedAgent;
@@ -342,7 +367,7 @@
     private async Task ToggleModelDropdown()
     {
         if (string.IsNullOrEmpty(_selectedProvider)) return;
-        
+
         _showModelDropdown = !_showModelDropdown;
         if (_showModelDropdown)
         {
@@ -448,7 +473,7 @@
                             _selectedModel = model.ModelId;
                         }
                     }
-                    
+
                     await SelectedProviderChanged.InvokeAsync(_selectedProvider);
                     await SelectedModelChanged.InvokeAsync(_selectedModel);
                 }
@@ -464,7 +489,7 @@
                     await SelectedAgentChanged.InvokeAsync(_selectedAgent);
                 }
             }
-            
+
             if (string.IsNullOrEmpty(_selectedAgent) && _enabledAgents.Any())
             {
                 _selectedAgent = _enabledAgents[0].Id;
@@ -519,6 +544,9 @@
             if (_module is not null) await _module.DisposeAsync();
             _objRef?.Dispose();
         }
-        catch (JSDisconnectedException) { }
+        catch (JSDisconnectedException)
+        {
+        }
     }
+
 }

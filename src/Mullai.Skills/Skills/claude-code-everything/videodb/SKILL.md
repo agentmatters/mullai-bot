@@ -13,38 +13,46 @@ argument-hint: "[task description]"
 ## When to use
 
 ### Desktop Perception
+
 - Start/stop a **desktop session** capturing **screen, mic, and system audio**
 - Stream **live context** and store **episodic session memory**
 - Run **real-time alerts/triggers** on what's spoken and what's happening on screen
 - Produce **session summaries**, a searchable timeline, and **playable evidence links**
 
 ### Video ingest + stream
+
 - Ingest a **file or URL** and return a **playable web stream link**
 - Transcode/normalize: **codec, bitrate, fps, resolution, aspect ratio**
 
 ### Index + search (timestamps + evidence)
+
 - Build **visual**, **spoken**, and **keyword** indexes
 - Search and return exact moments with **timestamps** and **playable evidence**
 - Auto-create **clips** from search results
 
 ### Timeline editing + generation
+
 - Subtitles: **generate**, **translate**, **burn-in**
 - Overlays: **text/image/branding**, motion captions
 - Audio: **background music**, **voiceover**, **dubbing**
 - Programmatic composition and exports via **timeline operations**
 
 ### Live streams (RTSP) + monitoring
+
 - Connect **RTSP/live feeds**
 - Run **real-time visual and spoken understanding** and emit **events/alerts** for monitoring workflows
 
 ## How it works
 
 ### Common inputs
+
 - Local **file path**, public **URL**, or **RTSP URL**
 - Desktop capture request: **start / stop / summarize session**
-- Desired operations: get context for understanding, transcode spec, index spec, search query, clip ranges, timeline edits, alert rules
+- Desired operations: get context for understanding, transcode spec, index spec, search query, clip ranges, timeline
+  edits, alert rules
 
 ### Common outputs
+
 - **Stream URL**
 - Search results with **timestamps** and **evidence links**
 - Generated assets: subtitles, audio, images, clips
@@ -64,6 +72,7 @@ conn = videodb.connect()
 ```
 
 This reads `VIDEO_DB_API_KEY` from:
+
 1. Environment (if already exported)
 2. Project's `.env` file in current directory
 
@@ -71,7 +80,8 @@ If the key is missing, `videodb.connect()` raises `AuthenticationError` automati
 
 Do NOT write a script file when a short inline command works.
 
-When writing inline Python (`python -c "..."`), always use properly formatted code — use semicolons to separate statements and keep it readable. For anything longer than ~3 statements, use a heredoc instead:
+When writing inline Python (`python -c "..."`), always use properly formatted code — use semicolons to separate
+statements and keep it readable. For anything longer than ~3 statements, use a heredoc instead:
 
 ```bash
 python << 'EOF'
@@ -198,6 +208,7 @@ except InvalidRequestError as e:
 ### Timeline editing
 
 **Important:** Always validate timestamps before building a timeline:
+
 - `start` must be >= 0 (negative values are silently accepted but produce broken output)
 - `start` must be < `end`
 - `end` must be <= `video.length`
@@ -231,6 +242,7 @@ job_id = conn.transcode(
 
 **Warning:** `reframe()` is a slow server-side operation. For long videos it can take
 several minutes and may time out. Best practices:
+
 - Always limit to a short segment using `start`/`end` when possible
 - For full-length videos, use `callback_url` for async processing
 - Trim the video on a `Timeline` first, then reframe the shorter result
@@ -278,18 +290,19 @@ except InvalidRequestError as e:
 
 ### Common pitfalls
 
-| Scenario | Error message | Solution |
-|----------|--------------|----------|
-| Indexing an already-indexed video | `Spoken word index for video already exists` | Use `video.index_spoken_words(force=True)` to skip if already indexed |
-| Scene index already exists | `Scene index with id XXXX already exists` | Extract the existing `scene_index_id` from the error with `re.search(r"id\s+([a-f0-9]+)", str(e))` |
-| Search finds no matches | `InvalidRequestError: No results found` | Catch the exception and treat as empty results (`shots = []`) |
-| Reframe times out | Blocks indefinitely on long videos | Use `start`/`end` to limit segment, or pass `callback_url` for async |
-| Negative timestamps on Timeline | Silently produces broken stream | Always validate `start >= 0` before creating `VideoAsset` |
-| `generate_video()` / `create_collection()` fails | `Operation not allowed` or `maximum limit` | Plan-gated features — inform the user about plan limits |
+| Scenario                                         | Error message                                | Solution                                                                                           |
+|--------------------------------------------------|----------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Indexing an already-indexed video                | `Spoken word index for video already exists` | Use `video.index_spoken_words(force=True)` to skip if already indexed                              |
+| Scene index already exists                       | `Scene index with id XXXX already exists`    | Extract the existing `scene_index_id` from the error with `re.search(r"id\s+([a-f0-9]+)", str(e))` |
+| Search finds no matches                          | `InvalidRequestError: No results found`      | Catch the exception and treat as empty results (`shots = []`)                                      |
+| Reframe times out                                | Blocks indefinitely on long videos           | Use `start`/`end` to limit segment, or pass `callback_url` for async                               |
+| Negative timestamps on Timeline                  | Silently produces broken stream              | Always validate `start >= 0` before creating `VideoAsset`                                          |
+| `generate_video()` / `create_collection()` fails | `Operation not allowed` or `maximum limit`   | Plan-gated features — inform the user about plan limits                                            |
 
 ## Examples
 
 ### Canonical prompts
+
 - "Start desktop capture and alert when a password field appears."
 - "Record my session and produce an actionable summary when it ends."
 - "Ingest this file and return a playable stream link."
@@ -309,7 +322,8 @@ Use `ws_listener.py` to capture WebSocket events during recording sessions. Desk
 4. **Run capture code** (see reference/capture.md for the full workflow)
 5. **Events written to**: `$STATE_DIR/videodb_events.jsonl`
 
-Use `--clear` whenever you start a fresh capture run so stale transcript and visual events do not leak into the new session.
+Use `--clear` whenever you start a fresh capture run so stale transcript and visual events do not leak into the new
+session.
 
 #### Query Events
 
@@ -341,7 +355,8 @@ recent_visual = [
 
 ## Additional docs
 
-Reference documentation is in the `reference/` directory adjacent to this SKILL.md file. Use the Glob tool to locate it if needed.
+Reference documentation is in the `reference/` directory adjacent to this SKILL.md file. Use the Glob tool to locate it
+if needed.
 
 - [reference/api-reference.md](reference/api-reference.md) - Complete VideoDB Python SDK API reference
 - [reference/search.md](reference/search.md) - In-depth guide to video search (spoken word and scene-based)
@@ -354,19 +369,23 @@ Reference documentation is in the `reference/` directory adjacent to this SKILL.
 - [reference/capture-reference.md](reference/capture-reference.md) - Capture SDK and WebSocket events
 - [reference/use-cases.md](reference/use-cases.md) - Common video processing patterns and examples
 
-**Do not use ffmpeg, moviepy, or local encoding tools** when VideoDB supports the operation. The following are all handled server-side by VideoDB — trimming, combining clips, overlaying audio or music, adding subtitles, text/image overlays, transcoding, resolution changes, aspect-ratio conversion, resizing for platform requirements, transcription, and media generation. Only fall back to local tools for operations listed under Limitations in reference/editor.md (transitions, speed changes, crop/zoom, colour grading, volume mixing).
+**Do not use ffmpeg, moviepy, or local encoding tools** when VideoDB supports the operation. The following are all
+handled server-side by VideoDB — trimming, combining clips, overlaying audio or music, adding subtitles, text/image
+overlays, transcoding, resolution changes, aspect-ratio conversion, resizing for platform requirements, transcription,
+and media generation. Only fall back to local tools for operations listed under Limitations in reference/editor.md (
+transitions, speed changes, crop/zoom, colour grading, volume mixing).
 
 ### When to use what
 
-| Problem | VideoDB solution |
-|---------|-----------------|
-| Platform rejects video aspect ratio or resolution | `video.reframe()` or `conn.transcode()` with `VideoConfig` |
-| Need to resize video for Twitter/Instagram/TikTok | `video.reframe(target="vertical")` or `target="square"` |
-| Need to change resolution (e.g. 1080p → 720p) | `conn.transcode()` with `VideoConfig(resolution=720)` |
-| Need to overlay audio/music on video | `AudioAsset` on a `Timeline` |
-| Need to add subtitles | `video.add_subtitle()` or `CaptionAsset` |
-| Need to combine/trim clips | `VideoAsset` on a `Timeline` |
-| Need to generate voiceover, music, or SFX | `coll.generate_voice()`, `generate_music()`, `generate_sound_effect()` |
+| Problem                                           | VideoDB solution                                                       |
+|---------------------------------------------------|------------------------------------------------------------------------|
+| Platform rejects video aspect ratio or resolution | `video.reframe()` or `conn.transcode()` with `VideoConfig`             |
+| Need to resize video for Twitter/Instagram/TikTok | `video.reframe(target="vertical")` or `target="square"`                |
+| Need to change resolution (e.g. 1080p → 720p)     | `conn.transcode()` with `VideoConfig(resolution=720)`                  |
+| Need to overlay audio/music on video              | `AudioAsset` on a `Timeline`                                           |
+| Need to add subtitles                             | `video.add_subtitle()` or `CaptionAsset`                               |
+| Need to combine/trim clips                        | `VideoAsset` on a `Timeline`                                           |
+| Need to generate voiceover, music, or SFX         | `coll.generate_voice()`, `generate_music()`, `generate_sound_effect()` |
 
 ## Provenance
 

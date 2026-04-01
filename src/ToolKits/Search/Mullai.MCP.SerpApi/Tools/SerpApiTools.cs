@@ -1,30 +1,28 @@
 using System.ComponentModel;
 using System.Globalization;
-using System.Net.Http;
-using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using ModelContextProtocol.Server;
 using ModelContextProtocol;
+using ModelContextProtocol.Server;
 using Mullai.Abstractions.Configuration;
 using Mullai.MCP.SerpApi.Models;
 
 namespace Mullai.MCP.SerpApi.Tools;
 
 /// <summary>
-/// Tool for interacting with the SerpAPI to perform searches.
+///     Tool for interacting with the SerpAPI to perform searches.
 /// </summary>
 [McpServerToolType]
-[McpConfigurationRequirement("SerpApiKey", "SerpAPI API Key", isSecret: true,
+[McpConfigurationRequirement("SerpApiKey", "SerpAPI API Key", true,
     HelpUrl = "https://serpapi.com/manage-api-key")]
 public sealed class SerpApiTools
 {
     private readonly IConfiguration _configuration;
-    private readonly ILogger<SerpApiTools> _logger;
     private readonly HttpClient _httpClient;
+    private readonly ILogger<SerpApiTools> _logger;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SerpApiTools"/> class.
+    ///     Initializes a new instance of the <see cref="SerpApiTools" /> class.
     /// </summary>
     public SerpApiTools(HttpClient httpClient, IConfiguration configuration, ILogger<SerpApiTools> logger)
     {
@@ -35,22 +33,17 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Executes a search request against SerpAPI.
+    ///     Executes a search request against SerpAPI.
     /// </summary>
     private async Task<string> ExecuteSearchAsync(string engine, Dictionary<string, string> parameters,
         CancellationToken cancellationToken = default)
     {
         var apiKey = _configuration["SerpApiKey"];
         if (string.IsNullOrWhiteSpace(apiKey))
-        {
             throw new McpException("SerpApiKey is not configured. Please set it in Settings.");
-        }
 
         parameters["api_key"] = apiKey;
-        if (!parameters.ContainsKey("engine"))
-        {
-            parameters["engine"] = engine;
-        }
+        if (!parameters.ContainsKey("engine")) parameters["engine"] = engine;
 
         var queryString = BuildQueryString(parameters);
         var requestUrl = $"/search.json?{queryString}";
@@ -65,27 +58,22 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Retrieves a stored search result by ID (for async searches).
+    ///     Retrieves a stored search result by ID (for async searches).
     /// </summary>
-    [McpServerTool, Description("Retrieve stored SerpAPI search results by search ID")]
+    [McpServerTool]
+    [Description("Retrieve stored SerpAPI search results by search ID")]
     public async Task<string> GetSearchResult(
         [Description("Search ID from async search")]
         string searchId,
-        [Description("Output format: json or html"), DefaultValue("json")]
+        [Description("Output format: json or html")] [DefaultValue("json")]
         string output = "json")
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(searchId))
-            {
-                throw new McpException("Search ID is required.");
-            }
+            if (string.IsNullOrWhiteSpace(searchId)) throw new McpException("Search ID is required.");
 
             var apiKey = _configuration["SerpApiKey"];
-            if (string.IsNullOrWhiteSpace(apiKey))
-            {
-                throw new McpException("SerpApiKey is not configured.");
-            }
+            if (string.IsNullOrWhiteSpace(apiKey)) throw new McpException("SerpApiKey is not configured.");
 
             var requestUrl = $"/searches/{searchId}.json?api_key={apiKey}&output={output}";
             _logger.LogDebug("Request URL: {Url}", requestUrl);
@@ -104,17 +92,15 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Performs a general Google web search.
+    ///     Performs a general Google web search.
     /// </summary>
-    [McpServerTool, Description("Search Google using SerpAPI")]
+    [McpServerTool]
+    [Description("Search Google using SerpAPI")]
     public async Task<string> GoogleSearch(GoogleSearchRequest request)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Q))
-            {
-                throw new McpException("Query parameter 'q' is required.");
-            }
+            if (string.IsNullOrWhiteSpace(request.Q)) throw new McpException("Query parameter 'q' is required.");
 
             var parameters = new Dictionary<string, string>();
             MapBaseParameters(request, parameters);
@@ -125,7 +111,8 @@ public sealed class SerpApiTools
             if (!string.IsNullOrEmpty(request.Tbm)) parameters["tbm"] = request.Tbm;
             if (!string.IsNullOrEmpty(request.Safe)) parameters["safe"] = request.Safe;
             if (request.Nfpr.HasValue) parameters["nfpr"] = request.Nfpr.Value.ToString(CultureInfo.InvariantCulture);
-            if (request.Filter.HasValue) parameters["filter"] = request.Filter.Value.ToString(CultureInfo.InvariantCulture);
+            if (request.Filter.HasValue)
+                parameters["filter"] = request.Filter.Value.ToString(CultureInfo.InvariantCulture);
             if (!string.IsNullOrEmpty(request.Ludocid)) parameters["ludocid"] = request.Ludocid;
             if (!string.IsNullOrEmpty(request.Lsig)) parameters["lsig"] = request.Lsig;
             if (!string.IsNullOrEmpty(request.Kgmid)) parameters["kgmid"] = request.Kgmid;
@@ -146,17 +133,15 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Performs a Google Image search.
+    ///     Performs a Google Image search.
     /// </summary>
-    [McpServerTool, Description("Search Google Images using SerpAPI")]
+    [McpServerTool]
+    [Description("Search Google Images using SerpAPI")]
     public async Task<string> GoogleImageSearch(GoogleImageSearchRequest request)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Q))
-            {
-                throw new McpException("Query parameter 'q' is required.");
-            }
+            if (string.IsNullOrWhiteSpace(request.Q)) throw new McpException("Query parameter 'q' is required.");
 
             var parameters = new Dictionary<string, string>();
             MapBaseParameters(request, parameters);
@@ -167,7 +152,8 @@ public sealed class SerpApiTools
             if (!string.IsNullOrEmpty(request.Lr)) parameters["lr"] = request.Lr;
             if (!string.IsNullOrEmpty(request.Safe)) parameters["safe"] = request.Safe;
             if (request.Nfpr.HasValue) parameters["nfpr"] = request.Nfpr.Value.ToString(CultureInfo.InvariantCulture);
-            if (request.Filter.HasValue) parameters["filter"] = request.Filter.Value.ToString(CultureInfo.InvariantCulture);
+            if (request.Filter.HasValue)
+                parameters["filter"] = request.Filter.Value.ToString(CultureInfo.InvariantCulture);
 
             _logger.LogInformation("Executing Google Image Search for: {Query}", request.Q);
             var response = await ExecuteSearchAsync("google_images", parameters);
@@ -182,17 +168,15 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Performs a Google News search.
+    ///     Performs a Google News search.
     /// </summary>
-    [McpServerTool, Description("Search Google News using SerpAPI")]
+    [McpServerTool]
+    [Description("Search Google News using SerpAPI")]
     public async Task<string> GoogleNewsSearch(GoogleNewsSearchRequest request)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Q))
-            {
-                throw new McpException("Query parameter 'q' is required.");
-            }
+            if (string.IsNullOrWhiteSpace(request.Q)) throw new McpException("Query parameter 'q' is required.");
 
             var parameters = new Dictionary<string, string>();
             MapBaseParameters(request, parameters);
@@ -214,17 +198,15 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Performs a Google Videos search.
+    ///     Performs a Google Videos search.
     /// </summary>
-    [McpServerTool, Description("Search Google Videos using SerpAPI")]
+    [McpServerTool]
+    [Description("Search Google Videos using SerpAPI")]
     public async Task<string> GoogleVideosSearch(GoogleVideosSearchRequest request)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Q))
-            {
-                throw new McpException("Query parameter 'q' is required.");
-            }
+            if (string.IsNullOrWhiteSpace(request.Q)) throw new McpException("Query parameter 'q' is required.");
 
             var parameters = new Dictionary<string, string>();
             MapBaseParameters(request, parameters);
@@ -247,17 +229,15 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Performs a Google Shopping search.
+    ///     Performs a Google Shopping search.
     /// </summary>
-    [McpServerTool, Description("Search Google Shopping using SerpAPI")]
+    [McpServerTool]
+    [Description("Search Google Shopping using SerpAPI")]
     public async Task<string> GoogleShoppingSearch(GoogleShoppingSearchRequest request)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Q))
-            {
-                throw new McpException("Query parameter 'q' is required.");
-            }
+            if (string.IsNullOrWhiteSpace(request.Q)) throw new McpException("Query parameter 'q' is required.");
 
             var parameters = new Dictionary<string, string>();
             MapBaseParameters(request, parameters);
@@ -279,17 +259,15 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Performs a Google Local search.
+    ///     Performs a Google Local search.
     /// </summary>
-    [McpServerTool, Description("Search Google Local using SerpAPI")]
+    [McpServerTool]
+    [Description("Search Google Local using SerpAPI")]
     public async Task<string> GoogleLocalSearch(GoogleLocalSearchRequest request)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Q))
-            {
-                throw new McpException("Query parameter 'q' is required.");
-            }
+            if (string.IsNullOrWhiteSpace(request.Q)) throw new McpException("Query parameter 'q' is required.");
 
             var parameters = new Dictionary<string, string>();
             MapBaseParameters(request, parameters);
@@ -309,17 +287,15 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Performs a Google Patents search.
+    ///     Performs a Google Patents search.
     /// </summary>
-    [McpServerTool, Description("Search Google Patents using SerpAPI")]
+    [McpServerTool]
+    [Description("Search Google Patents using SerpAPI")]
     public async Task<string> GooglePatentsSearch(GooglePatentsSearchRequest request)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Q))
-            {
-                throw new McpException("Query parameter 'q' is required.");
-            }
+            if (string.IsNullOrWhiteSpace(request.Q)) throw new McpException("Query parameter 'q' is required.");
 
             var parameters = new Dictionary<string, string>();
             MapBaseParameters(request, parameters);
@@ -340,7 +316,7 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Maps common search parameters from the request to the parameters dictionary.
+    ///     Maps common search parameters from the request to the parameters dictionary.
     /// </summary>
     private static void MapBaseParameters(SerpApiSearchRequest request, Dictionary<string, string> parameters)
     {
@@ -363,7 +339,7 @@ public sealed class SerpApiTools
     }
 
     /// <summary>
-    /// Builds a query string from a dictionary of parameters, omitting empty values.
+    ///     Builds a query string from a dictionary of parameters, omitting empty values.
     /// </summary>
     private static string BuildQueryString(IDictionary<string, string> parameters)
     {

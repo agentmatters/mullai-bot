@@ -6,7 +6,8 @@ origin: ECC
 
 # Agentic Engineering
 
-Use this skill for engineering workflows where AI agents perform most implementation work and humans enforce quality and risk controls.
+Use this skill for engineering workflows where AI agents perform most implementation work and humans enforce quality and
+risk controls.
 
 ## Operating Principles
 
@@ -25,6 +26,7 @@ Use this skill for engineering workflows where AI agents perform most implementa
 ## Task Decomposition
 
 Apply the 15-minute unit rule:
+
 - each unit should be independently verifiable
 - each unit should have a single dominant risk
 - each unit should expose a clear done condition
@@ -44,6 +46,7 @@ Apply the 15-minute unit rule:
 ## Review Focus for AI-Generated Code
 
 Prioritize:
+
 - invariants and edge cases
 - error boundaries
 - security and auth assumptions
@@ -54,6 +57,7 @@ Do not waste review cycles on style-only disagreements when automated format/lin
 ## Cost Discipline
 
 Track per task:
+
 - model
 - token estimate
 - retries

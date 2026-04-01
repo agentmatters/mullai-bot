@@ -1,8 +1,8 @@
 @page "/settings"
-@rendermode InteractiveServer
 @using Mullai.Abstractions.Configuration
 @using Mullai.Abstractions.Models
 @using Mullai.Providers
+@rendermode InteractiveServer
 
 @inject IMullaiConfigurationManager ConfigManager
 @inject HttpClient HttpClient
@@ -13,7 +13,9 @@
     <div class="settings-header">
         <div style="display: flex; align-items: center; gap: 1rem;">
             <button type="button" class="mobile-menu-btn" @onclick="() => Layout?.ToggleSidebar()">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M4 7h16M4 12h16M4 17h16"/>
+                </svg>
             </button>
             <h1>Settings</h1>
         </div>
@@ -34,7 +36,7 @@
         {
             <div class="notice @(_statusKind == NoticeKind.Danger ? "notice-danger" : "notice-success")">@_status</div>
         }
-        
+
         <section class="card">
             <div class="card-head">
                 <div class="card-title">General Settings</div>
@@ -52,7 +54,8 @@
                         <div class="credentials-bar-main">
                             <div class="credentials-bar-title">@name API Key</div>
                             <div class="credentials-bar-status">
-                                <span class="pill @(hasKey ? "pill-ok" : "pill-warn")">@(hasKey ? "Configured" : "Missing")</span>
+                                <span
+                                    class="pill @(hasKey ? "pill-ok" : "pill-warn")">@(hasKey ? "Configured" : "Missing")</span>
                                 @if (hasKey && masked is not null)
                                 {
                                     <span class="mono">@masked</span>
@@ -62,12 +65,15 @@
                         <div class="credentials-bar-actions">
                             @if (!_apiKeyEditMode && !_apiKeyDeleteConfirm)
                             {
-                                <button class="btn btn-sm @(hasKey ? "" : "btn-primary")" type="button" @onclick="BeginApiKeyEdit">
+                                <button class="btn btn-sm @(hasKey ? "" : "btn-primary")" type="button"
+                                        @onclick="BeginApiKeyEdit">
                                     @(hasKey ? "Update" : "Set key")
                                 </button>
                                 @if (hasKey)
                                 {
-                                    <button class="btn btn-sm" type="button" @onclick="BeginApiKeyDeleteConfirm">Delete</button>
+                                    <button class="btn btn-sm" type="button" @onclick="BeginApiKeyDeleteConfirm">
+                                        Delete
+                                    </button>
                                 }
                             }
                         </div>
@@ -81,8 +87,11 @@
                                 <div class="card-subtitle">Stored locally and never displayed in full.</div>
                             </div>
                             <div class="key-editor-form">
-                                <input class="input" type="password" placeholder="Paste @name API key…" @bind="_apiKeyDraft" @bind:event="oninput" />
-                                <button class="btn btn-primary" type="button" @onclick="() => SaveApiKey(name)" disabled="@string.IsNullOrWhiteSpace(_apiKeyDraft)">Save</button>
+                                <input class="input" type="password" placeholder="Paste @name API key…"
+                                       @bind="_apiKeyDraft" @bind:event="oninput"/>
+                                <button class="btn btn-primary" type="button" @onclick="() => SaveApiKey(name)"
+                                        disabled="@string.IsNullOrWhiteSpace(_apiKeyDraft)">Save
+                                </button>
                                 <button class="btn" type="button" @onclick="CancelApiKeyEdit">Cancel</button>
                             </div>
                         </div>
@@ -93,7 +102,9 @@
                         <div class="notice notice-danger">
                             <div class="key-editor-title">Delete API key for @name?</div>
                             <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary" style="background:#dc2626" type="button" @onclick="() => ConfirmDeleteApiKey(name)">Confirm Delete</button>
+                                <button class="btn btn-primary" style="background:#dc2626" type="button"
+                                        @onclick="() => ConfirmDeleteApiKey(name)">Confirm Delete
+                                </button>
                                 <button class="btn" type="button" @onclick="CancelDeleteApiKey">Cancel</button>
                             </div>
                         </div>
@@ -112,7 +123,8 @@
                             {
                                 var selected = string.Equals(providerItem.Provider.Name, _selectedProviderName, StringComparison.OrdinalIgnoreCase);
                                 var hasKey = providerItem.HasApiKey();
-                                <button type="button" class="list-item @(selected ? "selected" : "")" @onclick="() => SelectProvider(providerItem.Provider.Name)">
+                                <button type="button" class="list-item @(selected ? "selected" : "")"
+                                        @onclick="() => SelectProvider(providerItem.Provider.Name)">
                                     <div class="list-item-main">
                                         <div class="list-item-title">@providerItem.Provider.Name</div>
                                         <div class="list-item-sub">
@@ -127,7 +139,7 @@
                                         <input type="checkbox"
                                                checked="@providerItem.Enabled"
                                                @onclick:stopPropagation="true"
-                                               @onchange="e => OnProviderToggleChanged(providerItem, e)" />
+                                               @onchange="e => OnProviderToggleChanged(providerItem, e)"/>
                                         <span class="toggle-ui"></span>
                                     </label>
                                 </button>
@@ -140,7 +152,8 @@
                         {
                             <div class="panel-empty">
                                 <div class="card-title">Select a provider</div>
-                                <p class="card-subtitle">Choose a provider on the left to manage its API key and models.</p>
+                                <p class="card-subtitle">Choose a provider on the left to manage its API key and
+                                    models.</p>
                             </div>
                         }
                         else
@@ -149,13 +162,19 @@
                             <div class="panel-head">
                                 <div class="panel-title">Models</div>
                                 <div class="panel-actions">
-                                    <button class="btn btn-sm" type="button" @onclick="() => RefreshModelsAsync(provider)" disabled="@provider.IsRefreshing">
+                                    <button class="btn btn-sm" type="button"
+                                            @onclick="() => RefreshModelsAsync(provider)"
+                                            disabled="@provider.IsRefreshing">
                                         @(provider.IsRefreshing ? "Refreshing…" : "Refresh")
                                     </button>
-                                    <button class="btn btn-sm" type="button" @onclick="() => SetAllModelsEnabledAsync(provider, true)" disabled="@provider.IsBulkUpdating">
+                                    <button class="btn btn-sm" type="button"
+                                            @onclick="() => SetAllModelsEnabledAsync(provider, true)"
+                                            disabled="@provider.IsBulkUpdating">
                                         Enable all
                                     </button>
-                                    <button class="btn btn-sm" type="button" @onclick="() => SetAllModelsEnabledAsync(provider, false)" disabled="@provider.IsBulkUpdating">
+                                    <button class="btn btn-sm" type="button"
+                                            @onclick="() => SetAllModelsEnabledAsync(provider, false)"
+                                            disabled="@provider.IsBulkUpdating">
                                         Disable all
                                     </button>
                                     <button class="btn btn-sm btn-primary" type="button" @onclick="ToggleModelAddForm">
@@ -165,18 +184,25 @@
                             </div>
 
                             <div class="panel-toolbar">
-                                <input class="input" placeholder="Search models…" @bind="_modelNameFilter" @bind:event="oninput" />
-                                <button type="button" class="btn btn-sm @(_showEnabledModelsOnly ? "btn-on" : "")" @onclick="ToggleEnabledOnly">
+                                <input class="input" placeholder="Search models…" @bind="_modelNameFilter"
+                                       @bind:event="oninput"/>
+                                <button type="button" class="btn btn-sm @(_showEnabledModelsOnly ? "btn-on" : "")"
+                                        @onclick="ToggleEnabledOnly">
                                     Enabled only
                                 </button>
                             </div>
 
                             @if (_showModelAddForm)
                             {
-                                <div class="panel-toolbar" style="background: var(--surface-2); border-top: 1px solid var(--border); padding-top: 0.5rem; padding-bottom: 0.5rem;">
-                                    <input class="input" placeholder="Model ID (e.g. gpt-4o)" @bind="_newModelId" @bind:event="oninput" style="flex: 1;" />
-                                    <input class="input" placeholder="Display Name (optional)" @bind="_newModelName" @bind:event="oninput" style="flex: 1;" />
-                                    <button class="btn btn-sm btn-primary" type="button" @onclick="() => AddModel(provider)" disabled="@string.IsNullOrWhiteSpace(_newModelId)">
+                                <div class="panel-toolbar"
+                                     style="background: var(--surface-2); border-top: 1px solid var(--border); padding-top: 0.5rem; padding-bottom: 0.5rem;">
+                                    <input class="input" placeholder="Model ID (e.g. gpt-4o)" @bind="_newModelId"
+                                           @bind:event="oninput" style="flex: 1;"/>
+                                    <input class="input" placeholder="Display Name (optional)" @bind="_newModelName"
+                                           @bind:event="oninput" style="flex: 1;"/>
+                                    <button class="btn btn-sm btn-primary" type="button"
+                                            @onclick="() => AddModel(provider)"
+                                            disabled="@string.IsNullOrWhiteSpace(_newModelId)">
                                         Save
                                     </button>
                                     <button class="btn btn-sm" type="button" @onclick="ToggleModelAddForm">
@@ -209,7 +235,7 @@
                                                 <label class="toggle">
                                                     <input type="checkbox"
                                                            checked="@enabled"
-                                                           @onchange="e => OnModelToggleChanged(provider, model, e)" />
+                                                           @onchange="e => OnModelToggleChanged(provider, model, e)"/>
                                                     <span class="toggle-ui"></span>
                                                 </label>
                                             </td>
@@ -218,7 +244,7 @@
                                                 <div class="model-sub">@model.ModelId</div>
                                             </td>
                                             <td class="mono text-right">
-                                                @((model.ContextWindow > 0) ? model.ContextWindow.ToString("N0") : "—")
+                                                @(model.ContextWindow > 0 ? model.ContextWindow.ToString("N0") : "—")
                                             </td>
                                             <td class="mono text-right">
                                                 @FormatPricing(model.Pricing)
@@ -235,10 +261,13 @@
         </section>
 
         <section class="card" style="margin-top: 2rem;">
-            <div class="card-head" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1.5rem;">
+            <div class="card-head"
+                 style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding: 1.5rem;">
                 <div style="flex: 1; min-width: 200px;">
                     <div class="card-title">MCP Servers</div>
-                    <div class="card-subtitle" style="margin-top: 0.25rem;">Manage Model Context Protocol (MCP) servers to provide additional tools to Mullai.</div>
+                    <div class="card-subtitle" style="margin-top: 0.25rem;">Manage Model Context Protocol (MCP) servers
+                        to provide additional tools to Mullai.
+                    </div>
                 </div>
                 <div class="panel-actions">
                     <button class="btn btn-sm btn-primary" type="button" @onclick="ToggleMcpAddForm">
@@ -249,14 +278,16 @@
             <div class="card-body">
                 @if (_showMcpAddForm)
                 {
-                    <div class="key-editor" style="margin-bottom: 2rem; border: 1px solid var(--border); padding: 1.5rem; border-radius: 8px;">
+                    <div class="key-editor"
+                         style="margin-bottom: 2rem; border: 1px solid var(--border); padding: 1.5rem; border-radius: 8px;">
                         <div class="key-editor-header">
-                            <div class="key-editor-title">@(_editingMcpName == null ? "Add New" : "Edit") MCP Server</div>
+                            <div class="key-editor-title">@(_editingMcpName == null ? "Add New" : "Edit") MCP Server
+                            </div>
                         </div>
                         <div class="key-editor-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="form-group">
                                 <label class="label">Server Name</label>
-                                <input class="input" placeholder="e.g. MyLocalTools" @bind="_mcpNameDraft" />
+                                <input class="input" placeholder="e.g. MyLocalTools" @bind="_mcpNameDraft"/>
                             </div>
                             <div class="form-group">
                                 <label class="label">Connection Type</label>
@@ -269,22 +300,25 @@
                             {
                                 <div class="form-group" style="grid-column: span 2;">
                                     <label class="label">Executable Command</label>
-                                    <input class="input" placeholder="e.g. node, python, /path/to/binary" @bind="_mcpCommandDraft" />
+                                    <input class="input" placeholder="e.g. node, python, /path/to/binary"
+                                           @bind="_mcpCommandDraft"/>
                                 </div>
                                 <div class="form-group" style="grid-column: span 2;">
                                     <label class="label">Arguments (comma separated)</label>
-                                    <input class="input" placeholder="e.g. server.js, --quiet" @bind="_mcpArgsDraft" />
+                                    <input class="input" placeholder="e.g. server.js, --quiet" @bind="_mcpArgsDraft"/>
                                 </div>
                             }
                             else
                             {
                                 <div class="form-group" style="grid-column: span 2;">
                                     <label class="label">Server URL</label>
-                                    <input class="input" placeholder="https://example.com/mcp" @bind="_mcpUrlDraft" />
+                                    <input class="input" placeholder="https://example.com/mcp" @bind="_mcpUrlDraft"/>
                                 </div>
                             }
                             <div style="grid-column: span 2; display: flex; gap: 0.5rem; margin-top: 1rem;">
-                                <button class="btn btn-primary" type="button" @onclick="SaveMcpServer" disabled="@string.IsNullOrWhiteSpace(_mcpNameDraft)">Save Server</button>
+                                <button class="btn btn-primary" type="button" @onclick="SaveMcpServer"
+                                        disabled="@string.IsNullOrWhiteSpace(_mcpNameDraft)">Save Server
+                                </button>
                                 <button class="btn" type="button" @onclick="ToggleMcpAddForm">Cancel</button>
                             </div>
                         </div>
@@ -302,174 +336,228 @@
                     <div class="models-scroll" style="max-height: none;">
                         <table>
                             <thead>
-                                <tr>
-                                    <th style="width: 60px;">On</th>
-                                    <th>Server</th>
-                                    <th>Type</th>
-                                    <th>Details</th>
-                                    <th class="text-right">Actions</th>
-                                </tr>
+                            <tr>
+                                <th style="width: 60px;">On</th>
+                                <th>Server</th>
+                                <th>Type</th>
+                                <th>Details</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
                             </thead>
                             <tbody>
-                                @{
-                                    var builtInServers = _mcpConfig.Servers.Where(s => s.IsBuiltIn).OrderBy(s => s.Name);
-                                    var customServers = _mcpConfig.Servers.Where(s => !s.IsBuiltIn).OrderBy(s => s.Name);
-                                }
+                            @{
+                                var builtInServers = _mcpConfig.Servers.Where(s => s.IsBuiltIn).OrderBy(s => s.Name);
+                                var customServers = _mcpConfig.Servers.Where(s => !s.IsBuiltIn).OrderBy(s => s.Name);
+                            }
 
-                                @if (builtInServers.Any())
+                            @if (builtInServers.Any())
+                            {
+                                <tr class="table-group-header">
+                                    <td colspan="5"
+                                        style="background: var(--surface-2); padding: 0.5rem 1rem; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--text-2);">
+                                        Default Toolkits
+                                    </td>
+                                </tr>
+                                @foreach (var server in builtInServers)
                                 {
-                                    <tr class="table-group-header">
-                                        <td colspan="5" style="background: var(--surface-2); padding: 0.5rem 1rem; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--text-2);">Default Toolkits</td>
+                                    <tr>
+                                        <td>
+                                            <label class="toggle">
+                                                <input type="checkbox"
+                                                       checked="@server.Enabled"
+                                                       @onchange="e => OnMcpToggleChanged(server, e)"/>
+                                                <span class="toggle-ui"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="model-name"
+                                                 style="display: flex; align-items: center; gap: 0.5rem;">
+                                                @server.Name
+                                                <span class="pill pill-built-in"
+                                                      style="font-size: 0.65rem; background: var(--surface-3);">Built-in</span>
+                                                @if (server.Requirements.Any() && !IsMcpConfigured(server))
+                                                {
+                                                    <span class="pill pill-warning"
+                                                          @onclick="() => ToggleMcpConfig(server.Name)"
+                                                          style="font-size: 0.65rem; background: rgba(255, 171, 0, 0.1); color: #ffab00; border: 1px solid rgba(255, 171, 0, 0.2); cursor: pointer;"
+                                                          title="Click to configure">Missing Key</span>
+                                                }
+
+                                                @if (server.Requirements.Any())
+                                                {
+                                                    <button
+                                                        class="btn btn-icon btn-sm mcp-config-toggle @(_expandedMcpServers.Contains(server.Name) ? "active" : "")"
+                                                        type="button"
+                                                        @onclick="() => ToggleMcpConfig(server.Name)"
+                                                        style="padding: 2px; margin-left: 4px; border: none; background: transparent; transition: transform 0.2s;"
+                                                        title="Configure toolkit settings">
+                                                        <svg
+                                                            style="width: 1rem; height: 1rem; color: @(_expandedMcpServers.Contains(server.Name) ? "var(--accent)" : "var(--text-3)"); transform: @(_expandedMcpServers.Contains(server.Name) ? "rotate(45deg)" : "none");"
+                                                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                            stroke-width="2">
+                                                            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
+                                                            <path
+                                                                d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1-1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                                                        </svg>
+                                                    </button>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="pill">@server.Type</span>
+                                        </td>
+                                        <td class="mono"
+                                            style="font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            @if (server.Type == "stdio")
+                                            {
+                                                <span>@server.Command @(string.Join(" ", server.Args))</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@server.Url</span>
+                                            }
+                                        </td>
+                                        <td class="text-right">
+                                            <span class="hint" style="font-size: 0.75rem;">Managed by system</span>
+                                        </td>
                                     </tr>
-                                    @foreach (var server in builtInServers)
+
+                                    @if (server.Requirements.Any() && _expandedMcpServers.Contains(server.Name))
                                     {
-                                        <tr>
-                                            <td>
-                                                <label class="toggle">
-                                                    <input type="checkbox"
-                                                           checked="@server.Enabled"
-                                                           @onchange="e => OnMcpToggleChanged(server, e)" />
-                                                    <span class="toggle-ui"></span>
-                                                </label>
-                                            </td>
-                                            <td>
-                                                <div class="model-name" style="display: flex; align-items: center; gap: 0.5rem;">
-                                                    @server.Name 
-                                                    <span class="pill pill-built-in" style="font-size: 0.65rem; background: var(--surface-3);">Built-in</span>
-                                                    @if (server.Requirements.Any() && !IsMcpConfigured(server))
-                                                    {
-                                                        <span class="pill pill-warning" 
-                                                              @onclick="() => ToggleMcpConfig(server.Name)"
-                                                              style="font-size: 0.65rem; background: rgba(255, 171, 0, 0.1); color: #ffab00; border: 1px solid rgba(255, 171, 0, 0.2); cursor: pointer;"
-                                                              title="Click to configure">Missing Key</span>
-                                                    }
-
-                                                    @if (server.Requirements.Any())
-                                                    {
-                                                        <button class="btn btn-icon btn-sm mcp-config-toggle @(_expandedMcpServers.Contains(server.Name) ? "active" : "")" 
-                                                                type="button" 
-                                                                @onclick="() => ToggleMcpConfig(server.Name)" 
-                                                                style="padding: 2px; margin-left: 4px; border: none; background: transparent; transition: transform 0.2s;"
-                                                                title="Configure toolkit settings">
-                                                            <svg style="width: 1rem; height: 1rem; color: @(_expandedMcpServers.Contains(server.Name) ? "var(--accent)" : "var(--text-3)"); transform: @(_expandedMcpServers.Contains(server.Name) ? "rotate(45deg)" : "none");" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1-1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-                                                        </button>
-                                                    }
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="pill">@server.Type</span>
-                                            </td>
-                                            <td class="mono" style="font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                @if (server.Type == "stdio")
-                                                {
-                                                    <span>@server.Command @(string.Join(" ", server.Args))</span>
-                                                }
-                                                else
-                                                {
-                                                    <span>@server.Url</span>
-                                                }
-                                            </td>
-                                            <td class="text-right">
-                                                <span class="hint" style="font-size: 0.75rem;">Managed by system</span>
-                                            </td>
-                                        </tr>
-
-                                        @if (server.Requirements.Any() && _expandedMcpServers.Contains(server.Name))
-                                        {
-
-                                            <tr class="mcp-config-row">
-                                                <td></td>
-                                                <td colspan="4">
-                                                    <div class="mcp-config-card" style="margin: 0.5rem 0 1rem 0; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm);">
-                                                        <div class="mcp-config-header" style="background: var(--surface-3); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-                                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                                <svg style="width: 0.9rem; height: 0.9rem; color: var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-                                                                <span style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Toolkit Configuration</span>
-                                                            </div>
-                                                            <div class="hint" style="font-size: 0.65rem;">Changes take effect immediately</div>
+                                        <tr class="mcp-config-row">
+                                            <td></td>
+                                            <td colspan="4">
+                                                <div class="mcp-config-card"
+                                                     style="margin: 0.5rem 0 1rem 0; background: var(--surface-2); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm);">
+                                                    <div class="mcp-config-header"
+                                                         style="background: var(--surface-3); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+                                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                            <svg
+                                                                style="width: 0.9rem; height: 0.9rem; color: var(--accent);"
+                                                                viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                                stroke-width="2">
+                                                                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/>
+                                                                <path
+                                                                    d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+                                                            </svg>
+                                                            <span
+                                                                style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;">Toolkit Configuration</span>
                                                         </div>
-                                                        <div class="mcp-config-body" style="padding: 1.25rem;">
-                                                            @foreach (var req in server.Requirements)
-                                                            {
-                                                                <div class="mcp-config-field" style="margin-bottom: 1.25rem; last-child: margin-bottom: 0;">
-                                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                                            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-2);">@req.Description</label>
-                                                                            @if (!string.IsNullOrEmpty(req.HelpUrl))
-                                                                            {
-                                                                                <a href="@req.HelpUrl" target="_blank" title="Where do I find this?" style="color: var(--accent); display: flex; align-items: center;">
-                                                                                    <svg style="width: 0.8rem; height: 0.8rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
-                                                                                </a>
-                                                                            }
-                                                                        </div>
-                                                                        @if (req.IsSecret && !string.IsNullOrEmpty(GetMcpSecret(req.Key)))
-                                                                        {
-                                                                            <span class="pill pill-success" style="font-size: 0.65rem;">Configured</span>
-                                                                        }
-                                                                    </div>
-
-                                                                    <div style="position: relative; display: flex; gap: 0.5rem;">
-                                                                        <input type="@(req.IsSecret ? "password" : "text")" 
-                                                                               class="form-input" 
-                                                                               style="flex: 1; padding: 0.6rem 1rem; border-radius: 8px; font-family: var(--font-mono); font-size: 0.85rem;"
-                                                                               placeholder="@(req.IsSecret ? "Enter secret key..." : "Enter value...")"
-                                                                               value="@GetMcpSecret(req.Key)" 
-                                                                               @onchange="e => SaveMcpSecret(req.Key, e.Value?.ToString())" />
-                                                                        @if (!string.IsNullOrEmpty(GetMcpSecret(req.Key)))
-                                                                        {
-                                                                            <button class="btn btn-icon btn-sm" @onclick="() => SaveMcpSecret(req.Key, string.Empty)" title="Clear value" style="color: var(--text-3); font-size: 0.7rem; border: none; background: transparent;">✕</button>
-                                                                        }
-                                                                    </div>
-                                                                </div>
-                                                            }
+                                                        <div class="hint" style="font-size: 0.65rem;">Changes take
+                                                            effect immediately
                                                         </div>
                                                     </div>
-                                                </td>
-                                            </tr>
-                                        }
+                                                    <div class="mcp-config-body" style="padding: 1.25rem;">
+                                                        @foreach (var req in server.Requirements)
+                                                        {
+                                                            <div class="mcp-config-field"
+                                                                 style="margin-bottom: 1.25rem; last-child: margin-bottom: 0;">
+                                                                <div
+                                                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                                                    <div
+                                                                        style="display: flex; align-items: center; gap: 0.5rem;">
+                                                                        <label
+                                                                            style="font-size: 0.8rem; font-weight: 600; color: var(--text-2);">@req.Description</label>
+                                                                        @if (!string.IsNullOrEmpty(req.HelpUrl))
+                                                                        {
+                                                                            <a href="@req.HelpUrl" target="_blank"
+                                                                               title="Where do I find this?"
+                                                                               style="color: var(--accent); display: flex; align-items: center;">
+                                                                                <svg
+                                                                                    style="width: 0.8rem; height: 0.8rem;"
+                                                                                    viewBox="0 0 24 24" fill="none"
+                                                                                    stroke="currentColor"
+                                                                                    stroke-width="2.5">
+                                                                                    <circle cx="12" cy="12" r="10"/>
+                                                                                    <path
+                                                                                        d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/>
+                                                                                    <path d="M12 17h.01"/>
+                                                                                </svg>
+                                                                            </a>
+                                                                        }
+                                                                    </div>
+                                                                    @if (req.IsSecret && !string.IsNullOrEmpty(GetMcpSecret(req.Key)))
+                                                                    {
+                                                                        <span class="pill pill-success"
+                                                                              style="font-size: 0.65rem;">Configured</span>
+                                                                    }
+                                                                </div>
 
-                                    }
-                                }
-
-                                @if (customServers.Any())
-                                {
-                                    <tr class="table-group-header">
-                                        <td colspan="5" style="background: var(--surface-2); padding: 0.5rem 1rem; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--text-2); border-top: 1px solid var(--border);">Custom Servers</td>
-                                    </tr>
-                                    @foreach (var server in customServers)
-                                    {
-                                        <tr>
-                                            <td>
-                                                <label class="toggle">
-                                                    <input type="checkbox"
-                                                           checked="@server.Enabled"
-                                                           @onchange="e => OnMcpToggleChanged(server, e)" />
-                                                    <span class="toggle-ui"></span>
-                                                </label>
-                                            </td>
-                                            <td>
-                                                <div class="model-name">@server.Name</div>
-                                            </td>
-                                            <td>
-                                                <span class="pill">@server.Type</span>
-                                            </td>
-                                            <td class="mono" style="font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                @if (server.Type == "stdio")
-                                                {
-                                                    <span>@server.Command @(string.Join(" ", server.Args))</span>
-                                                }
-                                                else
-                                                {
-                                                    <span>@server.Url</span>
-                                                }
-                                            </td>
-                                            <td class="text-right">
-                                                <button class="btn btn-sm" type="button" @onclick="() => EditMcpServer(server)">Edit</button>
-                                                <button class="btn btn-sm" style="color: #dc2626" type="button" @onclick="() => DeleteMcpServer(server.Name)">Delete</button>
+                                                                <div
+                                                                    style="position: relative; display: flex; gap: 0.5rem;">
+                                                                    <input type="@(req.IsSecret ? "password" : "text")"
+                                                                           class="form-input"
+                                                                           style="flex: 1; padding: 0.6rem 1rem; border-radius: 8px; font-family: var(--font-mono); font-size: 0.85rem;"
+                                                                           placeholder="@(req.IsSecret ? "Enter secret key..." : "Enter value...")"
+                                                                           value="@GetMcpSecret(req.Key)"
+                                                                           @onchange="e => SaveMcpSecret(req.Key, e.Value?.ToString())"/>
+                                                                    @if (!string.IsNullOrEmpty(GetMcpSecret(req.Key)))
+                                                                    {
+                                                                        <button class="btn btn-icon btn-sm"
+                                                                                @onclick="() => SaveMcpSecret(req.Key, string.Empty)"
+                                                                                title="Clear value"
+                                                                                style="color: var(--text-3); font-size: 0.7rem; border: none; background: transparent;">
+                                                                            ✕
+                                                                        </button>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
                                             </td>
                                         </tr>
                                     }
                                 }
+                            }
+
+                            @if (customServers.Any())
+                            {
+                                <tr class="table-group-header">
+                                    <td colspan="5"
+                                        style="background: var(--surface-2); padding: 0.5rem 1rem; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: var(--text-2); border-top: 1px solid var(--border);">
+                                        Custom Servers
+                                    </td>
+                                </tr>
+                                @foreach (var server in customServers)
+                                {
+                                    <tr>
+                                        <td>
+                                            <label class="toggle">
+                                                <input type="checkbox"
+                                                       checked="@server.Enabled"
+                                                       @onchange="e => OnMcpToggleChanged(server, e)"/>
+                                                <span class="toggle-ui"></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <div class="model-name">@server.Name</div>
+                                        </td>
+                                        <td>
+                                            <span class="pill">@server.Type</span>
+                                        </td>
+                                        <td class="mono"
+                                            style="font-size: 0.85rem; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            @if (server.Type == "stdio")
+                                            {
+                                                <span>@server.Command @(string.Join(" ", server.Args))</span>
+                                            }
+                                            else
+                                            {
+                                                <span>@server.Url</span>
+                                            }
+                                        </td>
+                                        <td class="text-right">
+                                            <button class="btn btn-sm" type="button"
+                                                    @onclick="() => EditMcpServer(server)">Edit
+                                            </button>
+                                            <button class="btn btn-sm" style="color: #dc2626" type="button"
+                                                    @onclick="() => DeleteMcpServer(server.Name)">Delete
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
                             </tbody>
                         </table>
                     </div>
@@ -481,7 +569,7 @@
 </div>
 
 @code {
-    [CascadingParameter] public Layout.MainLayout? Layout { get; set; }
+    [CascadingParameter] public MainLayout? Layout { get; set; }
 
     private bool _loading = true;
     private string? _status;
@@ -497,7 +585,7 @@
     private string? _selectedProviderName;
     private string _modelNameFilter = string.Empty;
     private bool _showEnabledModelsOnly;
-    
+
     private bool _showModelAddForm;
     private string _newModelId = string.Empty;
     private string _newModelName = string.Empty;
@@ -632,7 +720,9 @@
         }
 
         public void SetModelEnabled(MullaiModelDescriptor model, bool enabled)
-            => _modelEnabled[model.ModelId] = enabled;
+        {
+            _modelEnabled[model.ModelId] = enabled;
+        }
 
         public string? GetMaskedApiKey()
         {
@@ -646,7 +736,9 @@
         }
 
         public bool HasApiKey()
-            => !string.IsNullOrWhiteSpace(_config.GetApiKey(Provider.Name));
+        {
+            return !string.IsNullOrWhiteSpace(_config.GetApiKey(Provider.Name));
+        }
     }
 
     private ProviderVm? SelectedProvider
@@ -664,7 +756,9 @@
     }
 
     private void ToggleEnabledOnly()
-        => _showEnabledModelsOnly = !_showEnabledModelsOnly;
+    {
+        _showEnabledModelsOnly = !_showEnabledModelsOnly;
+    }
 
     private IEnumerable<MullaiModelDescriptor> FilterModels(ProviderVm provider)
     {
@@ -745,9 +839,9 @@
 
         ConfigManager.AddModelDescriptor(provider.Provider.Name, model);
         LoadAll(); // To refresh UI
-        
+
         SetStatus($"Added model {model.ModelName} to {provider.Provider.Name}.", NoticeKind.Success);
-        
+
         _showModelAddForm = false;
         _newModelId = string.Empty;
         _newModelName = string.Empty;
@@ -768,7 +862,9 @@
     }
 
     private void CancelDeleteApiKey()
-        => _apiKeyDeleteConfirm = false;
+    {
+        _apiKeyDeleteConfirm = false;
+    }
 
     private void ConfirmDeleteApiKey(string providerName)
     {
@@ -827,7 +923,7 @@
 
         ConfigManager.SaveMcpConfiguration(_mcpConfig);
         SetStatus($"Saved MCP server {server.Name}.", NoticeKind.Success);
-        
+
         _showMcpAddForm = false;
         _editingMcpName = null;
         ResetMcpDrafts();
@@ -855,7 +951,10 @@
         }
     }
 
-    private string GetMcpSecret(string key) => ConfigManager.GetMcpSecret(key) ?? string.Empty;
+    private string GetMcpSecret(string key)
+    {
+        return ConfigManager.GetMcpSecret(key) ?? string.Empty;
+    }
 
     private bool IsMcpConfigured(McpServerDescriptor server)
     {
@@ -874,10 +973,13 @@
 
 
     private static bool ParseCheckbox(object? value)
-        => value switch
+    {
+        return value switch
         {
             bool b => b,
             string s when bool.TryParse(s, out var b) => b,
             _ => false
         };
+    }
+
 }

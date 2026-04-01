@@ -1,7 +1,7 @@
 namespace Mullai.Memory.UserMemory;
 
 /// <summary>
-/// Data model for storing user information extracted from conversations.
+///     Data model for storing user information extracted from conversations.
 /// </summary>
 public sealed class UserInfo
 {

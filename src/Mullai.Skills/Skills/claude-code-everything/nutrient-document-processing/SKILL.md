@@ -8,7 +8,8 @@ origin: ECC
 
 > **Note:** This skill integrates with the Nutrient commercial API. Review their terms before use.
 
-Process documents with the [Nutrient DWS Processor API](https://www.nutrient.io/api/). Convert formats, extract text and tables, OCR scanned documents, redact PII, add watermarks, digitally sign, and fill PDF forms.
+Process documents with the [Nutrient DWS Processor API](https://www.nutrient.io/api/). Convert formats, extract text and
+tables, OCR scanned documents, redact PII, add watermarks, digitally sign, and fill PDF forms.
 
 ## Setup
 
@@ -47,7 +48,8 @@ curl -X POST https://api.nutrient.io/build \
   -o output.pdf
 ```
 
-Supported inputs: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, PPS, PPSX, ODT, RTF, HTML, JPG, PNG, TIFF, HEIC, GIF, WebP, SVG, TGA, EPS.
+Supported inputs: PDF, DOCX, XLSX, PPTX, DOC, XLS, PPT, PPS, PPSX, ODT, RTF, HTML, JPG, PNG, TIFF, HEIC, GIF, WebP, SVG,
+TGA, EPS.
 
 ### Extract Text and Data
 
@@ -78,7 +80,10 @@ curl -X POST https://api.nutrient.io/build \
   -o searchable.pdf
 ```
 
-Languages: Supports 100+ languages via ISO 639-2 codes (e.g., `eng`, `deu`, `fra`, `spa`, `jpn`, `kor`, `chi_sim`, `chi_tra`, `ara`, `hin`, `rus`). Full language names like `english` or `german` also work. See the [complete OCR language table](https://www.nutrient.io/guides/document-engine/ocr/language-support/) for all supported codes.
+Languages: Supports 100+ languages via ISO 639-2 codes (e.g., `eng`, `deu`, `fra`, `spa`, `jpn`, `kor`, `chi_sim`,
+`chi_tra`, `ara`, `hin`, `rus`). Full language names like `english` or `german` also work. See
+the [complete OCR language table](https://www.nutrient.io/guides/document-engine/ocr/language-support/) for all
+supported codes.
 
 ### Redact Sensitive Information
 
@@ -98,7 +103,8 @@ curl -X POST https://api.nutrient.io/build \
   -o redacted.pdf
 ```
 
-Presets: `social-security-number`, `email-address`, `credit-card-number`, `international-phone-number`, `north-american-phone-number`, `date`, `time`, `url`, `ipv4`, `ipv6`, `mac-address`, `us-zip-code`, `vin`.
+Presets: `social-security-number`, `email-address`, `credit-card-number`, `international-phone-number`,
+`north-american-phone-number`, `date`, `time`, `url`, `ipv4`, `ipv6`, `mac-address`, `us-zip-code`, `vin`.
 
 ### Add Watermarks
 

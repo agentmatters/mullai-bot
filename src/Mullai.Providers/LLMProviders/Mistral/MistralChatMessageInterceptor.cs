@@ -1,14 +1,10 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.AI;
 
 namespace Mullai.Providers.LLMProviders.Mistral;
 
 /// <summary>
-/// Intercepts messages sent to Mistral API and removes properties that are not supported by Mistral.
-/// For example, the Mistral API rejects the 'name' property on message payloads.
+///     Intercepts messages sent to Mistral API and removes properties that are not supported by Mistral.
+///     For example, the Mistral API rejects the 'name' property on message payloads.
 /// </summary>
 public class MistralChatMessageInterceptor : DelegatingChatClient
 {
@@ -17,8 +13,8 @@ public class MistralChatMessageInterceptor : DelegatingChatClient
     }
 
     public override Task<ChatResponse> GetResponseAsync(
-        IEnumerable<ChatMessage> chatMessages, 
-        ChatOptions? options = null, 
+        IEnumerable<ChatMessage> chatMessages,
+        ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         var messages = ProcessMessages(chatMessages, options);
@@ -26,8 +22,8 @@ public class MistralChatMessageInterceptor : DelegatingChatClient
     }
 
     public override IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
-        IEnumerable<ChatMessage> chatMessages, 
-        ChatOptions? options = null, 
+        IEnumerable<ChatMessage> chatMessages,
+        ChatOptions? options = null,
         CancellationToken cancellationToken = default)
     {
         var messages = ProcessMessages(chatMessages, options);
@@ -46,13 +42,11 @@ public class MistralChatMessageInterceptor : DelegatingChatClient
             var instructionsMessage = new ChatMessage(ChatRole.System, options.Instructions);
             messages = new[] { instructionsMessage }.Concat(chatMessages);
         }
-        
+
         foreach (var message in messages)
-        {
             // Mistral API does not support the 'name' property (AuthorName in Microsoft.Extensions.AI).
             // It will throw a validation error if this property is sent in the payload.
             message.AuthorName = null;
-        }
 
         return messages;
     }

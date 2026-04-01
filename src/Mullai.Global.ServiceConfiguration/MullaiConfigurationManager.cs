@@ -1,7 +1,8 @@
-using System.Text.Json;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
-using System.Runtime.InteropServices;
+using System.Text.Json;
 using Mullai.Abstractions.Configuration;
 using Mullai.Abstractions.Models;
 
@@ -9,20 +10,18 @@ namespace Mullai.Global.ServiceConfiguration;
 
 public class MullaiConfigurationManager : IMullaiConfigurationManager
 {
-    private readonly string _configDir;
-    private readonly string _credentialsPath;
-    private readonly string _settingsPath;
-    
-    private Dictionary<string, string> _credentials = new();
-    private MullaiAppSettings _settings = new();
-    
-    public event Action? OnConfigurationChanged;
-    
-    private static readonly byte[] Salt = Encoding.UTF8.GetBytes("MullaiSecureSalt");
     private const string EncryptionPrefix = "enc:";
+
+    private static readonly byte[] Salt = Encoding.UTF8.GetBytes("MullaiSecureSalt");
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     private readonly IBuiltInMcpProvider? _builtInMcpProvider;
+    private readonly string _configDir;
+    private readonly string _credentialsPath;
+    private readonly string _settingsPath;
+
+    private Dictionary<string, string> _credentials = new();
+    private MullaiAppSettings _settings = new();
 
     public MullaiConfigurationManager(IBuiltInMcpProvider? builtInMcpProvider = null)
     {
@@ -35,15 +34,13 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         Load();
     }
 
+    public event Action? OnConfigurationChanged;
 
 
     // ICredentialStorage Implementation
     public string? GetApiKey(string providerName)
     {
-        if (_credentials.TryGetValue(providerName, out var value))
-        {
-            return DecryptIfNeeded(value);
-        }
+        if (_credentials.TryGetValue(providerName, out var value)) return DecryptIfNeeded(value);
         return null;
     }
 
@@ -55,19 +52,14 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
     public void DeleteApiKey(string providerName)
     {
-        if (_credentials.Remove(providerName))
-        {
-            SaveCredentials();
-        }
+        if (_credentials.Remove(providerName)) SaveCredentials();
     }
 
     public bool IsProviderEnabled(string providerName, bool defaultValue)
     {
         var key = GetProviderKey(providerName);
         if (_credentials.TryGetValue(key, out var enabledStr))
-        {
             return bool.TryParse(enabledStr, out var enabled) ? enabled : defaultValue;
-        }
         return defaultValue;
     }
 
@@ -78,15 +70,11 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         SaveCredentials();
     }
 
-    private string GetProviderKey(string providerName) => $"Provider:{providerName}:Enabled";
-
     public bool IsModelEnabled(string providerName, string modelId, bool defaultValue)
     {
         var key = GetModelKey(providerName, modelId);
         if (_credentials.TryGetValue(key, out var enabledStr))
-        {
             return bool.TryParse(enabledStr, out var enabled) ? enabled : defaultValue;
-        }
         return defaultValue;
     }
 
@@ -97,20 +85,23 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         SaveCredentials();
     }
 
-    private string GetModelKey(string providerName, string modelId) => $"Model:{providerName}:{modelId}:Enabled";
-
     // IMullaiConfigurationManager Implementation
-    public MullaiProvidersConfig GetProvidersConfig() => _settings.ProvidersConfig;
-    
+    public MullaiProvidersConfig GetProvidersConfig()
+    {
+        return _settings.ProvidersConfig;
+    }
+
     public void SaveProvidersConfig(MullaiProvidersConfig config)
     {
         _settings.ProvidersConfig = config;
         SaveSettings();
     }
-    
+
     public void AddModelDescriptor(string providerName, MullaiModelDescriptor model)
     {
-        var provider = _settings.ProvidersConfig.Providers.FirstOrDefault(p => p.Name.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+        var provider =
+            _settings.ProvidersConfig.Providers.FirstOrDefault(p =>
+                p.Name.Equals(providerName, StringComparison.OrdinalIgnoreCase));
         if (provider != null)
         {
             provider.Models.Add(model);
@@ -118,8 +109,11 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         }
     }
 
-    public List<CustomProviderDescriptor> GetCustomProviders() => _settings.CustomProviders;
-    
+    public List<CustomProviderDescriptor> GetCustomProviders()
+    {
+        return _settings.CustomProviders;
+    }
+
     public void AddCustomProvider(CustomProviderDescriptor provider)
     {
         _settings.CustomProviders.RemoveAll(p => p.Name == provider.Name);
@@ -129,14 +123,14 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
     public void RemoveCustomProvider(string name)
     {
-        if (_settings.CustomProviders.RemoveAll(p => p.Name == name) > 0)
-        {
-            SaveSettings();
-        }
+        if (_settings.CustomProviders.RemoveAll(p => p.Name == name) > 0) SaveSettings();
     }
 
-    public SkillConfiguration GetSkillConfiguration() => _settings.Skills;
-    
+    public SkillConfiguration GetSkillConfiguration()
+    {
+        return _settings.Skills;
+    }
+
     public void SaveSkillConfiguration(SkillConfiguration configuration)
     {
         _settings.Skills = configuration;
@@ -146,13 +140,14 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
     public McpConfiguration GetMcpConfiguration()
     {
         var config = _settings.Mcp;
-        
+
         if (_builtInMcpProvider != null)
         {
             var builtInServers = _builtInMcpProvider.GetBuiltInServers();
             foreach (var builtIn in builtInServers)
             {
-                var existing = config.Servers.FirstOrDefault(s => s.Name.Equals(builtIn.Name, StringComparison.OrdinalIgnoreCase));
+                var existing =
+                    config.Servers.FirstOrDefault(s => s.Name.Equals(builtIn.Name, StringComparison.OrdinalIgnoreCase));
                 if (existing != null)
                 {
                     existing.IsBuiltIn = true;
@@ -168,10 +163,10 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
                 }
             }
         }
-        
+
         return config;
     }
-    
+
     public void SaveMcpConfiguration(McpConfiguration configuration)
     {
         _settings.Mcp = configuration;
@@ -180,27 +175,21 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
     public void DeleteMcpServer(string serverName)
     {
-        var server = _settings.Mcp.Servers.FirstOrDefault(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase));
+        var server =
+            _settings.Mcp.Servers.FirstOrDefault(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase));
         if (server != null && server.IsBuiltIn)
-        {
             // Do not delete built-in servers from the configuration list,
             // but we can allow them to be disabled (which is handled by SaveMcpConfiguration).
             return;
-        }
 
-        if (_settings.Mcp.Servers.RemoveAll(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase)) > 0)
-        {
-            SaveSettings();
-        }
+        if (_settings.Mcp.Servers.RemoveAll(s => s.Name.Equals(serverName, StringComparison.OrdinalIgnoreCase)) >
+            0) SaveSettings();
     }
 
     public string? GetMcpSecret(string key)
     {
         var secretKey = $"McpSecret:{key}";
-        if (_credentials.TryGetValue(secretKey, out var value))
-        {
-            return DecryptIfNeeded(value);
-        }
+        if (_credentials.TryGetValue(secretKey, out var value)) return DecryptIfNeeded(value);
         return null;
     }
 
@@ -218,6 +207,7 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
             _settings.Agents = GetDefaultAgents();
             SaveSettings();
         }
+
         return _settings.Agents;
     }
 
@@ -230,10 +220,7 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
     public void DeleteAgent(string agentId)
     {
-        if (_settings.Agents.RemoveAll(a => a.Id == agentId) > 0)
-        {
-            SaveSettings();
-        }
+        if (_settings.Agents.RemoveAll(a => a.Id == agentId) > 0) SaveSettings();
     }
 
     public List<string> GetAllAvailableToolGroups()
@@ -253,24 +240,30 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
             "HtmlToMarkdownTool",
             "DynamicToolLoader"
         };
-        
+
         var mcpConfig = GetMcpConfiguration();
         foreach (var server in mcpConfig.Servers)
-        {
             if (server.Enabled)
-            {
                 tools.Add($"MCP:{server.Name}");
-            }
-        }
-        
+
         return tools;
+    }
+
+    private string GetProviderKey(string providerName)
+    {
+        return $"Provider:{providerName}:Enabled";
+    }
+
+    private string GetModelKey(string providerName, string modelId)
+    {
+        return $"Model:{providerName}:{modelId}:Enabled";
     }
 
     private List<AgentDefinition> GetDefaultAgents()
     {
         return new List<AgentDefinition>
         {
-            new AgentDefinition
+            new()
             {
                 Id = "assistant",
                 Name = "Assistant",
@@ -284,9 +277,9 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
                                """,
                 Tools = new List<AgentToolDefinition>
                 {
-                    new AgentToolDefinition { Name = "FileSystemTool", IsDefault = true },
-                    new AgentToolDefinition { Name = "BashTool", IsDefault = true },
-                    new AgentToolDefinition { Name = "DynamicToolLoader", IsDefault = true }
+                    new() { Name = "FileSystemTool", IsDefault = true },
+                    new() { Name = "BashTool", IsDefault = true },
+                    new() { Name = "DynamicToolLoader", IsDefault = true }
                 }
             }
         };
@@ -295,22 +288,21 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
     private void Load()
     {
-        if (!Directory.Exists(_configDir))
-        {
-            Directory.CreateDirectory(_configDir);
-        }
+        if (!Directory.Exists(_configDir)) Directory.CreateDirectory(_configDir);
 
         // Load Credentials
         if (File.Exists(_credentialsPath))
-        {
             try
             {
                 var json = File.ReadAllText(_credentialsPath);
-                _credentials = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? new();
+                _credentials = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ??
+                               new Dictionary<string, string>();
                 MigrateCredentials();
             }
-            catch { _credentials = new(); }
-        }
+            catch
+            {
+                _credentials = new Dictionary<string, string>();
+            }
 
         // Load Settings
         if (File.Exists(_settingsPath))
@@ -318,23 +310,27 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
             try
             {
                 var json = File.ReadAllText(_settingsPath);
-                _settings = JsonSerializer.Deserialize<MullaiAppSettings>(json) ?? new();
+                _settings = JsonSerializer.Deserialize<MullaiAppSettings>(json) ?? new MullaiAppSettings();
             }
-            catch { _settings = new(); }
+            catch
+            {
+                _settings = new MullaiAppSettings();
+            }
         }
         else
         {
             // Try to migrate from old models.json if settings.json doesn't exist
             var oldModelsPath = Path.Combine(_configDir, "models.json");
             if (File.Exists(oldModelsPath))
-            {
                 try
                 {
                     var json = File.ReadAllText(oldModelsPath);
-                    _settings.ProvidersConfig = JsonSerializer.Deserialize<MullaiProvidersConfig>(json) ?? new();
+                    _settings.ProvidersConfig = JsonSerializer.Deserialize<MullaiProvidersConfig>(json) ??
+                                                new MullaiProvidersConfig();
                 }
-                catch { }
-            }
+                catch
+                {
+                }
         }
 
         // Initialize defaults if empty
@@ -361,15 +357,15 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
 
     private void MigrateCredentials()
     {
-        bool migrated = false;
+        var migrated = false;
         foreach (var key in _credentials.Keys.ToList())
-        {
-            if (!key.StartsWith("Model:") && !key.StartsWith("Provider:") && !_credentials[key].StartsWith(EncryptionPrefix))
+            if (!key.StartsWith("Model:") && !key.StartsWith("Provider:") &&
+                !_credentials[key].StartsWith(EncryptionPrefix))
             {
                 _credentials[key] = Encrypt(_credentials[key]);
                 migrated = true;
             }
-        }
+
         if (migrated) SaveCredentials();
     }
 
@@ -391,13 +387,13 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         {
             File.WriteAllText(path, content);
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
                 try
                 {
-                    System.Diagnostics.Process.Start("chmod", $"600 \"{path}\"")?.WaitForExit();
+                    Process.Start("chmod", $"600 \"{path}\"")?.WaitForExit();
                 }
-                catch { }
-            }
+                catch
+                {
+                }
         }
         catch (Exception ex)
         {
@@ -420,6 +416,7 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
         {
             sw.Write(plainText);
         }
+
         return EncryptionPrefix + Convert.ToBase64String(ms.ToArray());
     }
 
@@ -442,7 +439,10 @@ public class MullaiConfigurationManager : IMullaiConfigurationManager
             using var sr = new StreamReader(cs);
             return sr.ReadToEnd();
         }
-        catch { return cipherText; }
+        catch
+        {
+            return cipherText;
+        }
     }
 
     private byte[] GetEncryptionKey()

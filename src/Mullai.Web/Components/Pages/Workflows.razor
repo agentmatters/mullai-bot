@@ -1,15 +1,17 @@
 @page "/workflows"
 @page "/workflows/{SelectedWorkflowId}"
 @rendermode InteractiveServer
+@using System.Text
+@using System.Text.Json
+@using Microsoft.Extensions.Options
+@using Mullai.Abstractions.WorkflowState
 @using Mullai.TaskRuntime.Abstractions
 @using Mullai.TaskRuntime.Models
 @using Mullai.TaskRuntime.Options
-@using Mullai.Abstractions.WorkflowState
+@using Mullai.Tools.WorkflowTool
+@using Mullai.Web.Components.Workflows
 @using Mullai.Workflows.Abstractions
 @using Mullai.Workflows.Models
-@using Mullai.Web.Components.Workflows
-@using System.Net.Http.Json
-@using Microsoft.Extensions.Options
 @implements IAsyncDisposable
 
 @inject IWorkflowRegistry WorkflowRegistry
@@ -19,17 +21,17 @@
 @inject IOptions<MullaiTaskRuntimeOptions> RuntimeOptions
 @inject HttpClient Http
 @inject NavigationManager Nav
-@inject Mullai.Tools.WorkflowTool.WorkflowTool WorkflowTool
+@inject WorkflowTool WorkflowTool
 @inject IWorkflowStateStore WorkflowStateStore
 
 <PageTitle>Workflows</PageTitle>
 
 <div class="workflows-dashboard">
-    <WorkflowSidebar 
-        Workflows="@_definitions" 
-        SelectedWorkflowId="@SelectedWorkflowId" 
+    <WorkflowSidebar
+        Workflows="@_definitions"
+        SelectedWorkflowId="@SelectedWorkflowId"
         OnWorkflowSelected="HandleWorkflowSelected"
-        WorkflowStatuses="@_workflowStatuses" />
+        WorkflowStatuses="@_workflowStatuses"/>
 
     <main class="workflow-main">
         @if (SelectedWorkflowId == null)
@@ -52,39 +54,39 @@
                     <label class="workflow-toggle">
                         <input type="checkbox"
                                checked="@_selectedState.Definition.IsEnabled"
-                               @onchange="async _ => await ToggleWorkflowAsync(_selectedState)" />
+                               @onchange="async _ => await ToggleWorkflowAsync(_selectedState)"/>
                         <span>@(_selectedState.Definition.IsEnabled ? "On" : "Off")</span>
                     </label>
                 </div>
             </header>
 
-            <WorkflowTabs ActiveTab="@_activeTab" OnTabChanged="tab => _activeTab = tab" />
+            <WorkflowTabs ActiveTab="@_activeTab" OnTabChanged="tab => _activeTab = tab"/>
 
             <div class="workflow-content">
                 @if (_activeTab == "Execution")
                 {
-                    <WorkflowExecutionView 
+                    <WorkflowExecutionView
                         @bind-Input="_selectedState.Input"
                         IsRunning="@_selectedState.IsRunning"
                         Status="@_selectedState.Status"
                         Response="@_selectedState.Response"
                         Error="@_selectedState.Error"
                         IsEnabled="@_selectedState.Definition.IsEnabled"
-                        OnRunClicked="() => RunWorkflowAsync(_selectedState)" />
+                        OnRunClicked="() => RunWorkflowAsync(_selectedState)"/>
                 }
                 else if (_activeTab == "Visual Graph")
                 {
-                    <WorkflowGraphView Definition="@_selectedState.Definition" />
+                    <WorkflowGraphView Definition="@_selectedState.Definition"/>
                 }
                 else if (_activeTab == "History")
                 {
-                    <WorkflowRunsView Runs="@_selectedState.RecentRuns" OnLoadDetails="LoadRunDetailsAsync" />
+                    <WorkflowRunsView Runs="@_selectedState.RecentRuns" OnLoadDetails="LoadRunDetailsAsync"/>
                 }
                 else if (_activeTab == "Triggers")
                 {
-                    <WorkflowTriggersView 
-                        Triggers="@_selectedState.WebhookTriggers" 
-                        OnSendWebhook="trigger => SendWebhookAsync(_selectedState, trigger)" />
+                    <WorkflowTriggersView
+                        Triggers="@_selectedState.WebhookTriggers"
+                        OnSendWebhook="trigger => SendWebhookAsync(_selectedState, trigger)"/>
                 }
                 else if (_activeTab == "State")
                 {
@@ -92,7 +94,7 @@
                         Entries="@_selectedState.StateEntries"
                         OnSave="entry => SaveStateAsync(_selectedState, entry)"
                         OnDelete="entry => DeleteStateAsync(_selectedState, entry)"
-                        OnReload="() => RefreshStateAsync(_selectedState)" />
+                        OnReload="() => RefreshStateAsync(_selectedState)"/>
                 }
             </div>
         }
@@ -250,7 +252,7 @@
             var request = new HttpRequestMessage(
                 HttpMethod.Post,
                 new Uri(baseUri, $"api/mullai/workflows/{card.Definition.Id}/triggers/{trigger.TriggerId}"));
-            request.Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
+            request.Content = new StringContent(payload, Encoding.UTF8, "application/json");
             if (!string.IsNullOrWhiteSpace(trigger.Secret))
             {
                 request.Headers.TryAddWithoutValidation("x-mullai-secret", trigger.Secret);
@@ -283,11 +285,23 @@
                     if (changed) StateHasChanged();
                 });
             }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
-            catch { /* Ignore */ }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
+            catch
+            {
+                /* Ignore */
+            }
 
-            try { await Task.Delay(500, cancellationToken); }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { break; }
+            try
+            {
+                await Task.Delay(500, cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                break;
+            }
         }
     }
 
@@ -333,7 +347,7 @@
 
             var oldStatus = card.Status;
             card.Status = status.State.ToString();
-            
+
             if (status.State is MullaiTaskState.Queued or MullaiTaskState.Running or MullaiTaskState.RetryScheduled)
             {
                 if (!string.IsNullOrWhiteSpace(status.Response)) card.Response = status.Response!;
@@ -359,6 +373,7 @@
                 changed = true;
             }
         }
+
         return changed;
     }
 
@@ -390,6 +405,7 @@
                 changed = true;
             }
         }
+
         return changed;
     }
 
@@ -432,10 +448,10 @@
 
         try
         {
-            using var doc = System.Text.Json.JsonDocument.Parse(json);
-            return System.Text.Json.JsonSerializer.Serialize(
+            using var doc = JsonDocument.Parse(json);
+            return JsonSerializer.Serialize(
                 doc,
-                new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                new JsonSerializerOptions { WriteIndented = true });
         }
         catch
         {
@@ -496,8 +512,24 @@
         if (_pollingCts != null)
         {
             _pollingCts.Cancel();
-            if (_pollingTask != null) try { await _pollingTask; } catch { }
-            if (_responseTask != null) try { await _responseTask; } catch { }
+            if (_pollingTask != null)
+                try
+                {
+                    await _pollingTask;
+                }
+                catch
+                {
+                }
+
+            if (_responseTask != null)
+                try
+                {
+                    await _responseTask;
+                }
+                catch
+                {
+                }
+
             _pollingCts.Dispose();
         }
     }
@@ -516,6 +548,7 @@
                 })
                 .ToList();
         }
+
         public WorkflowDefinition Definition { get; set; }
         public string Input { get; set; } = string.Empty;
         public string Status { get; set; } = "Idle";
@@ -526,7 +559,8 @@
         public string? SessionKey { get; set; }
         public List<WorkflowRunsView.WorkflowRunRow> RecentRuns { get; set; } = [];
         public string RecentRunsSignature { get; set; } = string.Empty;
-        public List<WorkflowTriggersView.WebhookTriggerState> WebhookTriggers { get; set; }
+        public List<WorkflowTriggersView.WebhookTriggerState> WebhookTriggers { get; }
         public List<WorkflowStateView.WorkflowStateEntry> StateEntries { get; set; } = [];
     }
+
 }

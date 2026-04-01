@@ -6,32 +6,42 @@ origin: community
 
 # Agent Payment Execution (x402)
 
-Enable AI agents to make autonomous payments with built-in spending controls. Uses the x402 HTTP payment protocol and MCP tools so agents can pay for external services, APIs, or other agents without custodial risk.
+Enable AI agents to make autonomous payments with built-in spending controls. Uses the x402 HTTP payment protocol and
+MCP tools so agents can pay for external services, APIs, or other agents without custodial risk.
 
 ## When to Use
 
-Use when: your agent needs to pay for an API call, purchase a service, settle with another agent, enforce per-task spending limits, or manage a non-custodial wallet. Pairs naturally with cost-aware-llm-pipeline and security-review skills.
+Use when: your agent needs to pay for an API call, purchase a service, settle with another agent, enforce per-task
+spending limits, or manage a non-custodial wallet. Pairs naturally with cost-aware-llm-pipeline and security-review
+skills.
 
 ## How It Works
 
 ### x402 Protocol
-x402 extends HTTP 402 (Payment Required) into a machine-negotiable flow. When a server returns `402`, the agent's payment tool automatically negotiates price, checks budget, signs a transaction, and retries — no human in the loop.
+
+x402 extends HTTP 402 (Payment Required) into a machine-negotiable flow. When a server returns `402`, the agent's
+payment tool automatically negotiates price, checks budget, signs a transaction, and retries — no human in the loop.
 
 ### Spending Controls
+
 Every payment tool call enforces a `SpendingPolicy`:
+
 - **Per-task budget** — max spend for a single agent action
 - **Per-session budget** — cumulative limit across an entire session
 - **Allowlisted recipients** — restrict which addresses/services the agent can pay
 - **Rate limits** — max transactions per minute/hour
 
 ### Non-Custodial Wallets
-Agents hold their own keys via ERC-4337 smart accounts. The orchestrator sets policy before delegation; the agent can only spend within bounds. No pooled funds, no custodial risk.
+
+Agents hold their own keys via ERC-4337 smart accounts. The orchestrator sets policy before delegation; the agent can
+only spend within bounds. No pooled funds, no custodial risk.
 
 ## MCP Integration
 
 The payment layer exposes standard MCP tools that slot into any Claude Code or agent harness setup.
 
-> **Security note**: Always pin the package version. This tool manages private keys — unpinned `npx` installs introduce supply-chain risk.
+> **Security note**: Always pin the package version. This tool manages private keys — unpinned `npx` installs introduce
+> supply-chain risk.
 
 ```json
 {
@@ -46,14 +56,16 @@ The payment layer exposes standard MCP tools that slot into any Claude Code or a
 
 ### Available Tools (agent-callable)
 
-| Tool | Purpose |
-|------|---------|
-| `get_balance` | Check agent wallet balance |
-| `send_payment` | Send payment to address or ENS |
-| `check_spending` | Query remaining budget |
-| `list_transactions` | Audit trail of all payments |
+| Tool                | Purpose                        |
+|---------------------|--------------------------------|
+| `get_balance`       | Check agent wallet balance     |
+| `send_payment`      | Send payment to address or ENS |
+| `check_spending`    | Query remaining budget         |
+| `list_transactions` | Audit trail of all payments    |
 
-> **Note**: Spending policy is set by the **orchestrator** before delegating to the agent — not by the agent itself. This prevents agents from escalating their own spending limits. Configure policy via `set_policy` in your orchestration layer or pre-task hook, never as an agent-callable tool.
+> **Note**: Spending policy is set by the **orchestrator** before delegating to the agent — not by the agent itself.
+> This prevents agents from escalating their own spending limits. Configure policy via `set_policy` in your orchestration
+> layer or pre-task hook, never as an agent-callable tool.
 
 ## Examples
 
@@ -61,7 +73,8 @@ The payment layer exposes standard MCP tools that slot into any Claude Code or a
 
 When building an orchestrator that calls the agentpay MCP server, enforce budgets before dispatching paid tool calls.
 
-> **Prerequisites**: Install the package before adding the MCP config — `npx` without `-y` will prompt for confirmation in non-interactive environments, causing the server to hang: `npm install -g agentwallet-sdk@6.0.0`
+> **Prerequisites**: Install the package before adding the MCP config — `npx` without `-y` will prompt for confirmation
+> in non-interactive environments, causing the server to hang: `npm install -g agentwallet-sdk@6.0.0`
 
 ```typescript
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
@@ -164,8 +177,10 @@ main().catch((err) => {
 
 ## Best Practices
 
-- **Set budgets before delegation**: When spawning sub-agents, attach a SpendingPolicy via your orchestration layer. Never give an agent unlimited spend.
-- **Pin your dependencies**: Always specify an exact version in your MCP config (e.g., `agentwallet-sdk@6.0.0`). Verify package integrity before deploying to production.
+- **Set budgets before delegation**: When spawning sub-agents, attach a SpendingPolicy via your orchestration layer.
+  Never give an agent unlimited spend.
+- **Pin your dependencies**: Always specify an exact version in your MCP config (e.g., `agentwallet-sdk@6.0.0`). Verify
+  package integrity before deploying to production.
 - **Audit trails**: Use `list_transactions` in post-task hooks to log what was spent and why.
 - **Fail closed**: If the payment tool is unreachable, block the paid action — don't fall back to unmetered access.
 - **Pair with security-review**: Payment tools are high-privilege. Apply the same scrutiny as shell access.
@@ -174,5 +189,6 @@ main().catch((err) => {
 ## Production Reference
 
 - **npm**: [`agentwallet-sdk`](https://www.npmjs.com/package/agentwallet-sdk)
-- **Merged into NVIDIA NeMo Agent Toolkit**: [PR #17](https://github.com/NVIDIA/NeMo-Agent-Toolkit-Examples/pull/17) — x402 payment tool for NVIDIA's agent examples
+- **Merged into NVIDIA NeMo Agent Toolkit**: [PR #17](https://github.com/NVIDIA/NeMo-Agent-Toolkit-Examples/pull/17) —
+  x402 payment tool for NVIDIA's agent examples
 - **Protocol spec**: [x402.org](https://x402.org)

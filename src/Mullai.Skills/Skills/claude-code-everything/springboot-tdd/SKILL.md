@@ -43,6 +43,7 @@ class MarketServiceTest {
 ```
 
 Patterns:
+
 - Arrange-Act-Assert
 - Avoid partial mocks; prefer explicit stubbing
 - Use `@ParameterizedTest` for variants
@@ -116,6 +117,7 @@ class MarketRepositoryTest {
 ## Coverage (JaCoCo)
 
 Maven snippet:
+
 ```xml
 <plugin>
   <groupId>org.jacoco</groupId>

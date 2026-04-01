@@ -5,7 +5,9 @@ description: iOS 26 Liquid Glass design system — dynamic glass material with b
 
 # Liquid Glass Design System (iOS 26)
 
-Patterns for implementing Apple's Liquid Glass — a dynamic material that blurs content behind it, reflects color and light from surrounding content, and reacts to touch and pointer interactions. Covers SwiftUI, UIKit, and WidgetKit integration.
+Patterns for implementing Apple's Liquid Glass — a dynamic material that blurs content behind it, reflects color and
+light from surrounding content, and reacts to touch and pointer interactions. Covers SwiftUI, UIKit, and WidgetKit
+integration.
 
 ## When to Activate
 
@@ -38,6 +40,7 @@ Text("Hello, World!")
 ```
 
 Key customization options:
+
 - `.regular` — standard glass effect
 - `.tint(Color)` — add color tint for prominence
 - `.interactive()` — react to touch and pointer interactions
@@ -126,7 +129,9 @@ Button("Toggle") {
 
 ### Extending Horizontal Scrolling Under Sidebar
 
-To allow horizontal scroll content to extend under a sidebar or inspector, ensure the `ScrollView` content reaches the leading/trailing edges of the container. The system automatically handles the under-sidebar scrolling behavior when the layout extends to the edges — no additional modifier is needed.
+To allow horizontal scroll content to extend under a sidebar or inspector, ensure the `ScrollView` content reaches the
+leading/trailing edges of the container. The system automatically handles the under-sidebar scrolling behavior when the
+layout extends to the edges — no additional modifier is needed.
 
 ## Core Pattern — UIKit
 
@@ -242,18 +247,19 @@ VStack { /* content */ }
 
 ## Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| GlassEffectContainer wrapping | Performance optimization, enables morphing between glass elements |
-| `spacing` parameter | Controls merge distance — fine-tune how close elements must be to blend |
-| `@Namespace` + `glassEffectID` | Enables smooth morphing transitions on view hierarchy changes |
-| `interactive()` modifier | Explicit opt-in for touch/pointer reactions — not all glass should respond |
-| UIGlassContainerEffect in UIKit | Same container pattern as SwiftUI for consistency |
-| Accented rendering mode in widgets | System applies tinted glass when user selects tinted Home Screen |
+| Decision                           | Rationale                                                                  |
+|------------------------------------|----------------------------------------------------------------------------|
+| GlassEffectContainer wrapping      | Performance optimization, enables morphing between glass elements          |
+| `spacing` parameter                | Controls merge distance — fine-tune how close elements must be to blend    |
+| `@Namespace` + `glassEffectID`     | Enables smooth morphing transitions on view hierarchy changes              |
+| `interactive()` modifier           | Explicit opt-in for touch/pointer reactions — not all glass should respond |
+| UIGlassContainerEffect in UIKit    | Same container pattern as SwiftUI for consistency                          |
+| Accented rendering mode in widgets | System applies tinted glass when user selects tinted Home Screen           |
 
 ## Best Practices
 
-- **Always use GlassEffectContainer** when applying glass to multiple sibling views — it enables morphing and improves rendering performance
+- **Always use GlassEffectContainer** when applying glass to multiple sibling views — it enables morphing and improves
+  rendering performance
 - **Apply `.glassEffect()` after** other appearance modifiers (frame, font, padding)
 - **Use `.interactive()`** only on elements that respond to user interaction (buttons, toggleable items)
 - **Choose spacing carefully** in containers to control when glass effects merge

@@ -16,7 +16,7 @@ var hostBuilder = Host.CreateDefaultBuilder(args)
 hostBuilder.ConfigureAppConfiguration((context, config) =>
 {
     config.SetBasePath(AppContext.BaseDirectory);
-    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+    config.AddJsonFile("appsettings.json", true, true);
 });
 
 hostBuilder.ConfigureServices((context, services) =>

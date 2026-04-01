@@ -4,10 +4,10 @@ namespace Mullai.TaskRuntime.Services.Background;
 
 public sealed class WorkflowRegistryWatcherService : BackgroundService
 {
-    private readonly IWorkflowRegistryReloader _reloader;
     private readonly ILogger<WorkflowRegistryWatcherService> _logger;
-    private FileSystemWatcher? _watcher;
+    private readonly IWorkflowRegistryReloader _reloader;
     private Timer? _debounceTimer;
+    private FileSystemWatcher? _watcher;
 
     public WorkflowRegistryWatcherService(
         IWorkflowRegistryReloader reloader,
@@ -27,7 +27,8 @@ public sealed class WorkflowRegistryWatcherService : BackgroundService
         {
             IncludeSubdirectories = false,
             Filter = "*.*",
-            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime | NotifyFilters.Size
+            NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.CreationTime |
+                           NotifyFilters.Size
         };
 
         _watcher.Changed += OnChanged;
@@ -53,9 +54,7 @@ public sealed class WorkflowRegistryWatcherService : BackgroundService
         var extension = Path.GetExtension(e.FullPath);
         if (!extension.Equals(".yml", StringComparison.OrdinalIgnoreCase) &&
             !extension.Equals(".yaml", StringComparison.OrdinalIgnoreCase))
-        {
             return;
-        }
 
         _debounceTimer?.Dispose();
         _debounceTimer = new Timer(_ =>

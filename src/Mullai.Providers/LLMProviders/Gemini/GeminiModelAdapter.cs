@@ -1,9 +1,9 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Mullai.Abstractions.Configuration;
 using Mullai.Abstractions.Models;
 using Mullai.Providers.Common;
-using Mullai.Abstractions.Configuration;
 
 namespace Mullai.Providers.LLMProviders.Gemini;
 
@@ -22,10 +22,7 @@ public class GeminiModelAdapter : IModelMetadataAdapter
             apiKey = storage.GetApiKey(ProviderName);
         }
 
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            return new List<MullaiModelDescriptor>();
-        }
+        if (string.IsNullOrEmpty(apiKey)) return new List<MullaiModelDescriptor>();
 
         // 1. Fetch Gemini models
         var url = string.Format(ModelsEndpointTemplate, apiKey);
@@ -34,7 +31,8 @@ public class GeminiModelAdapter : IModelMetadataAdapter
 
         // 2. Fetch OpenRouter models for pricing
         var orOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
-        var orResponse = await httpClient.GetFromJsonAsync<OpenRouterModelsResponse>(OpenRouterModelsEndpoint, orOptions);
+        var orResponse =
+            await httpClient.GetFromJsonAsync<OpenRouterModelsResponse>(OpenRouterModelsEndpoint, orOptions);
         var openRouterModels = orResponse?.Data ?? new List<OpenRouterPricingModelData>();
 
         // 3. Adapt and match
@@ -45,7 +43,7 @@ public class GeminiModelAdapter : IModelMetadataAdapter
     {
         // Remove "models/" prefix
         var modelId = data.Name.StartsWith("models/") ? data.Name.Substring("models/".Length) : data.Name;
-        
+
         // Match with openrouter: google/{modelId}
         var orMatch = openRouterModels.FirstOrDefault(m => m.Id == $"google/{modelId}");
 
@@ -61,44 +59,38 @@ public class GeminiModelAdapter : IModelMetadataAdapter
             Enabled = true,
             Priority = 1,
             Capabilities = capabilities,
-            Pricing = orMatch?.Pricing != null ? new ModelPricing
-            {
-                InputPer1kTokens = ParsePricing(orMatch.Pricing.Prompt),
-                OutputPer1kTokens = ParsePricing(orMatch.Pricing.Completion)
-            } : null
+            Pricing = orMatch?.Pricing != null
+                ? new ModelPricing
+                {
+                    InputPer1kTokens = ParsePricing(orMatch.Pricing.Prompt),
+                    OutputPer1kTokens = ParsePricing(orMatch.Pricing.Completion)
+                }
+                : null
         };
     }
 
     private decimal ParsePricing(string? pricing)
     {
         if (string.IsNullOrEmpty(pricing)) return 0;
-        if (decimal.TryParse(pricing, out var result))
-        {
-            return result * 1000000m;
-        }
+        if (decimal.TryParse(pricing, out var result)) return result * 1000000m;
         return 0;
     }
 }
 
 internal class GeminiModelsResponse
 {
-    [JsonPropertyName("models")]
-    public List<GeminiModelData>? Models { get; set; }
+    [JsonPropertyName("models")] public List<GeminiModelData>? Models { get; set; }
 }
 
 internal class GeminiModelData
 {
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
+    [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("displayName")]
-    public string? DisplayName { get; set; }
+    [JsonPropertyName("displayName")] public string? DisplayName { get; set; }
 
-    [JsonPropertyName("description")]
-    public string? Description { get; set; }
+    [JsonPropertyName("description")] public string? Description { get; set; }
 
-    [JsonPropertyName("inputTokenLimit")]
-    public int InputTokenLimit { get; set; }
+    [JsonPropertyName("inputTokenLimit")] public int InputTokenLimit { get; set; }
 
     [JsonPropertyName("supportedGenerationMethods")]
     public List<string>? SupportedGenerationMethods { get; set; }

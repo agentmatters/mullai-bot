@@ -6,7 +6,7 @@ using Mullai.Abstractions.WorkflowState;
 namespace Mullai.Tools.WorkflowStateTool;
 
 /// <summary>
-/// Tool for storing workflow state in SQLite.
+///     Tool for storing workflow state in SQLite.
 /// </summary>
 [Description("A tool for reading and updating workflow state for long-running workflows.")]
 public sealed class WorkflowStateTool(IWorkflowStateStore stateStore)
@@ -48,10 +48,10 @@ public sealed class WorkflowStateTool(IWorkflowStateStore stateStore)
 
     public IEnumerable<AITool> AsAITools()
     {
-        yield return AIFunctionFactory.Create(this.GetState);
-        yield return AIFunctionFactory.Create(this.ListState);
-        yield return AIFunctionFactory.Create(this.SetState);
-        yield return AIFunctionFactory.Create(this.DeleteState);
+        yield return AIFunctionFactory.Create(GetState);
+        yield return AIFunctionFactory.Create(ListState);
+        yield return AIFunctionFactory.Create(SetState);
+        yield return AIFunctionFactory.Create(DeleteState);
     }
 
     private static void EnsureJson(string json)

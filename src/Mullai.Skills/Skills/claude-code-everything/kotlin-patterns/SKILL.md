@@ -18,11 +18,16 @@ Idiomatic Kotlin patterns and best practices for building robust, efficient, and
 
 ## How It Works
 
-This skill enforces idiomatic Kotlin conventions across seven key areas: null safety using the type system and safe-call operators, immutability via `val` and `copy()` on data classes, sealed classes and interfaces for exhaustive type hierarchies, structured concurrency with coroutines and `Flow`, extension functions for adding behaviour without inheritance, type-safe DSL builders using `@DslMarker` and lambda receivers, and Gradle Kotlin DSL for build configuration.
+This skill enforces idiomatic Kotlin conventions across seven key areas: null safety using the type system and safe-call
+operators, immutability via `val` and `copy()` on data classes, sealed classes and interfaces for exhaustive type
+hierarchies, structured concurrency with coroutines and `Flow`, extension functions for adding behaviour without
+inheritance, type-safe DSL builders using `@DslMarker` and lambda receivers, and Gradle Kotlin DSL for build
+configuration.
 
 ## Examples
 
 **Null safety with Elvis operator:**
+
 ```kotlin
 fun getUserEmail(userId: String): String {
     val user = userRepository.findById(userId)
@@ -31,6 +36,7 @@ fun getUserEmail(userId: String): String {
 ```
 
 **Sealed class for exhaustive results:**
+
 ```kotlin
 sealed class Result<out T> {
     data class Success<T>(val data: T) : Result<T>()
@@ -40,6 +46,7 @@ sealed class Result<out T> {
 ```
 
 **Structured concurrency with async/await:**
+
 ```kotlin
 suspend fun fetchUserWithPosts(userId: String): UserProfile =
     coroutineScope {
@@ -648,23 +655,23 @@ val (active, inactive) = users.partition { it.isActive }
 
 ## Quick Reference: Kotlin Idioms
 
-| Idiom | Description |
-|-------|-------------|
-| `val` over `var` | Prefer immutable variables |
-| `data class` | For value objects with equals/hashCode/copy |
-| `sealed class/interface` | For restricted type hierarchies |
-| `value class` | For type-safe wrappers with zero overhead |
-| Expression `when` | Exhaustive pattern matching |
-| Safe call `?.` | Null-safe member access |
-| Elvis `?:` | Default value for nullables |
-| `let`/`apply`/`also`/`run`/`with` | Scope functions for clean code |
-| Extension functions | Add behavior without inheritance |
-| `copy()` | Immutable updates on data classes |
-| `require`/`check` | Precondition assertions |
-| Coroutine `async`/`await` | Structured concurrent execution |
-| `Flow` | Cold reactive streams |
-| `sequence` | Lazy evaluation |
-| Delegation `by` | Reuse implementation without inheritance |
+| Idiom                             | Description                                 |
+|-----------------------------------|---------------------------------------------|
+| `val` over `var`                  | Prefer immutable variables                  |
+| `data class`                      | For value objects with equals/hashCode/copy |
+| `sealed class/interface`          | For restricted type hierarchies             |
+| `value class`                     | For type-safe wrappers with zero overhead   |
+| Expression `when`                 | Exhaustive pattern matching                 |
+| Safe call `?.`                    | Null-safe member access                     |
+| Elvis `?:`                        | Default value for nullables                 |
+| `let`/`apply`/`also`/`run`/`with` | Scope functions for clean code              |
+| Extension functions               | Add behavior without inheritance            |
+| `copy()`                          | Immutable updates on data classes           |
+| `require`/`check`                 | Precondition assertions                     |
+| Coroutine `async`/`await`         | Structured concurrent execution             |
+| `Flow`                            | Cold reactive streams                       |
+| `sequence`                        | Lazy evaluation                             |
+| Delegation `by`                   | Reuse implementation without inheritance    |
 
 ## Anti-Patterns to Avoid
 
@@ -708,4 +715,5 @@ user?.let { u ->
 user?.address?.city?.let { process(it) }
 ```
 
-**Remember**: Kotlin code should be concise but readable. Leverage the type system for safety, prefer immutability, and use coroutines for concurrency. When in doubt, let the compiler help you.
+**Remember**: Kotlin code should be concise but readable. Leverage the type system for safety, prefer immutability, and
+use coroutines for concurrency. When in doubt, let the compiler help you.

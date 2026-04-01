@@ -1,58 +1,51 @@
 @page "/config/apikeys"
-@namespace Mullai.CLI.Pages
-
-@using System
-@using System.Collections.Generic
-@using System.Linq
-@using Microsoft.AspNetCore.Components
-@using RazorConsole.Components
-@using Spectre.Console
-@using Mullai.CLI.Controllers
 @using Mullai.Abstractions.Models
+@using Mullai.CLI.Controllers
+@namespace Mullai.CLI.Pages
 
 @inject ConfigController Config
 @inject NavigationManager Nav
 
-<Figlet Content="API Keys" Color="@Color.Yellow" />
+<Figlet Content="API Keys" Color="@Color.Yellow"/>
 
 <Padder Padding="@(new Padding(1, 0, 0, 0))">
     <Rows>
         @if (_providers == null || _providers.Count == 0)
         {
-            <Markup Content="No providers available." Foreground="@Color.Yellow" />
+            <Markup Content="No providers available." Foreground="@Color.Yellow"/>
         }
         else
         {
-            <Markup Content="Select a provider to manage its API key:" Foreground="@Color.White" />
-            <Newline />
+            <Markup Content="Select a provider to manage its API key:" Foreground="@Color.White"/>
+            <Newline/>
 
             @foreach (var provider in _providers)
             {
                 var key = Config.GetApiKey(provider.Name);
                 var hasKey = !string.IsNullOrEmpty(key);
                 var keyDisplay = hasKey
-                    ? (key!.Length > 8 ? key[..4] + "..." + key[^4..] : "****")
+                    ? key!.Length > 8 ? key[..4] + "..." + key[^4..] : "****"
                     : "Not Set";
                 var keyColor = hasKey ? Color.Green : Color.Red;
 
                 <TextButton Content="@($" {provider.Name,-20}  Key: {keyDisplay} ")"
                             OnClick="@(() => Nav.NavigateTo($"/config/apikeys/{provider.Name}"))"
                             BackgroundColor="@Color.Grey15"
-                            FocusedColor="@keyColor" />
+                            FocusedColor="@keyColor"/>
             }
         }
     </Rows>
 </Padder>
 
-<Newline />
+<Newline/>
 <TextButton Content="  ← Back to Settings  "
             OnClick="@(() => Nav.NavigateTo("/config"))"
             BackgroundColor="@Color.Grey15"
-            FocusedColor="@Color.Yellow" />
+            FocusedColor="@Color.Yellow"/>
 
-<Newline />
+<Newline/>
 <Align Horizontal="@HorizontalAlignment.Center">
-    <Markup Content="Tab to navigate • Enter to select" Foreground="@Color.Grey58" />
+    <Markup Content="Tab to navigate • Enter to select" Foreground="@Color.Grey58"/>
 </Align>
 
 @code {
@@ -62,4 +55,5 @@
     {
         _providers = Config.LoadProviders();
     }
+
 }

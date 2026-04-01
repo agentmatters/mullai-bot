@@ -5,5 +5,7 @@ namespace Mullai.Workflows.Abstractions;
 public interface IWorkflowOutputHandler
 {
     string Type { get; }
-    Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output, CancellationToken cancellationToken);
+
+    Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output,
+        CancellationToken cancellationToken);
 }

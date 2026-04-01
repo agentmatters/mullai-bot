@@ -1,21 +1,32 @@
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace Mullai.Tools.WordTool;
 
 /// <summary>
-/// A provider for Word document operations.
+///     A provider for Word document operations.
 /// </summary>
 public class WordProvider : IDisposable
 {
     private readonly Dictionary<string, WordSession> _sessions = new();
 
+    public void Dispose()
+    {
+        foreach (var session in _sessions.Values)
+            try
+            {
+                session.Document.Dispose();
+            }
+            catch
+            {
+            }
+
+        _sessions.Clear();
+    }
+
     /// <summary>
-    /// Creates a new Word editing session.
+    ///     Creates a new Word editing session.
     /// </summary>
     public string CreateSession()
     {
@@ -25,7 +36,7 @@ public class WordProvider : IDisposable
     }
 
     /// <summary>
-    /// Closes a Word session and saves the document.
+    ///     Closes a Word session and saves the document.
     /// </summary>
     public string CloseSession(string sessionId)
     {
@@ -40,7 +51,7 @@ public class WordProvider : IDisposable
     }
 
     /// <summary>
-    /// Creates or opens a Word document.
+    ///     Creates or opens a Word document.
     /// </summary>
     public string OpenDocument(string sessionId, string filePath)
     {
@@ -68,7 +79,7 @@ public class WordProvider : IDisposable
     }
 
     /// <summary>
-    /// Reads all text from the Word document.
+    ///     Reads all text from the Word document.
     /// </summary>
     public string ReadDocument(string sessionId)
     {
@@ -82,7 +93,7 @@ public class WordProvider : IDisposable
     }
 
     /// <summary>
-    /// Appends plain text to the Word document.
+    ///     Appends plain text to the Word document.
     /// </summary>
     public string AppendText(string sessionId, string text)
     {
@@ -95,9 +106,10 @@ public class WordProvider : IDisposable
     }
 
     /// <summary>
-    /// Adds formatted text (bold, italic, heading) to the Word document.
+    ///     Adds formatted text (bold, italic, heading) to the Word document.
     /// </summary>
-    public string AddFormattedText(string sessionId, string text, bool bold = false, bool italic = false, int headingLevel = 0)
+    public string AddFormattedText(string sessionId, string text, bool bold = false, bool italic = false,
+        int headingLevel = 0)
     {
         var session = GetSession(sessionId);
 
@@ -113,10 +125,8 @@ public class WordProvider : IDisposable
         var para = new Paragraph(run);
 
         if (headingLevel > 0)
-        {
             para.ParagraphProperties = new ParagraphProperties(
-                new ParagraphStyleId() { Val = $"Heading{headingLevel}" });
-        }
+                new ParagraphStyleId { Val = $"Heading{headingLevel}" });
 
         session.MainPart.Document.Body!.AppendChild(para);
 
@@ -124,7 +134,7 @@ public class WordProvider : IDisposable
     }
 
     /// <summary>
-    /// Replaces all occurrences of a text in the Word document.
+    ///     Replaces all occurrences of a text in the Word document.
     /// </summary>
     public string ReplaceText(string sessionId, string find, string replace)
     {
@@ -132,16 +142,14 @@ public class WordProvider : IDisposable
 
         var body = session.MainPart.Document.Body!;
         foreach (var text in body.Descendants<Text>())
-        {
             if (text.Text != null && text.Text.Contains(find))
                 text.Text = text.Text.Replace(find, replace);
-        }
 
         return "Text replaced.";
     }
 
     /// <summary>
-    /// Inserts a table into the Word document.
+    ///     Inserts a table into the Word document.
     /// </summary>
     public string InsertTable(string sessionId, int rows, int cols, string? defaultText = "")
     {
@@ -149,11 +157,11 @@ public class WordProvider : IDisposable
 
         var table = new Table();
 
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
             var tr = new TableRow();
 
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 var tc = new TableCell(
                     new Paragraph(
@@ -177,18 +185,5 @@ public class WordProvider : IDisposable
             throw new Exception("Session not found");
 
         return session;
-    }
-
-    public void Dispose()
-    {
-        foreach (var session in _sessions.Values)
-        {
-            try
-            {
-                session.Document.Dispose();
-            }
-            catch { }
-        }
-        _sessions.Clear();
     }
 }

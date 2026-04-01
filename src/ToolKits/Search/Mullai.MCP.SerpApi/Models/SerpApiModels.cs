@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Mullai.MCP.SerpApi.Models;
 
 /// <summary>
-/// Base class for SerpAPI search requests containing common parameters.
+///     Base class for SerpAPI search requests containing common parameters.
 /// </summary>
 public abstract class SerpApiSearchRequest
 {
@@ -74,7 +74,7 @@ public abstract class SerpApiSearchRequest
 }
 
 /// <summary>
-/// Request model for Google web search.
+///     Request model for Google web search.
 /// </summary>
 public class GoogleSearchRequest : SerpApiSearchRequest
 {
@@ -86,7 +86,8 @@ public class GoogleSearchRequest : SerpApiSearchRequest
     [DefaultValue("")]
     public string Lr { get; set; } = string.Empty;
 
-    [Description("Search type (tbm): (empty)=web, isch=images, lcl=local, vid=videos, nws=news, shop=shopping, pts=patents")]
+    [Description(
+        "Search type (tbm): (empty)=web, isch=images, lcl=local, vid=videos, nws=news, shop=shopping, pts=patents")]
     [DefaultValue("")]
     public string Tbm { get; set; } = string.Empty;
 
@@ -132,7 +133,7 @@ public class GoogleSearchRequest : SerpApiSearchRequest
 }
 
 /// <summary>
-/// Request model for Google Image search.
+///     Request model for Google Image search.
 /// </summary>
 public class GoogleImageSearchRequest : SerpApiSearchRequest
 {
@@ -166,7 +167,7 @@ public class GoogleImageSearchRequest : SerpApiSearchRequest
 }
 
 /// <summary>
-/// Request model for Google News search.
+///     Request model for Google News search.
 /// </summary>
 public class GoogleNewsSearchRequest : SerpApiSearchRequest
 {
@@ -184,7 +185,7 @@ public class GoogleNewsSearchRequest : SerpApiSearchRequest
 }
 
 /// <summary>
-/// Request model for Google Videos search.
+///     Request model for Google Videos search.
 /// </summary>
 public class GoogleVideosSearchRequest : SerpApiSearchRequest
 {
@@ -206,7 +207,7 @@ public class GoogleVideosSearchRequest : SerpApiSearchRequest
 }
 
 /// <summary>
-/// Request model for Google Shopping search.
+///     Request model for Google Shopping search.
 /// </summary>
 public class GoogleShoppingSearchRequest : SerpApiSearchRequest
 {
@@ -224,7 +225,7 @@ public class GoogleShoppingSearchRequest : SerpApiSearchRequest
 }
 
 /// <summary>
-/// Request model for Google Local search.
+///     Request model for Google Local search.
 /// </summary>
 public class GoogleLocalSearchRequest : SerpApiSearchRequest
 {
@@ -234,7 +235,7 @@ public class GoogleLocalSearchRequest : SerpApiSearchRequest
 }
 
 /// <summary>
-/// Request model for Google Patents search.
+///     Request model for Google Patents search.
 /// </summary>
 public class GooglePatentsSearchRequest : SerpApiSearchRequest
 {

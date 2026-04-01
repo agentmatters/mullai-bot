@@ -96,7 +96,8 @@ php artisan migrate:status
 ```
 
 - Review destructive migrations carefully
-- Ensure migration filenames follow `Y_m_d_His_*` (e.g., `2025_03_14_154210_create_orders_table.php`) and describe the change clearly
+- Ensure migration filenames follow `Y_m_d_His_*` (e.g., `2025_03_14_154210_create_orders_table.php`) and describe the
+  change clearly
 - Ensure rollbacks are possible
 - Verify `down()` methods and avoid irreversible data loss without explicit backups
 
@@ -132,7 +133,8 @@ If `queue:monitor` is available, use it to check backlog without processing jobs
 php artisan queue:monitor default --max=100
 ```
 
-Active verification (staging only): dispatch a no-op job to a dedicated queue and run a single worker to process it (ensure a non-`sync` queue connection is configured).
+Active verification (staging only): dispatch a no-op job to a dedicated queue and run a single worker to process it (
+ensure a non-`sync` queue connection is configured).
 
 ```bash
 php artisan tinker --execute="dispatch((new App\\Jobs\\QueueHealthcheck())->onQueue('healthcheck'))"

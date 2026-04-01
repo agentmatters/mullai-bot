@@ -2,7 +2,8 @@
 
 ## Overview
 
-RTStream enables real-time ingestion of live video streams (RTSP/RTMP) and desktop capture sessions. Once connected, you can record, index, search, and export content from live sources.
+RTStream enables real-time ingestion of live video streams (RTSP/RTMP) and desktop capture sessions. Once connected, you
+can record, index, search, and export content from live sources.
 
 For code-level details (SDK methods, parameters, examples), see [rtstream-reference.md](rtstream-reference.md).
 
@@ -60,6 +61,6 @@ For capture session workflow, see [capture.md](capture.md).
 
 ## Scripts
 
-| Script | Description |
-|--------|-------------|
+| Script                   | Description                                       |
+|--------------------------|---------------------------------------------------|
 | `scripts/ws_listener.py` | WebSocket event listener for real-time AI results |

@@ -1,5 +1,4 @@
 using System.Threading.Channels;
-using Microsoft.Extensions.Options;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
@@ -23,8 +22,12 @@ public class InMemoryMullaiTaskQueue : IMullaiTaskQueue
     }
 
     public ValueTask EnqueueAsync(MullaiTaskWorkItem workItem, CancellationToken cancellationToken = default)
-        => _channel.Writer.WriteAsync(workItem, cancellationToken);
+    {
+        return _channel.Writer.WriteAsync(workItem, cancellationToken);
+    }
 
     public ValueTask<MullaiTaskWorkItem> DequeueAsync(CancellationToken cancellationToken = default)
-        => _channel.Reader.ReadAsync(cancellationToken);
+    {
+        return _channel.Reader.ReadAsync(cancellationToken);
+    }
 }

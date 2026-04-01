@@ -7,27 +7,27 @@
         <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     </PropertyGroup>
 
-  <ItemGroup>
-        <ProjectReference Include="..\Mullai.TaskRuntime\Mullai.TaskRuntime.csproj" />
-        <ProjectReference Include="..\Mullai.Global.ServiceConfiguration\Mullai.Global.ServiceConfiguration.csproj" />
-        <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Markdig" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" />
-  </ItemGroup>
-
-  <Target Name="PublishMcpToolkits" AfterTargets="Build;Publish">
     <ItemGroup>
-      <McpToolkitProjects Include="$(ProjectDir)..\ToolKits\**\Mullai.MCP.*.csproj" />
+        <ProjectReference Include="..\Mullai.TaskRuntime\Mullai.TaskRuntime.csproj"/>
+        <ProjectReference Include="..\Mullai.Global.ServiceConfiguration\Mullai.Global.ServiceConfiguration.csproj"/>
+        <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj"/>
     </ItemGroup>
-    <Message Importance="high" Text="Publishing MCP Toolkits for configuration $(Configuration): @(McpToolkitProjects)" />
-    <MSBuild Projects="@(McpToolkitProjects)" 
-             Targets="Publish" 
-             Properties="Configuration=$(Configuration);PublishDir=$(ProjectDir)$(OutputPath)McpToolkits\%(Filename)\;SelfContained=false;RuntimeIdentifier=" />
-  </Target>
+
+    <ItemGroup>
+        <PackageReference Include="Markdig"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices"/>
+        <PackageReference Include="Microsoft.Extensions.Hosting.Systemd"/>
+    </ItemGroup>
+
+    <Target Name="PublishMcpToolkits" AfterTargets="Build;Publish">
+        <ItemGroup>
+            <McpToolkitProjects Include="$(ProjectDir)..\ToolKits\**\Mullai.MCP.*.csproj"/>
+        </ItemGroup>
+        <Message Importance="high" Text="Publishing MCP Toolkits for configuration $(Configuration): @(McpToolkitProjects)"/>
+        <MSBuild Projects="@(McpToolkitProjects)"
+                 Targets="Publish"
+                 Properties="Configuration=$(Configuration);PublishDir=$(ProjectDir)$(OutputPath)McpToolkits\%(Filename)\;SelfContained=false;RuntimeIdentifier="/>
+    </Target>
 
 </Project>
 

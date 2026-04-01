@@ -145,7 +145,8 @@ Route::middleware('auth:sanctum')->prefix('conversations')->group(function () {
 });
 ```
 
-If you want a parameter to resolve to a different model class, define explicit binding. For custom binding logic, use `Route::bind()` or implement `resolveRouteBinding()` on the model.
+If you want a parameter to resolve to a different model class, define explicit binding. For custom binding logic, use
+`Route::bind()` or implement `resolveRouteBinding()` on the model.
 
 ```php
 use App\Models\AiConversation;

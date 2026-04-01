@@ -12,36 +12,36 @@ When the user provides an image file path, AUTOMATICALLY execute the following s
 1. **Image Conversion**: If the file is HEIC, convert it to PNG using `sips -s format png <input> --out <output>`
 
 2. **Image Rotation**:
-   - Check EXIF orientation data
-   - Automatically rotate the image based on EXIF data
-   - If EXIF orientation is 6, rotate 90 degrees counterclockwise
-   - Apply additional rotation as needed (test 180 degrees if document appears upside down)
+    - Check EXIF orientation data
+    - Automatically rotate the image based on EXIF data
+    - If EXIF orientation is 6, rotate 90 degrees counterclockwise
+    - Apply additional rotation as needed (test 180 degrees if document appears upside down)
 
 3. **OCR Text Extraction**:
-   - Try multiple OCR methods automatically:
-     - macOS Vision framework (preferred for macOS)
-     - EasyOCR (cross-platform, no tesseract required)
-     - Tesseract OCR (if available)
-   - Extract all text information from the document
-   - Identify document type (deposit certificate, employment certificate, retirement certificate, etc.)
+    - Try multiple OCR methods automatically:
+        - macOS Vision framework (preferred for macOS)
+        - EasyOCR (cross-platform, no tesseract required)
+        - Tesseract OCR (if available)
+    - Extract all text information from the document
+    - Identify document type (deposit certificate, employment certificate, retirement certificate, etc.)
 
 4. **Translation**:
-   - Translate all text content to English professionally
-   - Maintain the original document structure and format
-   - Use professional terminology appropriate for visa applications
-   - Keep proper names in original language with English in parentheses
-   - For Chinese names, use pinyin format (e.g., WU Zhengye)
-   - Preserve all numbers, dates, and amounts accurately
+    - Translate all text content to English professionally
+    - Maintain the original document structure and format
+    - Use professional terminology appropriate for visa applications
+    - Keep proper names in original language with English in parentheses
+    - For Chinese names, use pinyin format (e.g., WU Zhengye)
+    - Preserve all numbers, dates, and amounts accurately
 
 5. **PDF Generation**:
-   - Create a Python script using PIL and reportlab libraries
-   - Page 1: Display the rotated original image, centered and scaled to fit A4 page
-   - Page 2: Display the English translation with proper formatting:
-     - Title centered and bold
-     - Content left-aligned with appropriate spacing
-     - Professional layout suitable for official documents
-   - Add a note at the bottom: "This is a certified English translation of the original document"
-   - Execute the script to generate the PDF
+    - Create a Python script using PIL and reportlab libraries
+    - Page 1: Display the rotated original image, centered and scaled to fit A4 page
+    - Page 2: Display the English translation with proper formatting:
+        - Title centered and bold
+        - Content left-aligned with appropriate spacing
+        - Professional layout suitable for official documents
+    - Add a note at the bottom: "This is a certified English translation of the original document"
+    - Execute the script to generate the PDF
 
 6. **Output**: Create a PDF file named `<original_filename>_Translated.pdf` in the same directory
 
@@ -84,6 +84,7 @@ pip install pillow reportlab
 ```
 
 For macOS Vision framework:
+
 ```bash
 pip install pyobjc-framework-Vision pyobjc-framework-Quartz
 ```
@@ -108,10 +109,11 @@ pip install pyobjc-framework-Vision pyobjc-framework-Quartz
 ## Output Example
 
 The skill will:
+
 1. Extract text using available OCR method
 2. Translate to professional English
 3. Generate `<filename>_Translated.pdf` with:
-   - Page 1: Original document image
-   - Page 2: Professional English translation
+    - Page 1: Original document image
+    - Page 2: Professional English translation
 
 Perfect for visa applications to Australia, USA, Canada, UK, and other countries requiring translated documents.

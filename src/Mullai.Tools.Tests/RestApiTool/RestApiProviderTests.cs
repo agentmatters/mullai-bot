@@ -1,9 +1,7 @@
 using System.Net;
-using System.Text;
 using Moq;
 using Moq.Protected;
 using Mullai.Tools.RestApiTool;
-using RestApiTool = Mullai.Tools.RestApiTool.RestApiTool;
 using Mullai.Tools.RestApiTool.Models;
 
 namespace Mullai.Tools.Tests.RestApi;
@@ -12,13 +10,13 @@ public class RestApiProviderTests
 {
     private readonly Mock<HttpMessageHandler> _handlerMock;
     private readonly HttpClient _httpClient;
-    private readonly Mullai.Tools.RestApiTool.RestApiProvider _provider;
+    private readonly RestApiProvider _provider;
 
     public RestApiProviderTests()
     {
         _handlerMock = new Mock<HttpMessageHandler>();
         _httpClient = new HttpClient(_handlerMock.Object);
-        _provider = new Mullai.Tools.RestApiTool.RestApiProvider(_httpClient);
+        _provider = new RestApiProvider(_httpClient);
     }
 
     [Fact]
@@ -67,8 +65,8 @@ public class RestApiProviderTests
         _handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
-                ItExpr.Is<HttpRequestMessage>(r => 
-                    r.Method == HttpMethod.Post && 
+                ItExpr.Is<HttpRequestMessage>(r =>
+                    r.Method == HttpMethod.Post &&
                     r.Content != null),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage

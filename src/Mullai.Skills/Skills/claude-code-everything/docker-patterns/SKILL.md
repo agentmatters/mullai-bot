@@ -154,6 +154,7 @@ docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 ### Service Discovery
 
 Services in the same Compose network resolve by service name:
+
 ```
 # From "app" container:
 postgres://postgres:postgres@db:5432/app_dev    # "db" resolves to the db container

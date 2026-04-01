@@ -9,8 +9,8 @@ public abstract class BaseMullaiClient : IMullaiClient
 {
     private readonly AgentFactory _agentFactory;
     private readonly string _agentName;
-    private readonly SemaphoreSlim _initialisationLock = new(1, 1);
     private readonly SemaphoreSlim _executionLock = new(1, 1);
+    private readonly SemaphoreSlim _initialisationLock = new(1, 1);
     private MullaiAgent? _agent;
     private AgentSession? _session;
 
@@ -27,18 +27,12 @@ public abstract class BaseMullaiClient : IMullaiClient
 
     public async Task InitialiseAsync(CancellationToken cancellationToken = default)
     {
-        if (_agent is not null && _session is not null)
-        {
-            return;
-        }
+        if (_agent is not null && _session is not null) return;
 
         await _initialisationLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            if (_agent is not null && _session is not null)
-            {
-                return;
-            }
+            if (_agent is not null && _session is not null) return;
 
             _agent = await _agentFactory.GetAgent(_agentName);
             _session = await _agent.CreateSessionAsync(cancellationToken).ConfigureAwait(false);
@@ -63,8 +57,8 @@ public abstract class BaseMullaiClient : IMullaiClient
             var agent = _agent!;
             var session = _session!;
 
-            await foreach (var update in agent.RunStreamingAsync(userInput, session, provider, model, cancellationToken))
-            {
+            await foreach (var update in
+                           agent.RunStreamingAsync(userInput, session, provider, model, cancellationToken))
                 if (update is string || update is MullaiUsage)
                 {
                     yield return update;
@@ -72,12 +66,8 @@ public abstract class BaseMullaiClient : IMullaiClient
                 else
                 {
                     var text = update?.ToString();
-                    if (!string.IsNullOrEmpty(text))
-                    {
-                        yield return text;
-                    }
+                    if (!string.IsNullOrEmpty(text)) yield return text;
                 }
-            }
         }
         finally
         {
@@ -85,14 +75,16 @@ public abstract class BaseMullaiClient : IMullaiClient
         }
     }
 
-    public async Task<string> RunAsync(string userInput, string? provider = null, string? model = null, CancellationToken cancellationToken = default)
+    public async Task<string> RunAsync(string userInput, string? provider = null, string? model = null,
+        CancellationToken cancellationToken = default)
     {
         await InitialiseAsync(cancellationToken).ConfigureAwait(false);
         await _executionLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
-            var response = await _agent!.RunAsync(userInput, _session!, provider, model, cancellationToken).ConfigureAwait(false);
+            var response = await _agent!.RunAsync(userInput, _session!, provider, model, cancellationToken)
+                .ConfigureAwait(false);
             return response?.ToString() ?? string.Empty;
         }
         finally
@@ -107,10 +99,7 @@ public abstract class BaseMullaiClient : IMullaiClient
 
     protected void RefreshAgentClients(Action<MullaiAgent> refreshAction)
     {
-        if (_agent is null || refreshAction is null)
-        {
-            return;
-        }
+        if (_agent is null || refreshAction is null) return;
 
         _agent.RefreshClients(() => refreshAction(_agent));
     }

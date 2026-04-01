@@ -1,11 +1,10 @@
-using Microsoft.Extensions.Options;
+using System.Text.Json;
+using Mullai.Abstractions.WorkflowState;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
 using Mullai.Workflows.Abstractions;
 using Mullai.Workflows.Models;
-using System.Text.Json;
-using Mullai.Abstractions.WorkflowState;
 
 namespace Mullai.TaskRuntime;
 
@@ -50,17 +49,13 @@ public static class MullaiTaskEndpoints
         IOptions<MullaiTaskRuntimeOptions> runtimeOptions,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Prompt))
-        {
-            return Results.BadRequest("Prompt is required.");
-        }
+        if (string.IsNullOrWhiteSpace(request.Prompt)) return Results.BadRequest("Prompt is required.");
 
-        if (string.IsNullOrWhiteSpace(request.SessionKey))
-        {
-            return Results.BadRequest("SessionKey is required.");
-        }
+        if (string.IsNullOrWhiteSpace(request.SessionKey)) return Results.BadRequest("SessionKey is required.");
 
-        var maxAttempts = request.MaxAttempts is > 0 ? request.MaxAttempts.Value : runtimeOptions.Value.DefaultMaxAttempts;
+        var maxAttempts = request.MaxAttempts is > 0
+            ? request.MaxAttempts.Value
+            : runtimeOptions.Value.DefaultMaxAttempts;
         var workItem = new MullaiTaskWorkItem
         {
             TaskId = Guid.NewGuid().ToString("N"),
@@ -118,19 +113,10 @@ public static class MullaiTaskEndpoints
         CancellationToken cancellationToken)
     {
         var workflow = registry.GetById(workflowId);
-        if (workflow is null)
-        {
-            return Results.NotFound($"Workflow '{workflowId}' was not found.");
-        }
-        if (!workflow.IsEnabled)
-        {
-            return Results.Conflict($"Workflow '{workflowId}' is disabled.");
-        }
+        if (workflow is null) return Results.NotFound($"Workflow '{workflowId}' was not found.");
+        if (!workflow.IsEnabled) return Results.Conflict($"Workflow '{workflowId}' is disabled.");
 
-        if (string.IsNullOrWhiteSpace(request.Input))
-        {
-            return Results.BadRequest("Input is required.");
-        }
+        if (string.IsNullOrWhiteSpace(request.Input)) return Results.BadRequest("Input is required.");
 
         var sessionKey = string.IsNullOrWhiteSpace(request.SessionKey)
             ? $"workflow-{workflowId}-{Guid.NewGuid():N}"
@@ -169,14 +155,8 @@ public static class MullaiTaskEndpoints
         CancellationToken cancellationToken)
     {
         var workflow = registry.GetById(workflowId);
-        if (workflow is null)
-        {
-            return Results.NotFound($"Workflow '{workflowId}' was not found.");
-        }
-        if (!workflow.IsEnabled)
-        {
-            return Results.Conflict($"Workflow '{workflowId}' is disabled.");
-        }
+        if (workflow is null) return Results.NotFound($"Workflow '{workflowId}' was not found.");
+        if (!workflow.IsEnabled) return Results.Conflict($"Workflow '{workflowId}' is disabled.");
 
         var trigger = workflow.Triggers.FirstOrDefault(t =>
             t.Enabled &&
@@ -185,28 +165,19 @@ public static class MullaiTaskEndpoints
              string.Equals(t.Name, triggerId, StringComparison.OrdinalIgnoreCase)));
 
         if (trigger is null)
-        {
             return Results.NotFound($"Webhook trigger '{triggerId}' not found for workflow '{workflowId}'.");
-        }
 
         if (trigger.Properties.TryGetValue("secret", out var secret) && !string.IsNullOrWhiteSpace(secret))
-        {
             if (!httpRequest.Headers.TryGetValue("x-mullai-secret", out var provided) ||
                 !string.Equals(provided.ToString(), secret, StringComparison.Ordinal))
-            {
                 return Results.Unauthorized();
-            }
-        }
 
         var payloadJson = payload.GetRawText();
         var input = !string.IsNullOrWhiteSpace(trigger.Input)
             ? trigger.Input.Replace("{{payload}}", payloadJson, StringComparison.OrdinalIgnoreCase)
             : payloadJson;
 
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            return Results.BadRequest("Trigger input is required.");
-        }
+        if (string.IsNullOrWhiteSpace(input)) return Results.BadRequest("Trigger input is required.");
 
         var sessionKey = string.IsNullOrWhiteSpace(trigger.SessionKey)
             ? $"workflow-{workflow.Id}-{trigger.Id}"
@@ -246,16 +217,12 @@ public static class MullaiTaskEndpoints
         var filtered = recent.AsEnumerable();
 
         if (!string.IsNullOrWhiteSpace(workflowId))
-        {
             filtered = filtered.Where(snapshot =>
                 string.Equals(snapshot.WorkflowId, workflowId.Trim(), StringComparison.OrdinalIgnoreCase));
-        }
 
         if (!string.IsNullOrWhiteSpace(state))
-        {
             filtered = filtered.Where(snapshot =>
                 string.Equals(snapshot.State.ToString(), state.Trim(), StringComparison.OrdinalIgnoreCase));
-        }
 
         return Results.Ok(filtered);
     }
@@ -289,23 +256,14 @@ public static class MullaiTaskEndpoints
         CancellationToken cancellationToken)
     {
         var failure = await failureStore.GetAsync(failureId, cancellationToken).ConfigureAwait(false);
-        if (failure is null)
-        {
-            return Results.NotFound();
-        }
+        if (failure is null) return Results.NotFound();
 
         var definition = registry.GetById(failure.WorkflowId);
-        if (definition is null)
-        {
-            return Results.NotFound($"Workflow '{failure.WorkflowId}' was not found.");
-        }
+        if (definition is null) return Results.NotFound($"Workflow '{failure.WorkflowId}' was not found.");
 
         var handler = handlers.FirstOrDefault(h =>
             string.Equals(h.Type, failure.OutputType, StringComparison.OrdinalIgnoreCase));
-        if (handler is null)
-        {
-            return Results.NotFound($"No output handler for '{failure.OutputType}'.");
-        }
+        if (handler is null) return Results.NotFound($"No output handler for '{failure.OutputType}'.");
 
         var output = new WorkflowOutputDefinition
         {

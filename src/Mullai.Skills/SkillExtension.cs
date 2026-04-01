@@ -7,15 +7,15 @@ namespace Mullai.Skills;
 public static class SkillExtension
 {
     /// <summary>
-    /// Registers the FileAgentSkillsProvider in the dependency injection container.
+    ///     Registers the FileAgentSkillsProvider in the dependency injection container.
     /// </summary>
     public static IServiceCollection AddMullaiSkills(this IServiceCollection services)
     {
-        services.AddSingleton(sp => 
+        services.AddSingleton(sp =>
             new AgentSkillsProvider(
-            skillPath: Path.Combine(AppContext.BaseDirectory, "skills"),
-            loggerFactory: sp.GetRequiredService<ILoggerFactory>()));
-        
+                Path.Combine(AppContext.BaseDirectory, "skills"),
+                loggerFactory: sp.GetRequiredService<ILoggerFactory>()));
+
         return services;
     }
 }

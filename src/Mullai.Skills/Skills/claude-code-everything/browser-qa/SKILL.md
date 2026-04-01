@@ -16,9 +16,11 @@ origin: ECC
 
 ## How It Works
 
-Uses the browser automation MCP (claude-in-chrome, Playwright, or Puppeteer) to interact with live pages like a real user.
+Uses the browser automation MCP (claude-in-chrome, Playwright, or Puppeteer) to interact with live pages like a real
+user.
 
 ### Phase 1: Smoke Test
+
 ```
 1. Navigate to target URL
 2. Check for console errors (filter noise: analytics, third-party)
@@ -28,6 +30,7 @@ Uses the browser automation MCP (claude-in-chrome, Playwright, or Puppeteer) to 
 ```
 
 ### Phase 2: Interaction Test
+
 ```
 1. Click every nav link — verify no dead links
 2. Submit forms with valid data — verify success state
@@ -37,6 +40,7 @@ Uses the browser automation MCP (claude-in-chrome, Playwright, or Puppeteer) to 
 ```
 
 ### Phase 3: Visual Regression
+
 ```
 1. Screenshot key pages at 3 breakpoints (375px, 768px, 1440px)
 2. Compare against baseline screenshots (if stored)
@@ -45,6 +49,7 @@ Uses the browser automation MCP (claude-in-chrome, Playwright, or Puppeteer) to 
 ```
 
 ### Phase 4: Accessibility
+
 ```
 1. Run axe-core or equivalent on each page
 2. Flag WCAG AA violations (contrast, labels, focus order)
@@ -80,6 +85,7 @@ Uses the browser automation MCP (claude-in-chrome, Playwright, or Puppeteer) to 
 ## Integration
 
 Works with any browser MCP:
+
 - `mChild__claude-in-chrome__*` tools (preferred — uses your actual Chrome)
 - Playwright via `mcp__browserbase__*`
 - Direct Puppeteer scripts

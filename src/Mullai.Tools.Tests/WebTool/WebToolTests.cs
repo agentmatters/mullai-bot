@@ -1,18 +1,18 @@
+using Mullai.Tools.CodeSearchTool;
 using Mullai.Tools.WebTool;
-using Xunit;
 
 namespace Mullai.Tools.Tests.WebTool;
 
 public class WebToolTests : IDisposable
 {
-    private readonly Mullai.Tools.WebTool.WebTool _tool;
     private readonly HttpClient _httpClient;
+    private readonly Tools.WebTool.WebTool _tool;
 
     public WebToolTests()
     {
         _httpClient = new HttpClient();
         var provider = new WebProvider(_httpClient);
-        _tool = new Mullai.Tools.WebTool.WebTool(provider);
+        _tool = new Tools.WebTool.WebTool(provider);
     }
 
     public void Dispose()
@@ -47,14 +47,14 @@ public class WebToolTests : IDisposable
 
 public class CodeSearchToolTests : IDisposable
 {
-    private readonly Mullai.Tools.CodeSearchTool.CodeSearchTool _tool;
     private readonly HttpClient _httpClient;
+    private readonly CodeSearchTool.CodeSearchTool _tool;
 
     public CodeSearchToolTests()
     {
         _httpClient = new HttpClient();
-        var provider = new Mullai.Tools.CodeSearchTool.CodeSearchProvider(_httpClient);
-        _tool = new Mullai.Tools.CodeSearchTool.CodeSearchTool(provider);
+        var provider = new CodeSearchProvider(_httpClient);
+        _tool = new CodeSearchTool.CodeSearchTool(provider);
     }
 
     public void Dispose()

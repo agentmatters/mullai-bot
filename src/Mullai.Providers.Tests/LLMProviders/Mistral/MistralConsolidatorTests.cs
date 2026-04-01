@@ -1,7 +1,5 @@
-
 using Microsoft.Extensions.AI;
 using Mullai.Providers.LLMProviders.Mistral;
-using Xunit;
 
 namespace Mullai.Providers.Tests.LLMProviders.Mistral;
 
@@ -15,9 +13,9 @@ public class MistralConsolidatorTests
         // Arrange
         var messages = new List<ChatMessage>
         {
-            new ChatMessage(ChatRole.Tool, "result 1"),
-            new ChatMessage(ChatRole.Tool, "result 2"),
-            new ChatMessage(ChatRole.User, "Next question")
+            new(ChatRole.Tool, "result 1"),
+            new(ChatRole.Tool, "result 2"),
+            new(ChatRole.User, "Next question")
         };
 
         // Act
@@ -39,8 +37,8 @@ public class MistralConsolidatorTests
         // Arrange
         var messages = new List<ChatMessage>
         {
-            new ChatMessage(ChatRole.Tool, "result 1"),
-            new ChatMessage(ChatRole.User, "Next question")
+            new(ChatRole.Tool, "result 1"),
+            new(ChatRole.User, "Next question")
         };
 
         // Act

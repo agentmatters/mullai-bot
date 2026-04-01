@@ -21,7 +21,8 @@ public class NvidiaModelAdapter : IModelMetadataAdapter
 
         // 2. Fetch OpenRouter models for pricing/metadata
         var orOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
-        var orResponse = await httpClient.GetFromJsonAsync<OpenRouterModelsResponse>(OpenRouterModelsEndpoint, orOptions);
+        var orResponse =
+            await httpClient.GetFromJsonAsync<OpenRouterModelsResponse>(OpenRouterModelsEndpoint, orOptions);
         var openRouterModels = orResponse?.Data ?? new List<OpenRouterPricingModelData>();
 
         // 3. Adapt and match
@@ -41,35 +42,32 @@ public class NvidiaModelAdapter : IModelMetadataAdapter
             Enabled = true,
             Priority = 1,
             Capabilities = ["chat"],
-            Pricing = orMatch?.Pricing != null ? new ModelPricing
-            {
-                InputPer1kTokens = ParsePricing(orMatch.Pricing.Prompt),
-                OutputPer1kTokens = ParsePricing(orMatch.Pricing.Completion)
-            } : null
+            Pricing = orMatch?.Pricing != null
+                ? new ModelPricing
+                {
+                    InputPer1kTokens = ParsePricing(orMatch.Pricing.Prompt),
+                    OutputPer1kTokens = ParsePricing(orMatch.Pricing.Completion)
+                }
+                : null
         };
     }
 
     private decimal ParsePricing(string? pricing)
     {
         if (string.IsNullOrEmpty(pricing)) return 0;
-        if (decimal.TryParse(pricing, out var result))
-        {
-            return result * 1000000m;
-        }
+        if (decimal.TryParse(pricing, out var result)) return result * 1000000m;
         return 0;
     }
 }
 
 internal class NvidiaModelsResponse
 {
-    [JsonPropertyName("data")]
-    public List<NvidiaModelData>? Data { get; set; }
+    [JsonPropertyName("data")] public List<NvidiaModelData>? Data { get; set; }
 }
 
 internal class NvidiaModelData
 {
-    [JsonPropertyName("id")]
-    public string Id { get; set; } = string.Empty;
+    [JsonPropertyName("id")] public string Id { get; set; } = string.Empty;
 }
 
 internal class OpenRouterModelsResponse

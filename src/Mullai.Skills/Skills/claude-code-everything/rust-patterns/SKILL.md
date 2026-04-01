@@ -17,7 +17,10 @@ Idiomatic Rust patterns and best practices for building safe, performant, and ma
 
 ## How It Works
 
-This skill enforces idiomatic Rust conventions across six key areas: ownership and borrowing to prevent data races at compile time, `Result`/`?` error propagation with `thiserror` for libraries and `anyhow` for applications, enums and exhaustive pattern matching to make illegal states unrepresentable, traits and generics for zero-cost abstraction, safe concurrency via `Arc<Mutex<T>>`, channels, and async/await, and minimal `pub` surfaces organized by domain.
+This skill enforces idiomatic Rust conventions across six key areas: ownership and borrowing to prevent data races at
+compile time, `Result`/`?` error propagation with `thiserror` for libraries and `anyhow` for applications, enums and
+exhaustive pattern matching to make illegal states unrepresentable, traits and generics for zero-cost abstraction, safe
+concurrency via `Arc<Mutex<T>>`, channels, and async/await, and minimal `pub` surfaces organized by domain.
 
 ## Core Principles
 
@@ -457,18 +460,18 @@ cargo bench              # Run benchmarks
 
 ## Quick Reference: Rust Idioms
 
-| Idiom | Description |
-|-------|-------------|
-| Borrow, don't clone | Pass `&T` instead of cloning unless ownership is needed |
-| Make illegal states unrepresentable | Use enums to model valid states only |
-| `?` over `unwrap()` | Propagate errors, never panic in library/production code |
-| Parse, don't validate | Convert unstructured data to typed structs at the boundary |
-| Newtype for type safety | Wrap primitives in newtypes to prevent argument swaps |
-| Prefer iterators over loops | Declarative chains are clearer and often faster |
-| `#[must_use]` on Results | Ensure callers handle return values |
-| `Cow` for flexible ownership | Avoid allocations when borrowing suffices |
-| Exhaustive matching | No wildcard `_` for business-critical enums |
-| Minimal `pub` surface | Use `pub(crate)` for internal APIs |
+| Idiom                               | Description                                                |
+|-------------------------------------|------------------------------------------------------------|
+| Borrow, don't clone                 | Pass `&T` instead of cloning unless ownership is needed    |
+| Make illegal states unrepresentable | Use enums to model valid states only                       |
+| `?` over `unwrap()`                 | Propagate errors, never panic in library/production code   |
+| Parse, don't validate               | Convert unstructured data to typed structs at the boundary |
+| Newtype for type safety             | Wrap primitives in newtypes to prevent argument swaps      |
+| Prefer iterators over loops         | Declarative chains are clearer and often faster            |
+| `#[must_use]` on Results            | Ensure callers handle return values                        |
+| `Cow` for flexible ownership        | Avoid allocations when borrowing suffices                  |
+| Exhaustive matching                 | No wildcard `_` for business-critical enums                |
+| Minimal `pub` surface               | Use `pub(crate)` for internal APIs                         |
 
 ## Anti-Patterns to Avoid
 
@@ -496,4 +499,5 @@ async fn bad_async() {
 }
 ```
 
-**Remember**: If it compiles, it's probably correct — but only if you avoid `unwrap()`, minimize `unsafe`, and let the type system work for you.
+**Remember**: If it compiles, it's probably correct — but only if you avoid `unwrap()`, minimize `unsafe`, and let the
+type system work for you.

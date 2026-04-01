@@ -20,6 +20,7 @@ A formal evaluation framework for Claude Code sessions, implementing eval-driven
 ## Philosophy
 
 Eval-Driven Development treats evals as the "unit tests of AI development":
+
 - Define expected behavior BEFORE implementation
 - Run evals continuously during development
 - Track regressions with each change
@@ -28,7 +29,9 @@ Eval-Driven Development treats evals as the "unit tests of AI development":
 ## Eval Types
 
 ### Capability Evals
+
 Test if Claude can do something it couldn't before:
+
 ```markdown
 [CAPABILITY EVAL: feature-name]
 Task: Description of what Claude should accomplish
@@ -40,7 +43,9 @@ Expected Output: Description of expected result
 ```
 
 ### Regression Evals
+
 Ensure changes don't break existing functionality:
+
 ```markdown
 [REGRESSION EVAL: feature-name]
 Baseline: SHA or checkpoint name
@@ -54,7 +59,9 @@ Result: X/Y passed (previously Y/Y)
 ## Grader Types
 
 ### 1. Code-Based Grader
+
 Deterministic checks using code:
+
 ```bash
 # Check if file contains expected pattern
 grep -q "export function handleAuth" src/auth.ts && echo "PASS" || echo "FAIL"
@@ -67,7 +74,9 @@ npm run build && echo "PASS" || echo "FAIL"
 ```
 
 ### 2. Model-Based Grader
+
 Use Claude to evaluate open-ended outputs:
+
 ```markdown
 [MODEL GRADER PROMPT]
 Evaluate the following code change:
@@ -81,7 +90,9 @@ Reasoning: [explanation]
 ```
 
 ### 3. Human Grader
+
 Flag for manual review:
+
 ```markdown
 [HUMAN REVIEW REQUIRED]
 Change: Description of what changed
@@ -92,13 +103,17 @@ Risk Level: LOW/MEDIUM/HIGH
 ## Metrics
 
 ### pass@k
+
 "At least one success in k attempts"
+
 - pass@1: First attempt success rate
 - pass@3: Success within 3 attempts
 - Typical target: pass@3 > 90%
 
 ### pass^k
+
 "All k trials succeed"
+
 - Higher bar for reliability
 - pass^3: 3 consecutive successes
 - Use for critical paths
@@ -106,6 +121,7 @@ Risk Level: LOW/MEDIUM/HIGH
 ## Eval Workflow
 
 ### 1. Define (Before Coding)
+
 ```markdown
 ## EVAL DEFINITION: feature-xyz
 
@@ -125,9 +141,11 @@ Risk Level: LOW/MEDIUM/HIGH
 ```
 
 ### 2. Implement
+
 Write code to pass the defined evals.
 
 ### 3. Evaluate
+
 ```bash
 # Run capability evals
 [Run each capability eval, record PASS/FAIL]
@@ -139,6 +157,7 @@ npm test -- --testPathPattern="existing"
 ```
 
 ### 4. Report
+
 ```markdown
 EVAL REPORT: feature-xyz
 ========================
@@ -165,26 +184,33 @@ Status: READY FOR REVIEW
 ## Integration Patterns
 
 ### Pre-Implementation
+
 ```
 /eval define feature-name
 ```
+
 Creates eval definition file at `.claude/evals/feature-name.md`
 
 ### During Implementation
+
 ```
 /eval check feature-name
 ```
+
 Runs current evals and reports status
 
 ### Post-Implementation
+
 ```
 /eval report feature-name
 ```
+
 Generates full eval report
 
 ## Eval Storage
 
 Store evals in project:
+
 ```
 .claude/
   evals/
@@ -253,6 +279,7 @@ Use product evals when behavior quality cannot be captured by unit tests alone.
 - `pass^3`: stability test (all 3 runs must pass)
 
 Recommended thresholds:
+
 - Capability evals: pass@3 >= 0.90
 - Regression evals: pass^3 = 1.00 for release-critical paths
 

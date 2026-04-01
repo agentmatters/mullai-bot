@@ -1,19 +1,15 @@
 using Mullai.Tools.CliTool;
-using Xunit;
-
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace Mullai.Tools.Tests.CliTool;
 
 public class CliToolTests
 {
-    private readonly Mullai.Tools.CliTool.CliTool _tool;
+    private readonly Tools.CliTool.CliTool _tool;
 
     public CliToolTests()
     {
         var provider = new CliProvider();
-        _tool = new Mullai.Tools.CliTool.CliTool(provider);
+        _tool = new Tools.CliTool.CliTool(provider);
     }
 
     [Fact]
@@ -38,7 +34,7 @@ public class CliToolTests
         // Assert
         Assert.NotNull(tools);
         Assert.Equal(4, tools.Count);
-        
+
         var toolNames = tools.Select(t => t.Name).ToList();
         Assert.Contains("ExecuteCliCommand", toolNames);
         Assert.Contains("CreateCliSession", toolNames);

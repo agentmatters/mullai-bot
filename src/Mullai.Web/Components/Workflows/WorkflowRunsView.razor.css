@@ -67,10 +67,25 @@
     text-transform: uppercase;
 }
 
-.run-state.succeeded { background: #d1e7dd; color: #0f5132; }
-.run-state.failed { background: #f8d7da; color: #842029; }
-.run-state.running { background: #cff4fc; color: #055160; }
-.run-state.queued { background: #fff3cd; color: #664d03; }
+.run-state.succeeded {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.run-state.failed {
+    background: #f8d7da;
+    color: #842029;
+}
+
+.run-state.running {
+    background: #cff4fc;
+    color: #055160;
+}
+
+.run-state.queued {
+    background: #fff3cd;
+    color: #664d03;
+}
 
 .run-time {
     color: var(--subtle);

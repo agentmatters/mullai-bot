@@ -8,28 +8,27 @@ public interface IMullaiConfigurationManager : ICredentialStorage
     MullaiProvidersConfig GetProvidersConfig();
     void SaveProvidersConfig(MullaiProvidersConfig config);
     void AddModelDescriptor(string providerName, MullaiModelDescriptor model);
-    
+
     List<CustomProviderDescriptor> GetCustomProviders();
     void AddCustomProvider(CustomProviderDescriptor provider);
     void RemoveCustomProvider(string name);
-    
+
     SkillConfiguration GetSkillConfiguration();
     void SaveSkillConfiguration(SkillConfiguration configuration);
-    
+
     McpConfiguration GetMcpConfiguration();
     void SaveMcpConfiguration(McpConfiguration configuration);
     void DeleteMcpServer(string serverName);
-    
+
     string? GetMcpSecret(string key);
     void SaveMcpSecret(string key, string value);
-    
+
     List<AgentDefinition> GetAgents();
     void SaveAgent(AgentDefinition agent);
     void DeleteAgent(string agentId);
-    
+
     List<string> GetAllAvailableToolGroups();
 }
-
 
 public class CustomProviderDescriptor
 {
@@ -61,5 +60,3 @@ public class McpServerDescriptor
     public bool IsBuiltIn { get; set; } = false;
     public List<McpConfigurationRequirement> Requirements { get; set; } = [];
 }
-
-

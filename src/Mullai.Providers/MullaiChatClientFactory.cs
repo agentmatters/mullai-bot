@@ -2,23 +2,21 @@ using System.ClientModel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Mullai.Providers.Common;
-using Mullai.Providers.LLMProviders;
-using Mullai.Providers.LLMProviders.Mistral;
-using Mullai.Providers.LLMProviders.OpenRouter;
-using Mullai.Abstractions.Models;
 using Mullai.Abstractions.Configuration;
-using System.Text.Json;
-using Mullai.Providers.LLMProviders.Gemini;
-using Mullai.Providers.LLMProviders.Nvidia;
-using Mullai.Providers.LLMProviders.Groq;
+using Mullai.Abstractions.Models;
+using Mullai.Providers.Common;
 using Mullai.Providers.LLMProviders.Cerebras;
+using Mullai.Providers.LLMProviders.Gemini;
+using Mullai.Providers.LLMProviders.Groq;
+using Mullai.Providers.LLMProviders.Mistral;
+using Mullai.Providers.LLMProviders.Nvidia;
+using Mullai.Providers.LLMProviders.OpenRouter;
 using OpenAI;
 
 namespace Mullai.Providers;
 
 /// <summary>
-/// Builds a priority-ordered <see cref="MullaiChatClient"/> using the configuration manager.
+///     Builds a priority-ordered <see cref="MullaiChatClient" /> using the configuration manager.
 /// </summary>
 public static class MullaiChatClientFactory
 {
@@ -31,7 +29,7 @@ public static class MullaiChatClientFactory
         new GroqModelAdapter(),
         new CerebrasModelAdapter()
     };
-    
+
     public static MullaiChatClient Create(
         IConfiguration configuration,
         IMullaiConfigurationManager configManager,
@@ -40,7 +38,7 @@ public static class MullaiChatClientFactory
     {
         var config = configManager.GetProvidersConfig();
         var customProviders = configManager.GetCustomProviders();
-        
+
         var clients = BuildOrderedClients(config, customProviders, configuration, configManager, httpClient);
 
         return new MullaiChatClient(clients, logger, configManager, configuration, httpClient);
@@ -70,25 +68,17 @@ public static class MullaiChatClientFactory
             {
                 var label = $"{provider.Name}/{model.ModelId}";
                 var client = TryCreateClient(provider.Name, model.ModelId, configuration, configManager, httpClient);
-                if (client is not null)
-                {
-                    result.Add((label, client));
-                }
+                if (client is not null) result.Add((label, client));
             }
         }
 
         // Custom Providers
         foreach (var custom in customProviders.Where(cp => cp.Enabled))
+        foreach (var modelId in custom.Models)
         {
-            foreach (var modelId in custom.Models)
-            {
-                var label = $"{custom.Name}/{modelId}";
-                var client = CreateCustomClient(custom, modelId);
-                if (client != null)
-                {
-                    result.Add((label, client));
-                }
-            }
+            var label = $"{custom.Name}/{modelId}";
+            var client = CreateCustomClient(custom, modelId);
+            if (client != null) result.Add((label, client));
         }
 
         return result;
@@ -102,24 +92,27 @@ public static class MullaiChatClientFactory
         HttpClient httpClient)
     {
         var apiKey = configManager.GetApiKey(providerName);
-        var effectiveConfig = apiKey != null 
-            ? OverlayApiKey(configuration, providerName, apiKey) 
+        var effectiveConfig = apiKey != null
+            ? OverlayApiKey(configuration, providerName, apiKey)
             : configuration;
 
         try
         {
             return providerName switch
             {
-                "Mistral"     => Mistral.GetMistralChatClient(effectiveConfig, httpClient, modelId),
-                "OpenRouter"  => OpenRouter.GetOpenRouterChatClient(effectiveConfig, httpClient, modelId),
-                "Gemini"  => Gemini.GetGeminiChatClient(effectiveConfig, httpClient, modelId),
-                "Nvidia"  => Nvidia.GetNvidiaChatClient(effectiveConfig, httpClient, modelId),
-                "Groq"  => Groq.GetGroqChatClient(effectiveConfig, httpClient, modelId),
-                "Cerebras"  => Cerebras.GetCerebrasChatClient(effectiveConfig, httpClient, modelId),
+                "Mistral" => Mistral.GetMistralChatClient(effectiveConfig, httpClient, modelId),
+                "OpenRouter" => OpenRouter.GetOpenRouterChatClient(effectiveConfig, httpClient, modelId),
+                "Gemini" => Gemini.GetGeminiChatClient(effectiveConfig, httpClient, modelId),
+                "Nvidia" => Nvidia.GetNvidiaChatClient(effectiveConfig, httpClient, modelId),
+                "Groq" => Groq.GetGroqChatClient(effectiveConfig, httpClient, modelId),
+                "Cerebras" => Cerebras.GetCerebrasChatClient(effectiveConfig, httpClient, modelId),
                 _ => null
             };
         }
-        catch { return null; }
+        catch
+        {
+            return null;
+        }
     }
 
     private static IChatClient? CreateCustomClient(CustomProviderDescriptor custom, string modelId)
@@ -130,7 +123,10 @@ public static class MullaiChatClientFactory
             var openAIClient = new OpenAIClient(new ApiKeyCredential(custom.ApiKey ?? "no-key"), options);
             return openAIClient.GetChatClient(modelId).AsIChatClient();
         }
-        catch { return null; }
+        catch
+        {
+            return null;
+        }
     }
 
     private static IConfiguration OverlayApiKey(IConfiguration original, string providerName, string apiKey)
@@ -140,16 +136,13 @@ public static class MullaiChatClientFactory
     }
 
     public static async Task<List<MullaiModelDescriptor>> GetModelsForProviderAsync(
-        string providerName, 
-        HttpClient httpClient, 
+        string providerName,
+        HttpClient httpClient,
         string? apiKey = null)
     {
-        var adapter = _adapters.FirstOrDefault(a => a.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
-        if (adapter != null)
-        {
-            return await adapter.FetchModelsAsync(httpClient, apiKey);
-        }
+        var adapter =
+            _adapters.FirstOrDefault(a => a.ProviderName.Equals(providerName, StringComparison.OrdinalIgnoreCase));
+        if (adapter != null) return await adapter.FetchModelsAsync(httpClient, apiKey);
         return new List<MullaiModelDescriptor>();
     }
 }
-

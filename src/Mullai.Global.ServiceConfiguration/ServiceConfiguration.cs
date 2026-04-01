@@ -1,55 +1,55 @@
 using Microsoft.Extensions.AI;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Mullai.Abstractions.Configuration;
 using Mullai.Agents;
+using Mullai.LocalMcp;
 using Mullai.Logging.LLMRequestLogging;
-using Mullai.Tools.WeatherTool;
 using Mullai.Memory;
 using Mullai.Middleware.Middlewares;
 using Mullai.OpenTelemetry.OpenTelemetry;
 using Mullai.Providers;
-using Mullai.Abstractions.Configuration;
 using Mullai.Skills;
 using Mullai.Tools.BashTool;
 using Mullai.Tools.CliTool;
 using Mullai.Tools.CodeSearchTool;
 using Mullai.Tools.FileSystemTool;
+using Mullai.Tools.HtmlToMarkdownTool;
+using Mullai.Tools.RestApiTool;
 using Mullai.Tools.TodoTool;
+using Mullai.Tools.WeatherTool;
 using Mullai.Tools.WebTool;
 using Mullai.Tools.WordTool;
-using Mullai.Tools.WorkflowTool;
 using Mullai.Tools.WorkflowStateTool;
-using Mullai.Tools.RestApiTool;
-using Mullai.Tools.HtmlToMarkdownTool;
-using OpenTelemetry.Logs;
-using OpenTelemetry.Resources;
+using Mullai.Tools.WorkflowTool;
 using Mullai.Workflows;
 using Mullai.Workflows.Abstractions;
 
-namespace Mullai.Global.ServiceConfiguration
+namespace Mullai.Global.ServiceConfiguration;
+
+public static class ServiceConfiguration
 {
-    public static class ServiceConfiguration
+    public static IServiceProvider ConfigureMullaiServices(IConfiguration configuration)
     {
-        public static IServiceProvider ConfigureMullaiServices(IConfiguration configuration)
-        {
-            OpenTelemetrySettings.Initialize(configuration);
-            
-            var serviceCollection = new ServiceCollection();
+        OpenTelemetrySettings.Initialize(configuration);
 
-            serviceCollection.ConfigureMullaiServices(configuration);
+        var serviceCollection = new ServiceCollection();
 
-            return serviceCollection.BuildServiceProvider();
-        }
+        serviceCollection.ConfigureMullaiServices(configuration);
 
-        public static IServiceCollection ConfigureMullaiServices(this IServiceCollection services, IConfiguration configuration)
-        {
-            OpenTelemetrySettings.Initialize(configuration);
-            
-            services
-                .AddSingleton<IConfiguration>(configuration)
-                .AddLogging(builder =>
-                {
+        return serviceCollection.BuildServiceProvider();
+    }
+
+    public static IServiceCollection ConfigureMullaiServices(this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        OpenTelemetrySettings.Initialize(configuration);
+
+        services
+            .AddSingleton<IConfiguration>(configuration)
+            .AddLogging(builder =>
+            {
 #if DEBUG
                     builder
                         .AddConsole()
@@ -66,50 +66,49 @@ namespace Mullai.Global.ServiceConfiguration
                             options.IncludeFormattedMessage = true;
                         });
 #else
-                    builder.SetMinimumLevel(LogLevel.None);
+                builder.SetMinimumLevel(LogLevel.None);
 #endif
-                })
-                .AddSingleton<LLMRequestLoggingHandler>()
-                .AddSingleton<HttpClient>(sp => {
-                    var loggingHandler = sp.GetService<LLMRequestLoggingHandler>();
-                    loggingHandler!.InnerHandler = new HttpClientHandler();
-                    return new HttpClient(loggingHandler);
-                })
-                .AddSingleton<IMullaiConfigurationManager, MullaiConfigurationManager>()
-                .AddSingleton<ICredentialStorage>(sp => sp.GetRequiredService<IMullaiConfigurationManager>())
-                .AddSingleton<IMullaiChatClient>(sp => 
-                {
-                    var httpClient = sp.GetRequiredService<HttpClient>();
-                    var logger = sp.GetRequiredService<ILogger<MullaiChatClient>>();
-                    var configManager = sp.GetRequiredService<IMullaiConfigurationManager>();
+            })
+            .AddSingleton<LLMRequestLoggingHandler>()
+            .AddSingleton<HttpClient>(sp =>
+            {
+                var loggingHandler = sp.GetService<LLMRequestLoggingHandler>();
+                loggingHandler!.InnerHandler = new HttpClientHandler();
+                return new HttpClient(loggingHandler);
+            })
+            .AddSingleton<IMullaiConfigurationManager, MullaiConfigurationManager>()
+            .AddSingleton<ICredentialStorage>(sp => sp.GetRequiredService<IMullaiConfigurationManager>())
+            .AddSingleton<IMullaiChatClient>(sp =>
+            {
+                var httpClient = sp.GetRequiredService<HttpClient>();
+                var logger = sp.GetRequiredService<ILogger<MullaiChatClient>>();
+                var configManager = sp.GetRequiredService<IMullaiConfigurationManager>();
 
-                    return MullaiChatClientFactory.Create(configuration, configManager, httpClient, logger);
-                })
-                .AddSingleton<IChatClient>(sp => sp.GetRequiredService<IMullaiChatClient>())
-                .AddSingleton<AgentFactory>()
-                .AddSingleton<FunctionCallingMiddleware>()
-                .AddWeatherTool()
-                .AddCliTool()
-                .AddWebTool()
-                .AddTodoTool()
-                .AddBashTool()
-                .AddCodeSearchTool()
-                .AddFileSystemTool()
-                .AddWordTool()
-                .AddWorkflowTool()
-                .AddWorkflowStateTool()
-                .AddRestApiTool()
-                .AddHtmlToMarkdownTool()
-                .AddUserMemory()
-                .AddMullaiSkills()
-                .AddMullaiWorkflows()
-                .AddSingleton<IBuiltInMcpProvider, Mullai.LocalMcp.LocalMcpProvider>();
+                return MullaiChatClientFactory.Create(configuration, configManager, httpClient, logger);
+            })
+            .AddSingleton<IChatClient>(sp => sp.GetRequiredService<IMullaiChatClient>())
+            .AddSingleton<AgentFactory>()
+            .AddSingleton<FunctionCallingMiddleware>()
+            .AddWeatherTool()
+            .AddCliTool()
+            .AddWebTool()
+            .AddTodoTool()
+            .AddBashTool()
+            .AddCodeSearchTool()
+            .AddFileSystemTool()
+            .AddWordTool()
+            .AddWorkflowTool()
+            .AddWorkflowStateTool()
+            .AddRestApiTool()
+            .AddHtmlToMarkdownTool()
+            .AddUserMemory()
+            .AddMullaiSkills()
+            .AddMullaiWorkflows()
+            .AddSingleton<IBuiltInMcpProvider, LocalMcpProvider>();
 
 
+        services.AddSingleton<IWorkflowToolsProvider, WorkflowToolsProvider>();
 
-            services.AddSingleton<IWorkflowToolsProvider, WorkflowToolsProvider>();
-            
-            return services;
-        }
+        return services;
     }
 }

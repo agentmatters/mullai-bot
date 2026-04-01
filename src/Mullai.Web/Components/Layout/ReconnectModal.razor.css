@@ -34,9 +34,8 @@
 }
 
 #components-reconnect-modal[open] {
-    animation:
-        components-reconnect-modal-slideUp 0.7s cubic-bezier(.05, .89, .25, 1.02) 0.08s,
-        components-reconnect-modal-fadeInOpacity 0.25s ease-in-out 0.08s;
+    animation: components-reconnect-modal-slideUp 0.7s cubic-bezier(.05, .89, .25, 1.02) 0.08s,
+    components-reconnect-modal-fadeInOpacity 0.25s ease-in-out 0.08s;
     animation-fill-mode: both;
 }
 

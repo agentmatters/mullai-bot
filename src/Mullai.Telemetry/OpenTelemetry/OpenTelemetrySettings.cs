@@ -34,7 +34,7 @@ public class OpenTelemetrySettings
         // Assign values after validation passes
         OtlpEndpoint = otlpEndpoint;
         ServiceName = serviceName;
-        ServiceVersion = serviceVersion;  
+        ServiceVersion = serviceVersion;
 #endif
     }
 }

@@ -8,11 +8,11 @@ namespace Mullai.Providers.LLMProviders.Cerebras;
 public static class Cerebras
 {
     public static IServiceCollection AddCerebrasChatClient(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration,
         ILoggerFactory loggerFactory,
         HttpClient httpClient
-        )
+    )
     {
         var chatClient = GetCerebrasChatClient(configuration, loggerFactory, httpClient);
 
@@ -40,5 +40,8 @@ public static class Cerebras
         IConfiguration configuration,
         ILoggerFactory loggerFactory,
         HttpClient httpClient
-    ) => GetCerebrasChatClient(configuration, httpClient);
+    )
+    {
+        return GetCerebrasChatClient(configuration, httpClient);
+    }
 }

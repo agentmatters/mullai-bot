@@ -19,12 +19,10 @@ public sealed class WorkflowAgentFactory : IWorkflowAgentFactory
     public AIAgent CreateAgent(string workflowId, IChatClient chatClient)
     {
         if (string.IsNullOrWhiteSpace(workflowId))
-        {
             throw new ArgumentException("Workflow id is required.", nameof(workflowId));
-        }
 
         var definition = _registry.GetById(workflowId.Trim())
-            ?? throw new InvalidOperationException($"Workflow '{workflowId}' was not found.");
+                         ?? throw new InvalidOperationException($"Workflow '{workflowId}' was not found.");
 
         var workflow = _workflowFactory.Build(definition, chatClient);
         var agentId = $"workflow-{definition.Id}";

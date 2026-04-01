@@ -6,7 +6,8 @@ origin: ECC
 
 # AI Regression Testing
 
-Testing patterns specifically designed for AI-assisted development, where the same model writes code and reviews it — creating systematic blind spots that only automated tests can catch.
+Testing patterns specifically designed for AI-assisted development, where the same model writes code and reviews it —
+creating systematic blind spots that only automated tests can catch.
 
 ## When to Activate
 
@@ -18,7 +19,8 @@ Testing patterns specifically designed for AI-assisted development, where the sa
 
 ## The Core Problem
 
-When an AI writes code and then reviews its own work, it carries the same assumptions into both steps. This creates a predictable failure pattern:
+When an AI writes code and then reviews its own work, it carries the same assumptions into both steps. This creates a
+predictable failure pattern:
 
 ```
 AI writes fix → AI reviews fix → AI says "looks correct" → Bug still exists
@@ -360,17 +362,18 @@ No bug in /api/user/notifications  → Don't write test (yet)
 
 ## Quick Reference
 
-| AI Regression Pattern | Test Strategy | Priority |
-|---|---|---|
-| Sandbox/production mismatch | Assert same response shape in sandbox mode |  High |
-| SELECT clause omission | Assert all required fields in response |  High |
-| Error state leakage | Assert state cleanup on error |  Medium |
-| Missing rollback | Assert state restored on API failure |  Medium |
-| Type cast masking null | Assert field is not undefined |  Medium |
+| AI Regression Pattern       | Test Strategy                              | Priority |
+|-----------------------------|--------------------------------------------|----------|
+| Sandbox/production mismatch | Assert same response shape in sandbox mode | High     |
+| SELECT clause omission      | Assert all required fields in response     | High     |
+| Error state leakage         | Assert state cleanup on error              | Medium   |
+| Missing rollback            | Assert state restored on API failure       | Medium   |
+| Type cast masking null      | Assert field is not undefined              | Medium   |
 
 ## DO / DON'T
 
 **DO:**
+
 - Write tests immediately after finding a bug (before fixing it if possible)
 - Test the API response shape, not the implementation
 - Run tests as the first step of every bug-check
@@ -378,6 +381,7 @@ No bug in /api/user/notifications  → Don't write test (yet)
 - Name tests after the bug they prevent (e.g., "BUG-R1 regression")
 
 **DON'T:**
+
 - Write tests for code that has never had a bug
 - Trust AI self-review as a substitute for automated tests
 - Skip sandbox path testing because "it's just mock data"

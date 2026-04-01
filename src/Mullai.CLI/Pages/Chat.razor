@@ -1,33 +1,27 @@
 @page "/"
 @namespace Mullai.CLI.Pages
 
-@using System
-@using System.Collections.Generic
-@using System.Linq
-@using Microsoft.AspNetCore.Components
-@using Microsoft.Extensions.Hosting
-@using RazorConsole.Components
-@using Spectre.Console
-@using Mullai.CLI.Controllers
-@using Mullai.CLI.State
-@using Mullai.Abstractions.Observability
-
 @inject ChatOrchestrator Orchestrator
 @inject ChatState State
 @inject NavigationManager Nav
 @inject IHostApplicationLifetime AppLifetime
 
+@using Microsoft.Extensions.Hosting
+@using Mullai.Abstractions.Observability
+@using Mullai.CLI.Controllers
+@using Mullai.CLI.State
+@using Spinner = Spectre.Console.Spinner
 @implements IDisposable
 
-<Figlet Content="Mullai" Color="@Color.DeepPink3_1" />
+<Figlet Content="Mullai" Color="@Color.DeepPink3_1"/>
 
 
 <Padder Padding="@(new Padding(1, 0, 0, 0))">
     <Rows>
         @if (State.Messages.Count == 0 && !State.IsThinking)
         {
-            <Markup Content="Welcome! Type a message below to start chatting." Foreground="@Color.Grey" />
-            <Markup Content="Type /config to manage settings, /quit to exit." Foreground="@Color.Grey58" />
+            <Markup Content="Welcome! Type a message below to start chatting." Foreground="@Color.Grey"/>
+            <Markup Content="Type /config to manage settings, /quit to exit." Foreground="@Color.Grey58"/>
         }
         else
         {
@@ -36,29 +30,30 @@
                 @if (entry is ChatMessage message)
                 {
                     <Padder @key="GetKey(entry)" Padding="@(new Padding(0, 1, 0, 0))">
-                        <Markup Content="@(message.IsUser ? "You" : "Mullai")" Foreground="@(message.IsUser ? Color.Green : Color.Blue)" />
-                        <Markup Content=" " />
+                        <Markup Content="@(message.IsUser ? "You" : "Mullai")"
+                                Foreground="@(message.IsUser ? Color.Green : Color.Blue)"/>
+                        <Markup Content=" "/>
                         @if (message.IsUser)
                         {
-                            <Markup Content="@message.Content" />
+                            <Markup Content="@message.Content"/>
                         }
                         else
                         {
-                            <Markdown Content="@message.Content" />
+                            <Markdown Content="@message.Content"/>
                         }
                     </Padder>
                 }
                 else if (entry is ToolCallObservation toolCall)
                 {
                     <Padder Padding="@(new Padding(0, 1, 0, 0))">
-                        <Markup Content="@($"🔧 {toolCall.ToolName}")" Foreground="@Color.Cyan1" />
+                        <Markup Content="@($"🔧 {toolCall.ToolName}")" Foreground="@Color.Cyan1"/>
                         @if (!string.IsNullOrEmpty(toolCall.Result))
                         {
-                            <Markup Content="@($"   ↳ {Truncate(toolCall.Result, 120)}")" Foreground="@Color.Grey" />
+                            <Markup Content="@($"   ↳ {Truncate(toolCall.Result, 120)}")" Foreground="@Color.Grey"/>
                         }
                         @if (!string.IsNullOrEmpty(toolCall.Error))
                         {
-                            <Markup Content="@($"   ✗ {toolCall.Error}")" Foreground="@Color.Red" />
+                            <Markup Content="@($"   ✗ {toolCall.Error}")" Foreground="@Color.Red"/>
                         }
                     </Padder>
                 }
@@ -69,8 +64,8 @@
         {
             <Padder Padding="@(new Padding(0, 1, 0, 1))">
                 <Columns>
-                    <RazorConsole.Components.Spinner SpinnerType="@Spectre.Console.Spinner.Known.Dots" />
-                    <Markup Content="Mullai is thinking..." Foreground="@Color.Grey" Decoration="@Decoration.Italic" />
+                    <RazorConsole.Components.Spinner SpinnerType="@Spinner.Known.Dots"/>
+                    <Markup Content="Mullai is thinking..." Foreground="@Color.Grey" Decoration="@Decoration.Italic"/>
                 </Columns>
             </Padder>
         }
@@ -79,16 +74,16 @@
 
 <Padder Padding="@(new Padding(0, 1, 0, 0))">
     <Columns>
-        <Markup Content="@($"Model: {Orchestrator.ModelName}")" Foreground="@Color.Cyan1" />
-        <Markup Content="  " />
-        <Markup Content="@($"Provider: {Orchestrator.ProviderName}")" Foreground="@Color.Cyan1" />
+        <Markup Content="@($"Model: {Orchestrator.ModelName}")" Foreground="@Color.Cyan1"/>
+        <Markup Content="  "/>
+        <Markup Content="@($"Provider: {Orchestrator.ProviderName}")" Foreground="@Color.Cyan1"/>
     </Columns>
 </Padder>
 
-<TextInput @bind-Value="_currentInput" Placeholder="Type your message..." OnSubmit="HandleInput" Expand="true" />
+<TextInput @bind-Value="_currentInput" Placeholder="Type your message..." OnSubmit="HandleInput" Expand="true"/>
 
 <Align Horizontal="@HorizontalAlignment.Center">
-    <Markup Content="Enter to send • /config for settings • /quit to exit" Foreground="@Color.Grey58" />
+    <Markup Content="Enter to send • /config for settings • /quit to exit" Foreground="@Color.Grey58"/>
 </Align>
 
 @code {
@@ -146,7 +141,7 @@
         var singleLine = text.ReplaceLineEndings(" ");
         return singleLine.Length <= maxLength ? singleLine : singleLine[..maxLength] + "…";
     }
-    
+
     private string GetKey(object entry)
     {
         return entry switch
@@ -161,4 +156,5 @@
     {
         State.StateChanged -= OnStateChanged;
     }
+
 }

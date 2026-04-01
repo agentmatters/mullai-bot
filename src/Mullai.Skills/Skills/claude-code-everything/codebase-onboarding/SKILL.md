@@ -6,7 +6,8 @@ origin: ECC
 
 # Codebase Onboarding
 
-Systematically analyze an unfamiliar codebase and produce a structured onboarding guide. Designed for developers joining a new project or setting up Claude Code in an existing repo for the first time.
+Systematically analyze an unfamiliar codebase and produce a structured onboarding guide. Designed for developers joining
+a new project or setting up Claude Code in an existing repo for the first time.
 
 ## When to Use
 
@@ -52,6 +53,7 @@ Gather raw signals about the project without reading every file. Run these check
 From the reconnaissance data, identify:
 
 **Tech Stack**
+
 - Language(s) and version constraints
 - Framework(s) and major libraries
 - Database(s) and ORMs
@@ -59,6 +61,7 @@ From the reconnaissance data, identify:
 - CI/CD platform
 
 **Architecture Pattern**
+
 - Monolith, monorepo, microservices, or serverless
 - Frontend/backend split or full-stack
 - API style: REST, GraphQL, gRPC, tRPC
@@ -67,6 +70,7 @@ From the reconnaissance data, identify:
 Map the top-level directories to their purpose:
 
 <!-- Example for a React project — replace with detected directories -->
+
 ```
 src/components/  → React UI components
 src/api/         → API route handlers
@@ -78,6 +82,7 @@ scripts/         → Build and deployment scripts
 
 **Data Flow**
 Trace one request from entry to response:
+
 - Where does a request enter? (router, handler, controller)
 - How is it validated? (middleware, schemas, guards)
 - Where is business logic? (services, models, use cases)
@@ -88,21 +93,25 @@ Trace one request from entry to response:
 Identify patterns the codebase already follows:
 
 **Naming Conventions**
+
 - File naming: kebab-case, camelCase, PascalCase, snake_case
 - Component/class naming patterns
 - Test file naming: `*.test.ts`, `*.spec.ts`, `*_test.go`
 
 **Code Patterns**
+
 - Error handling style: try/catch, Result types, error codes
 - Dependency injection or direct imports
 - State management approach
 - Async patterns: callbacks, promises, async/await, channels
 
 **Git Conventions**
+
 - Branch naming from recent branches
 - Commit message style from recent commits
 - PR workflow (squash, merge, rebase)
-- If the repo has no commits yet or only a shallow history (e.g. `git clone --depth 1`), skip this section and note "Git history unavailable or too shallow to detect conventions"
+- If the repo has no commits yet or only a shallow history (e.g. `git clone --depth 1`), skip this section and note "Git
+  history unavailable or too shallow to detect conventions"
 
 ### Phase 4: Generate Onboarding Artifacts
 
@@ -169,7 +178,8 @@ Produce two outputs:
 
 #### Output 2: Starter CLAUDE.md
 
-Generate or update a project-specific CLAUDE.md based on detected conventions. If `CLAUDE.md` already exists, read it first and enhance it — preserve existing project-specific instructions and clearly call out what was added or changed.
+Generate or update a project-specific CLAUDE.md based on detected conventions. If `CLAUDE.md` already exists, read it
+first and enhance it — preserve existing project-specific instructions and clearly call out what was added or changed.
 
 ```markdown
 # Project Instructions
@@ -202,11 +212,15 @@ Generate or update a project-specific CLAUDE.md based on detected conventions. I
 
 ## Best Practices
 
-1. **Don't read everything** — reconnaissance should use Glob and Grep, not Read on every file. Read selectively only for ambiguous signals.
-2. **Verify, don't guess** — if a framework is detected from config but the actual code uses something different, trust the code.
-3. **Respect existing CLAUDE.md** — if one already exists, enhance it rather than replacing it. Call out what's new vs existing.
+1. **Don't read everything** — reconnaissance should use Glob and Grep, not Read on every file. Read selectively only
+   for ambiguous signals.
+2. **Verify, don't guess** — if a framework is detected from config but the actual code uses something different, trust
+   the code.
+3. **Respect existing CLAUDE.md** — if one already exists, enhance it rather than replacing it. Call out what's new vs
+   existing.
 4. **Stay concise** — the onboarding guide should be scannable in 2 minutes. Details belong in the code, not the guide.
-5. **Flag unknowns** — if a convention can't be confidently detected, say so rather than guessing. "Could not determine test runner" is better than a wrong answer.
+5. **Flag unknowns** — if a convention can't be confidently detected, say so rather than guessing. "Could not determine
+   test runner" is better than a wrong answer.
 
 ## Anti-Patterns to Avoid
 
@@ -218,16 +232,19 @@ Generate or update a project-specific CLAUDE.md based on detected conventions. I
 ## Examples
 
 ### Example 1: First time in a new repo
+
 **User**: "Onboard me to this codebase"
 **Action**: Run full 4-phase workflow → produce Onboarding Guide + Starter CLAUDE.md
 **Output**: Onboarding Guide printed directly to the conversation, plus a `CLAUDE.md` written to the project root
 
 ### Example 2: Generate CLAUDE.md for existing project
+
 **User**: "Generate a CLAUDE.md for this project"
 **Action**: Run Phases 1-3, skip Onboarding Guide, produce only CLAUDE.md
 **Output**: Project-specific `CLAUDE.md` with detected conventions
 
 ### Example 3: Enhance existing CLAUDE.md
+
 **User**: "Update the CLAUDE.md with current project conventions"
 **Action**: Read existing CLAUDE.md, run Phases 1-3, merge new findings
 **Output**: Updated `CLAUDE.md` with additions clearly marked

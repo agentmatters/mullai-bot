@@ -1,5 +1,4 @@
 using System.Net.Http.Json;
-using Microsoft.Extensions.Logging;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.Workflows.Abstractions;
@@ -9,8 +8,8 @@ namespace Mullai.TaskRuntime.Services.WorkflowOutputHandlers;
 
 public sealed class WebhookWorkflowOutputHandler : IWorkflowOutputHandler
 {
-    private readonly HttpClient _httpClient;
     private readonly IWorkflowOutputFailureStore _failureStore;
+    private readonly HttpClient _httpClient;
     private readonly ILogger<WebhookWorkflowOutputHandler> _logger;
 
     public WebhookWorkflowOutputHandler(
@@ -25,7 +24,8 @@ public sealed class WebhookWorkflowOutputHandler : IWorkflowOutputHandler
 
     public string Type => "webhook";
 
-    public async Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(output.Target))
         {
@@ -53,20 +53,15 @@ public sealed class WebhookWorkflowOutputHandler : IWorkflowOutputHandler
                 {
                     Content = JsonContent.Create(payload)
                 };
-                foreach (var header in output.Properties.Where(p => p.Key.StartsWith("header:", StringComparison.OrdinalIgnoreCase)))
+                foreach (var header in output.Properties.Where(p =>
+                             p.Key.StartsWith("header:", StringComparison.OrdinalIgnoreCase)))
                 {
                     var name = header.Key["header:".Length..].Trim();
-                    if (!string.IsNullOrWhiteSpace(name))
-                    {
-                        request.Headers.TryAddWithoutValidation(name, header.Value);
-                    }
+                    if (!string.IsNullOrWhiteSpace(name)) request.Headers.TryAddWithoutValidation(name, header.Value);
                 }
 
                 using var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-                if (response.IsSuccessStatusCode)
-                {
-                    return;
-                }
+                if (response.IsSuccessStatusCode) return;
 
                 _logger.LogWarning(
                     "Webhook output for workflow {WorkflowId} returned status {StatusCode} (attempt {Attempt}/{Retries}).",
@@ -86,7 +81,6 @@ public sealed class WebhookWorkflowOutputHandler : IWorkflowOutputHandler
             }
 
             if (attempt < retries)
-            {
                 try
                 {
                     await Task.Delay(TimeSpan.FromSeconds(delaySeconds), cancellationToken).ConfigureAwait(false);
@@ -95,7 +89,6 @@ public sealed class WebhookWorkflowOutputHandler : IWorkflowOutputHandler
                 {
                     return;
                 }
-            }
         }
 
         await _failureStore.AddAsync(new WorkflowOutputFailure
@@ -115,10 +108,7 @@ public sealed class WebhookWorkflowOutputHandler : IWorkflowOutputHandler
 
     private static int GetIntProperty(WorkflowOutputDefinition output, string key, int defaultValue)
     {
-        if (!output.Properties.TryGetValue(key, out var raw))
-        {
-            return defaultValue;
-        }
+        if (!output.Properties.TryGetValue(key, out var raw)) return defaultValue;
 
         return int.TryParse(raw, out var parsed) ? parsed : defaultValue;
     }

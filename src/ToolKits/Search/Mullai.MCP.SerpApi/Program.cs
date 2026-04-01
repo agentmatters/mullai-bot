@@ -9,10 +9,7 @@ builder.Services.AddMcpServer()
     .WithStdioServerTransport()
     .WithTools<SerpApiTools>();
 
-builder.Logging.AddConsole(options =>
-{
-    options.LogToStandardErrorThreshold = LogLevel.Trace;
-});
+builder.Logging.AddConsole(options => { options.LogToStandardErrorThreshold = LogLevel.Trace; });
 
 using var httpClient = new HttpClient();
 builder.Services.AddSingleton(httpClient);

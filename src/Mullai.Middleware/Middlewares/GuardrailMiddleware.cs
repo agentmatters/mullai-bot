@@ -14,10 +14,10 @@ public class GuardrailMiddleware
     }
 
     public async Task<AgentResponse> InvokeAsync(
-        IEnumerable<ChatMessage> messages, 
-        AgentSession? session, 
-        AgentRunOptions? options, 
-        AIAgent innerAgent, 
+        IEnumerable<ChatMessage> messages,
+        AgentSession? session,
+        AgentRunOptions? options,
+        AIAgent innerAgent,
         CancellationToken cancellationToken)
     {
         // Redact keywords from input messages
@@ -46,12 +46,8 @@ public class GuardrailMiddleware
         if (string.IsNullOrEmpty(content)) return string.Empty;
 
         foreach (var keyword in new[] { "harmful", "illegal", "violence" })
-        {
             if (content.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-            {
                 return "[REDACTED: Forbidden content]";
-            }
-        }
 
         return content;
     }

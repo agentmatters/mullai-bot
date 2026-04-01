@@ -1,6 +1,4 @@
 @using Markdig
-@using Mullai.TaskRuntime.Models
-
 <div class="message-item @(IsUser ? "user" : "assistant") @(IsError ? "error" : "") @(IsPending ? "pending" : "")">
     <div class="message-container">
         <div class="message-header">
@@ -8,13 +6,18 @@
                 @if (IsUser)
                 {
                     <span class="user-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round"><path
+                                d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     </span>
                 }
                 else
                 {
                     <span class="assistant-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10h-7.5l-3-3a1 1 0 0 0-1.5 0l-3 3H2"/><path d="M12 22a10 10 0 0 0 10-10h-7.5l-3-3a1 1 0 0 0-1.5 0l-3 3H2"/></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path
+                                d="M12 2a10 10 0 0 1 10 10h-7.5l-3-3a1 1 0 0 0-1.5 0l-3 3H2"/><path
+                                d="M12 22a10 10 0 0 0 10-10h-7.5l-3-3a1 1 0 0 0-1.5 0l-3 3H2"/></svg>
                     </span>
                 }
             </div>
@@ -31,6 +34,7 @@
 </div>
 
 @code {
+
     private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
         .UseAdvancedExtensions()
         .Build();

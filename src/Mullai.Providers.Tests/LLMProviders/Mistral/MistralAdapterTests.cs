@@ -1,9 +1,6 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
-
 using Microsoft.Extensions.AI;
 using Mullai.Providers.LLMProviders.Mistral;
-using Xunit;
 
 namespace Mullai.Providers.Tests.LLMProviders.Mistral;
 
@@ -22,7 +19,7 @@ public class MistralAdapterTests
         var options = new ChatOptions { ModelId = "mistral-large-latest" };
 
         // Act
-        var request = _adapter.MapRequest(messages, options, isStreaming: false);
+        var request = _adapter.MapRequest(messages, options, false);
 
         // Assert
         Assert.NotNull(request);
@@ -46,7 +43,7 @@ public class MistralAdapterTests
         };
 
         // Act
-        var request = _adapter.MapRequest(messages, options, isStreaming: false);
+        var request = _adapter.MapRequest(messages, options, false);
 
         // Assert
         Assert.Equal(0.5f, request.FrequencyPenalty);
@@ -67,7 +64,7 @@ public class MistralAdapterTests
         };
 
         // Act
-        var request = _adapter.MapRequest(messages, options, isStreaming: false);
+        var request = _adapter.MapRequest(messages, options, false);
 
         // Assert
         Assert.NotNull(request.ResponseFormat);
@@ -134,9 +131,9 @@ public class MistralAdapterTests
         // Arrange
         var messages = new List<ChatMessage>
         {
-            new ChatMessage(ChatRole.Tool, (string?)null)
+            new(ChatRole.Tool, (string?)null)
             {
-                Contents = 
+                Contents =
                 {
                     new FunctionResultContent("call_1", "result_1"),
                     new FunctionResultContent("call_2", "result_2")
@@ -146,14 +143,14 @@ public class MistralAdapterTests
         var options = new ChatOptions { ModelId = "mistral-large-latest" };
 
         // Act
-        var request = _adapter.MapRequest(messages, options, isStreaming: false);
+        var request = _adapter.MapRequest(messages, options, false);
 
         // Assert
         Assert.Equal(2, request.Messages.Count);
         Assert.Equal("tool", request.Messages[0].Role);
         Assert.Equal("call_1", request.Messages[0].ToolCallId);
         Assert.Equal("result_1", request.Messages[0].Content);
-        
+
         Assert.Equal("tool", request.Messages[1].Role);
         Assert.Equal("call_2", request.Messages[1].ToolCallId);
         Assert.Equal("result_2", request.Messages[1].Content);

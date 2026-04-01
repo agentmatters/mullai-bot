@@ -6,7 +6,8 @@ origin: ECC
 
 # Kotlin Testing Patterns
 
-Comprehensive Kotlin testing patterns for writing reliable, maintainable tests following TDD methodology with Kotest and MockK.
+Comprehensive Kotlin testing patterns for writing reliable, maintainable tests following TDD methodology with Kotest and
+MockK.
 
 ## When to Use
 
@@ -32,9 +33,11 @@ The following sections contain detailed, runnable examples for each testing patt
 
 ### Quick Reference
 
-- **Kotest specs** — StringSpec, FunSpec, BehaviorSpec, DescribeSpec examples in [Kotest Spec Styles](#kotest-spec-styles)
+- **Kotest specs** — StringSpec, FunSpec, BehaviorSpec, DescribeSpec examples
+  in [Kotest Spec Styles](#kotest-spec-styles)
 - **Mocking** — MockK setup, coroutine mocking, argument capture in [MockK](#mockk)
-- **TDD walkthrough** — Full RED/GREEN/REFACTOR cycle with EmailValidator in [TDD Workflow for Kotlin](#tdd-workflow-for-kotlin)
+- **TDD walkthrough** — Full RED/GREEN/REFACTOR cycle with EmailValidator
+  in [TDD Workflow for Kotlin](#tdd-workflow-for-kotlin)
 - **Coverage** — Kover configuration and commands in [Kover Coverage](#kover-coverage)
 - **Ktor testing** — testApplication setup in [Ktor testApplication Testing](#ktor-testapplication-testing)
 
@@ -704,11 +707,11 @@ kover {
 
 #### Coverage Targets
 
-| Code Type | Target |
-|-----------|--------|
-| Critical business logic | 100% |
-| Public APIs | 90%+ |
-| General code | 80%+ |
+| Code Type               | Target  |
+|-------------------------|---------|
+| Critical business logic | 100%    |
+| Public APIs             | 90%+    |
+| General code            | 80%+    |
 | Generated / config code | Exclude |
 
 ### Ktor testApplication Testing
@@ -779,6 +782,7 @@ class ApiRoutesTest : FunSpec({
 ### Best Practices
 
 **DO:**
+
 - Write tests FIRST (TDD)
 - Use Kotest's spec styles consistently across the project
 - Use MockK's `coEvery`/`coVerify` for suspend functions
@@ -788,6 +792,7 @@ class ApiRoutesTest : FunSpec({
 - Use `data class` test fixtures for clarity
 
 **DON'T:**
+
 - Mix testing frameworks (pick Kotest and stick with it)
 - Mock data classes (use real instances)
 - Use `Thread.sleep()` in coroutine tests (use `advanceTimeBy`)
@@ -821,4 +826,5 @@ test:
         token: ${{ secrets.CODECOV_TOKEN }}
 ```
 
-**Remember**: Tests are documentation. They show how your Kotlin code is meant to be used. Use Kotest's expressive matchers to make tests readable and MockK for clean mocking of dependencies.
+**Remember**: Tests are documentation. They show how your Kotlin code is meant to be used. Use Kotest's expressive
+matchers to make tests readable and MockK for clean mocking of dependencies.

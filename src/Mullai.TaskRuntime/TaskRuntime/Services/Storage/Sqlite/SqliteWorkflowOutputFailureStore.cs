@@ -8,22 +8,22 @@ namespace Mullai.TaskRuntime.Services.Storage.Sqlite;
 public sealed class SqliteWorkflowOutputFailureStore : IWorkflowOutputFailureStore
 {
     private const string InitSql = """
-        CREATE TABLE IF NOT EXISTS workflow_output_failures (
-            id TEXT PRIMARY KEY,
-            workflow_id TEXT NOT NULL,
-            output_type TEXT NOT NULL,
-            output_target TEXT,
-            output_properties TEXT,
-            task_id TEXT NOT NULL,
-            session_key TEXT NOT NULL,
-            response TEXT NOT NULL,
-            metadata TEXT,
-            error TEXT NOT NULL,
-            attempts INTEGER NOT NULL,
-            failed_at_utc TEXT NOT NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_output_failures_failed ON workflow_output_failures(failed_at_utc DESC);
-        """;
+                                   CREATE TABLE IF NOT EXISTS workflow_output_failures (
+                                       id TEXT PRIMARY KEY,
+                                       workflow_id TEXT NOT NULL,
+                                       output_type TEXT NOT NULL,
+                                       output_target TEXT,
+                                       output_properties TEXT,
+                                       task_id TEXT NOT NULL,
+                                       session_key TEXT NOT NULL,
+                                       response TEXT NOT NULL,
+                                       metadata TEXT,
+                                       error TEXT NOT NULL,
+                                       attempts INTEGER NOT NULL,
+                                       failed_at_utc TEXT NOT NULL
+                                   );
+                                   CREATE INDEX IF NOT EXISTS idx_output_failures_failed ON workflow_output_failures(failed_at_utc DESC);
+                                   """;
 
     public SqliteWorkflowOutputFailureStore()
     {
@@ -38,34 +38,34 @@ public sealed class SqliteWorkflowOutputFailureStore : IWorkflowOutputFailureSto
         using var connection = SqliteStoreHelper.CreateConnection();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO workflow_output_failures (
-                id,
-                workflow_id,
-                output_type,
-                output_target,
-                output_properties,
-                task_id,
-                session_key,
-                response,
-                metadata,
-                error,
-                attempts,
-                failed_at_utc
-            ) VALUES (
-                $id,
-                $workflowId,
-                $outputType,
-                $outputTarget,
-                $outputProperties,
-                $taskId,
-                $sessionKey,
-                $response,
-                $metadata,
-                $error,
-                $attempts,
-                $failedAtUtc
-            );
-            """;
+                              INSERT INTO workflow_output_failures (
+                                  id,
+                                  workflow_id,
+                                  output_type,
+                                  output_target,
+                                  output_properties,
+                                  task_id,
+                                  session_key,
+                                  response,
+                                  metadata,
+                                  error,
+                                  attempts,
+                                  failed_at_utc
+                              ) VALUES (
+                                  $id,
+                                  $workflowId,
+                                  $outputType,
+                                  $outputTarget,
+                                  $outputProperties,
+                                  $taskId,
+                                  $sessionKey,
+                                  $response,
+                                  $metadata,
+                                  $error,
+                                  $attempts,
+                                  $failedAtUtc
+                              );
+                              """;
         command.Parameters.AddWithValue("$id", failure.Id);
         command.Parameters.AddWithValue("$workflowId", failure.WorkflowId);
         command.Parameters.AddWithValue("$outputType", failure.OutputType);
@@ -74,7 +74,8 @@ public sealed class SqliteWorkflowOutputFailureStore : IWorkflowOutputFailureSto
         command.Parameters.AddWithValue("$taskId", failure.TaskId);
         command.Parameters.AddWithValue("$sessionKey", failure.SessionKey);
         command.Parameters.AddWithValue("$response", failure.Response);
-        command.Parameters.AddWithValue("$metadata", failure.Metadata is null ? DBNull.Value : JsonSerializer.Serialize(failure.Metadata));
+        command.Parameters.AddWithValue("$metadata",
+            failure.Metadata is null ? DBNull.Value : JsonSerializer.Serialize(failure.Metadata));
         command.Parameters.AddWithValue("$error", failure.Error);
         command.Parameters.AddWithValue("$attempts", failure.Attempts);
         command.Parameters.AddWithValue("$failedAtUtc", failure.FailedAtUtc.ToString("O"));
@@ -89,15 +90,13 @@ public sealed class SqliteWorkflowOutputFailureStore : IWorkflowOutputFailureSto
         command.CommandText = "SELECT * FROM workflow_output_failures WHERE id = $id";
         command.Parameters.AddWithValue("$id", id);
         using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            return Task.FromResult<WorkflowOutputFailure?>(null);
-        }
+        if (!reader.Read()) return Task.FromResult<WorkflowOutputFailure?>(null);
 
         return Task.FromResult<WorkflowOutputFailure?>(ReadFailure(reader));
     }
 
-    public Task<IReadOnlyCollection<WorkflowOutputFailure>> GetRecentAsync(int take = 50, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<WorkflowOutputFailure>> GetRecentAsync(int take = 50,
+        CancellationToken cancellationToken = default)
     {
         using var connection = SqliteStoreHelper.CreateConnection();
         using var command = connection.CreateCommand();
@@ -106,10 +105,7 @@ public sealed class SqliteWorkflowOutputFailureStore : IWorkflowOutputFailureSto
         using var reader = command.ExecuteReader();
 
         var results = new List<WorkflowOutputFailure>();
-        while (reader.Read())
-        {
-            results.Add(ReadFailure(reader));
-        }
+        while (reader.Read()) results.Add(ReadFailure(reader));
 
         return Task.FromResult<IReadOnlyCollection<WorkflowOutputFailure>>(results);
     }
@@ -128,7 +124,8 @@ public sealed class SqliteWorkflowOutputFailureStore : IWorkflowOutputFailureSto
     {
         var outputProperties = reader.IsDBNull(reader.GetOrdinal("output_properties"))
             ? new Dictionary<string, string>()
-            : JsonSerializer.Deserialize<Dictionary<string, string>>(reader.GetString(reader.GetOrdinal("output_properties")))
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(
+                  reader.GetString(reader.GetOrdinal("output_properties")))
               ?? new Dictionary<string, string>();
 
         var metadata = reader.IsDBNull(reader.GetOrdinal("metadata"))

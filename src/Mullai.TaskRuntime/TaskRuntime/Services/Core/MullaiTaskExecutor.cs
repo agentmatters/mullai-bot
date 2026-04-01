@@ -37,17 +37,12 @@ public class MullaiTaskExecutor : IMullaiTaskExecutor
             }
 
             var text = chunk?.ToString();
-            if (string.IsNullOrEmpty(text))
-            {
-                continue;
-            }
+            if (string.IsNullOrEmpty(text)) continue;
 
             responseAccumulator.Append(text);
 
             if (onResponseFragment is not null)
-            {
                 await onResponseFragment(responseAccumulator.ToString()).ConfigureAwait(false);
-            }
         }
 
         return new MullaiTaskExecutionResult(responseAccumulator.ToString(), finalUsage);

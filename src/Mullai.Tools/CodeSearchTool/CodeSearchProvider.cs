@@ -21,8 +21,7 @@ public class CodeSearchProvider(HttpClient httpClient)
                     name = "get_code_context_exa",
                     arguments = new
                     {
-                        query = query,
-                        tokensNum = tokensNum
+                        query, tokensNum
                     }
                 }
             };
@@ -44,11 +43,10 @@ public class CodeSearchProvider(HttpClient httpClient)
             }
 
             var responseText = await response.Content.ReadAsStringAsync();
-            
+
             // The API response is SSE-like (data: ...). We need to parse it.
             var lines = responseText.Split('\n');
             foreach (var line in lines)
-            {
                 if (line.StartsWith("data: "))
                 {
                     var data = line.Substring(6);
@@ -57,11 +55,8 @@ public class CodeSearchProvider(HttpClient httpClient)
                         result.TryGetProperty("content", out var content) &&
                         content.ValueKind == JsonValueKind.Array &&
                         content.GetArrayLength() > 0)
-                    {
                         return content[0].GetProperty("text").GetString() ?? "No content found.";
-                    }
                 }
-            }
 
             return "No code context found for the query.";
         }

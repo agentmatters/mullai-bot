@@ -7,7 +7,8 @@ version: "1.0.0"
 
 # Healthcare CDSS Development Patterns
 
-Patterns for building Clinical Decision Support Systems that integrate into EMR workflows. CDSS modules are patient safety critical — zero tolerance for false negatives.
+Patterns for building Clinical Decision Support Systems that integrate into EMR workflows. CDSS modules are patient
+safety critical — zero tolerance for false negatives.
 
 ## When to Use
 
@@ -20,13 +21,17 @@ Patterns for building Clinical Decision Support Systems that integrate into EMR 
 
 ## How It Works
 
-The CDSS engine is a **pure function library with zero side effects**. Input clinical data, output alerts. This makes it fully testable.
+The CDSS engine is a **pure function library with zero side effects**. Input clinical data, output alerts. This makes it
+fully testable.
 
 Three primary modules:
 
-1. **`checkInteractions(newDrug, currentMeds, allergies)`** — Checks a new drug against current medications and known allergies. Returns severity-sorted `InteractionAlert[]`. Uses `DrugInteractionPair` data model.
-2. **`validateDose(drug, dose, route, weight, age, renalFunction)`** — Validates a prescribed dose against weight-based, age-adjusted, and renal-adjusted rules. Returns `DoseValidationResult`.
-3. **`calculateNEWS2(vitals)`** — National Early Warning Score 2 from `NEWS2Input`. Returns `NEWS2Result` with total score, risk level, and escalation guidance.
+1. **`checkInteractions(newDrug, currentMeds, allergies)`** — Checks a new drug against current medications and known
+   allergies. Returns severity-sorted `InteractionAlert[]`. Uses `DrugInteractionPair` data model.
+2. **`validateDose(drug, dose, route, weight, age, renalFunction)`** — Validates a prescribed dose against weight-based,
+   age-adjusted, and renal-adjusted rules. Returns `DoseValidationResult`.
+3. **`calculateNEWS2(vitals)`** — National Early Warning Score 2 from `NEWS2Input`. Returns `NEWS2Result` with total
+   score, risk level, and escalation guidance.
 
 ```
 EMR UI
@@ -166,13 +171,14 @@ Scoring tables must match the Royal College of Physicians specification exactly.
 
 ### Alert Severity and UI Behavior
 
-| Severity | UI Behavior | Clinician Action Required |
-|----------|-------------|--------------------------|
+| Severity | UI Behavior                               | Clinician Action Required                |
+|----------|-------------------------------------------|------------------------------------------|
 | Critical | Block action. Non-dismissable modal. Red. | Must document override reason to proceed |
-| Major | Warning banner inline. Orange. | Must acknowledge before proceeding |
-| Minor | Info note inline. Yellow. | Awareness only, no action required |
+| Major    | Warning banner inline. Orange.            | Must acknowledge before proceeding       |
+| Minor    | Info note inline. Yellow.                 | Awareness only, no action required       |
 
-Critical alerts must NEVER be auto-dismissed or implemented as toast notifications. Override reasons must be stored in the audit trail.
+Critical alerts must NEVER be auto-dismissed or implemented as toast notifications. Override reasons must be stored in
+the audit trail.
 
 ### Testing CDSS (Zero Tolerance for False Negatives)
 

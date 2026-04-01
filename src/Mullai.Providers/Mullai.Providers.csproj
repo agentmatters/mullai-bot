@@ -7,16 +7,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Google.GenAI" />
-      <PackageReference Include="Microsoft.Extensions.AI" />
-      <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
-      <PackageReference Include="Microsoft.Extensions.Configuration" />
-      <PackageReference Include="OpenAI" />
+        <PackageReference Include="Google.GenAI"/>
+        <PackageReference Include="Microsoft.Extensions.AI"/>
+        <PackageReference Include="Microsoft.Extensions.AI.OpenAI"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration"/>
+        <PackageReference Include="OpenAI"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Mullai.Telemetry\Mullai.Telemetry.csproj" />
-      <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj" />
+        <ProjectReference Include="..\Mullai.Telemetry\Mullai.Telemetry.csproj"/>
+        <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj"/>
     </ItemGroup>
 
 </Project>

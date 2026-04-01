@@ -6,7 +6,8 @@ origin: ECC
 
 # Perl Security Patterns
 
-Comprehensive security guidelines for Perl applications covering input validation, injection prevention, and secure coding practices.
+Comprehensive security guidelines for Perl applications covering input validation, injection prevention, and secure
+coding practices.
 
 ## When to Activate
 
@@ -19,11 +20,14 @@ Comprehensive security guidelines for Perl applications covering input validatio
 
 ## How It Works
 
-Start with taint-aware input boundaries, then move outward: validate and untaint inputs, keep filesystem and process execution constrained, and use parameterized DBI queries everywhere. The examples below show the safe defaults this skill expects you to apply before shipping Perl code that touches user input, the shell, or the network.
+Start with taint-aware input boundaries, then move outward: validate and untaint inputs, keep filesystem and process
+execution constrained, and use parameterized DBI queries everywhere. The examples below show the safe defaults this
+skill expects you to apply before shipping Perl code that touches user input, the shell, or the network.
 
 ## Taint Mode
 
-Perl's taint mode (`-T`) tracks data from external sources and prevents it from being used in unsafe operations without explicit validation.
+Perl's taint mode (`-T`) tracks data from external sources and prevents it from being used in unsafe operations without
+explicit validation.
 
 ### Enabling Taint Mode
 
@@ -372,7 +376,8 @@ sub generate_csrf_token() {
 }
 ```
 
-Use constant-time comparison when verifying tokens. Most web frameworks (Mojolicious, Dancer2, Catalyst) provide built-in CSRF protection — prefer those over hand-rolled solutions.
+Use constant-time comparison when verifying tokens. Most web frameworks (Mojolicious, Dancer2, Catalyst) provide
+built-in CSRF protection — prefer those over hand-rolled solutions.
 
 ### Session and Header Security
 
@@ -394,7 +399,8 @@ $app->hook(after_dispatch => sub ($c) {
 
 ## Output Encoding
 
-Always encode output for its context: `HTML::Entities::encode_entities()` for HTML, `URI::Escape::uri_escape_utf8()` for URLs, `JSON::MaybeXS::encode_json()` for JSON.
+Always encode output for its context: `HTML::Entities::encode_entities()` for HTML, `URI::Escape::uri_escape_utf8()` for
+URLs, `JSON::MaybeXS::encode_json()` for JSON.
 
 ## CPAN Module Security
 
@@ -456,20 +462,20 @@ perlcritic --severity 4 --theme security --quiet lib/ || exit 1
 
 ## Quick Security Checklist
 
-| Check | What to Verify |
-|---|---|
-| Taint mode | `-T` flag on CGI/web scripts |
-| Input validation | Allowlist patterns, length limits |
-| File operations | Three-arg open, path traversal checks |
-| Process execution | List-form system, no shell interpolation |
-| SQL queries | DBI placeholders, never interpolate |
-| HTML output | `encode_entities()`, template auto-escape |
-| CSRF tokens | Generated, verified on state-changing requests |
-| Session config | Secure, HttpOnly, SameSite cookies |
-| HTTP headers | CSP, X-Frame-Options, HSTS |
-| Dependencies | Pinned versions, audited modules |
-| Regex safety | No nested quantifiers, anchored patterns |
-| Error messages | No stack traces or paths leaked to users |
+| Check             | What to Verify                                 |
+|-------------------|------------------------------------------------|
+| Taint mode        | `-T` flag on CGI/web scripts                   |
+| Input validation  | Allowlist patterns, length limits              |
+| File operations   | Three-arg open, path traversal checks          |
+| Process execution | List-form system, no shell interpolation       |
+| SQL queries       | DBI placeholders, never interpolate            |
+| HTML output       | `encode_entities()`, template auto-escape      |
+| CSRF tokens       | Generated, verified on state-changing requests |
+| Session config    | Secure, HttpOnly, SameSite cookies             |
+| HTTP headers      | CSP, X-Frame-Options, HSTS                     |
+| Dependencies      | Pinned versions, audited modules               |
+| Regex safety      | No nested quantifiers, anchored patterns       |
+| Error messages    | No stack traces or paths leaked to users       |
 
 ## Anti-Patterns
 
@@ -500,4 +506,6 @@ print "<div>Welcome, $username!</div>";  # XSS
 print $cgi->redirect($user_url);         # Open redirect
 ```
 
-**Remember**: Perl's flexibility is powerful but requires discipline. Use taint mode for web-facing code, validate all input with allowlists, use DBI placeholders for every query, and encode all output for its context. Defense in depth — never rely on a single layer.
+**Remember**: Perl's flexibility is powerful but requires discipline. Use taint mode for web-facing code, validate all
+input with allowlists, use DBI placeholders for every query, and encode all output for its context. Defense in depth —
+never rely on a single layer.

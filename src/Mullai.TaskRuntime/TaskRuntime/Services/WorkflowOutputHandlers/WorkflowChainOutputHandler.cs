@@ -1,9 +1,7 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Mullai.Abstractions.WorkflowState;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
-using Mullai.Abstractions.WorkflowState;
 using Mullai.Workflows.Abstractions;
 using Mullai.Workflows.Models;
 
@@ -11,12 +9,12 @@ namespace Mullai.TaskRuntime.Services.WorkflowOutputHandlers;
 
 public sealed class WorkflowChainOutputHandler : IWorkflowOutputHandler
 {
+    private readonly ILogger<WorkflowChainOutputHandler> _logger;
     private readonly IMullaiTaskQueue _queue;
-    private readonly IMullaiTaskStatusStore _statusStore;
-    private readonly IWorkflowStateStore _stateStore;
     private readonly IWorkflowRegistry _registry;
     private readonly MullaiTaskRuntimeOptions _runtimeOptions;
-    private readonly ILogger<WorkflowChainOutputHandler> _logger;
+    private readonly IWorkflowStateStore _stateStore;
+    private readonly IMullaiTaskStatusStore _statusStore;
 
     public WorkflowChainOutputHandler(
         IMullaiTaskQueue queue,
@@ -36,7 +34,8 @@ public sealed class WorkflowChainOutputHandler : IWorkflowOutputHandler
 
     public string Type => "workflow";
 
-    public async Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output, CancellationToken cancellationToken)
+    public async Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output,
+        CancellationToken cancellationToken)
     {
         if (await IsStopConditionMetAsync(context, output, cancellationToken).ConfigureAwait(false))
         {
@@ -98,14 +97,9 @@ public sealed class WorkflowChainOutputHandler : IWorkflowOutputHandler
     {
         if (!output.Properties.TryGetValue("completionToken", out var token) ||
             string.IsNullOrWhiteSpace(token))
-        {
             return true;
-        }
 
-        if (string.IsNullOrWhiteSpace(context.Response))
-        {
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(context.Response)) return false;
 
         return context.Response.Contains(token, StringComparison.OrdinalIgnoreCase);
     }
@@ -116,30 +110,21 @@ public sealed class WorkflowChainOutputHandler : IWorkflowOutputHandler
         CancellationToken cancellationToken)
     {
         if (!output.Properties.TryGetValue("stopKey", out var stopKey) || string.IsNullOrWhiteSpace(stopKey))
-        {
             return false;
-        }
 
-        var record = await _stateStore.GetAsync(context.Definition.Id, stopKey, cancellationToken).ConfigureAwait(false);
-        if (record is null)
-        {
-            return false;
-        }
+        var record = await _stateStore.GetAsync(context.Definition.Id, stopKey, cancellationToken)
+            .ConfigureAwait(false);
+        if (record is null) return false;
 
-        if (!output.Properties.TryGetValue("stopValue", out var stopValue) || string.IsNullOrWhiteSpace(stopValue))
-        {
-            return true;
-        }
+        if (!output.Properties.TryGetValue("stopValue", out var stopValue) ||
+            string.IsNullOrWhiteSpace(stopValue)) return true;
 
         return MatchesStopValue(record.JsonValue, stopValue);
     }
 
     private static bool MatchesStopValue(string jsonValue, string stopValue)
     {
-        if (string.IsNullOrWhiteSpace(jsonValue))
-        {
-            return false;
-        }
+        if (string.IsNullOrWhiteSpace(jsonValue)) return false;
 
         var normalizedJson = NormalizeValue(jsonValue);
         var normalizedStop = NormalizeValue(stopValue);
@@ -153,9 +138,7 @@ public sealed class WorkflowChainOutputHandler : IWorkflowOutputHandler
         if (trimmed.StartsWith("\"", StringComparison.Ordinal) &&
             trimmed.EndsWith("\"", StringComparison.Ordinal) &&
             trimmed.Length >= 2)
-        {
             trimmed = trimmed[1..^1];
-        }
 
         return trimmed.Trim();
     }
@@ -163,9 +146,7 @@ public sealed class WorkflowChainOutputHandler : IWorkflowOutputHandler
     private static string ResolveInput(WorkflowOutputContext context, WorkflowOutputDefinition output)
     {
         if (output.Properties.TryGetValue("input", out var template) && !string.IsNullOrWhiteSpace(template))
-        {
             return template.Replace("{{response}}", context.Response, StringComparison.OrdinalIgnoreCase);
-        }
 
         return context.Response;
     }

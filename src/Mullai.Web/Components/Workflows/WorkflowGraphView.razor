@@ -1,5 +1,4 @@
 @using Mullai.Workflows.Models
-
 <div class="graph-view">
     <div class="graph-header">
         <h3>Architecture</h3>
@@ -19,7 +18,7 @@
 
 @code {
     [Parameter] public WorkflowDefinition? Definition { get; set; }
-    
+
     private string _mermaid = string.Empty;
 
     protected override void OnParametersSet()
@@ -57,5 +56,9 @@
         return string.Join('\n', lines);
     }
 
-    private static string Escape(string value) => value?.Replace("\"", "'") ?? " ";
+    private static string Escape(string value)
+    {
+        return value?.Replace("\"", "'") ?? " ";
+    }
+
 }

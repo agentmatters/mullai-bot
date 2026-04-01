@@ -11,29 +11,29 @@
  * This script is the "do it" step — no confirmation prompt here.
  */
 
-import { rmSync } from 'fs';
-import { resolve } from 'path';
-import { resolveContext, readProjects, writeProjects, CONTEXTS_DIR } from './shared.mjs';
+import {rmSync} from 'fs';
+import {resolve} from 'path';
+import {CONTEXTS_DIR, readProjects, resolveContext, writeProjects} from './shared.mjs';
 
 const arg = process.argv[2];
 const cwd = process.env.PWD || process.cwd();
 
 const resolved = resolveContext(arg, cwd);
 if (!resolved) {
-  const hint = arg ? `No project matching "${arg}".` : 'This directory is not registered.';
-  console.log(`${hint}`);
-  process.exit(1);
+    const hint = arg ? `No project matching "${arg}".` : 'This directory is not registered.';
+    console.log(`${hint}`);
+    process.exit(1);
 }
 
-const { name, contextDir, projectPath } = resolved;
+const {name, contextDir, projectPath} = resolved;
 
 // Remove context directory
 const contextDirPath = resolve(CONTEXTS_DIR, contextDir);
 try {
-  rmSync(contextDirPath, { recursive: true, force: true });
+    rmSync(contextDirPath, {recursive: true, force: true});
 } catch (e) {
-  console.log(`ck: could not remove context directory — ${e.message}`);
-  process.exit(1);
+    console.log(`ck: could not remove context directory — ${e.message}`);
+    process.exit(1);
 }
 
 // Remove from projects.json

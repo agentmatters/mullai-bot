@@ -1,9 +1,4 @@
 using Mullai.Tools.FileSystemTool;
-using Xunit;
-
-using System.IO;
-using System.Threading.Tasks;
-using System;
 
 namespace Mullai.Tools.Tests.FileSystemTool;
 
@@ -15,16 +10,13 @@ public class FileSystemProviderTests : IDisposable
     public FileSystemProviderTests()
     {
         _provider = new FileSystemProvider();
-        _testDirectory = Path.Combine(Path.GetTempPath(), "MullaiFileSystemProviderTests_" + Guid.NewGuid().ToString());
+        _testDirectory = Path.Combine(Path.GetTempPath(), "MullaiFileSystemProviderTests_" + Guid.NewGuid());
         Directory.CreateDirectory(_testDirectory);
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(_testDirectory))
-        {
-            Directory.Delete(_testDirectory, true);
-        }
+        if (Directory.Exists(_testDirectory)) Directory.Delete(_testDirectory, true);
     }
 
     [Fact]

@@ -8,9 +8,9 @@ namespace Mullai.TaskRuntime.Services.Storage.InMemory;
 
 public class InMemoryMullaiToolCallFeed : IMullaiToolCallFeed
 {
+    private const int MaxItems = 4000;
     private readonly ConcurrentQueue<ToolCallFeedItem> _events = new();
     private long _sequence;
-    private const int MaxItems = 4000;
 
     public long Publish(ToolCallObservation observation)
     {

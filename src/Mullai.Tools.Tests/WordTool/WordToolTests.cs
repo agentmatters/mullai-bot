@@ -1,5 +1,4 @@
 using Mullai.Tools.WordTool;
-using Xunit;
 
 namespace Mullai.Tools.Tests.WordTool;
 
@@ -9,7 +8,7 @@ public class WordToolTests
     public async Task WordTool_FullFlow_Success()
     {
         var provider = new WordProvider();
-        var tool = new Mullai.Tools.WordTool.WordTool(provider);
+        var tool = new Tools.WordTool.WordTool(provider);
         var filePath = Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid()}.docx");
 
         try
@@ -23,7 +22,7 @@ public class WordToolTests
             Assert.Equal("Document opened successfully.", openResult);
 
             // 3. Add Heading
-            var headingResult = await tool.AddWordFormattedText(sessionId, "Test Report", bold: true, headingLevel: 1);
+            var headingResult = await tool.AddWordFormattedText(sessionId, "Test Report", true, headingLevel: 1);
             Assert.Equal("Formatted text added.", headingResult);
 
             // 4. Append Text
@@ -52,10 +51,7 @@ public class WordToolTests
         }
         finally
         {
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
-            }
+            if (File.Exists(filePath)) File.Delete(filePath);
         }
     }
 }

@@ -13,6 +13,7 @@ Based on a real production application: [Zenith](https://zenith.chat) - AI-power
 ## When to Use
 
 Reference this skill when working on the specific project it's designed for. Project skills contain:
+
 - Architecture overview
 - File structure
 - Code patterns
@@ -24,6 +25,7 @@ Reference this skill when working on the specific project it's designed for. Pro
 ## Architecture Overview
 
 **Tech Stack:**
+
 - **Frontend**: Next.js 15 (App Router), TypeScript, React
 - **Backend**: FastAPI (Python), Pydantic models
 - **Database**: Supabase (PostgreSQL)
@@ -32,6 +34,7 @@ Reference this skill when working on the specific project it's designed for. Pro
 - **Testing**: Playwright (E2E), pytest (backend), React Testing Library
 
 **Services:**
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                         Frontend                            │
@@ -237,6 +240,7 @@ poetry run pytest tests/test_auth.py -v
 ```
 
 **Test structure:**
+
 ```python
 import pytest
 from httpx import AsyncClient
@@ -268,6 +272,7 @@ npm run test:e2e
 ```
 
 **Test structure:**
+
 ```typescript
 import { render, screen, fireEvent } from '@testing-library/react'
 import { WorkspacePanel } from './WorkspacePanel'

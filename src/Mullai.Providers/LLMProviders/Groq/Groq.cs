@@ -1,23 +1,18 @@
-using System.ClientModel;
-using System.ClientModel.Primitives;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Mullai.OpenTelemetry.OpenTelemetry;
-using OpenAI;
-
 
 namespace Mullai.Providers.LLMProviders.Groq;
 
 public static class Groq
 {
     public static IServiceCollection AddGroqChatClient(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration,
         ILoggerFactory loggerFactory,
         HttpClient httpClient
-        )
+    )
     {
         var chatClient = GetGroqChatClient(configuration, loggerFactory, httpClient);
 
@@ -45,5 +40,8 @@ public static class Groq
         IConfiguration configuration,
         ILoggerFactory loggerFactory,
         HttpClient httpClient
-    ) => GetGroqChatClient(configuration, httpClient);
+    )
+    {
+        return GetGroqChatClient(configuration, httpClient);
+    }
 }

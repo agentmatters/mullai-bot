@@ -9,9 +9,9 @@ namespace Mullai.Workflows.Services;
 public sealed class FileSystemWorkflowRegistry : IWorkflowRegistry, IWorkflowRegistryReloader
 {
     private readonly ILogger<FileSystemWorkflowRegistry> _logger;
-    private IReadOnlyList<WorkflowDefinition> _definitions;
-    private Dictionary<string, WorkflowDefinition> _byId;
     private readonly object _sync = new();
+    private Dictionary<string, WorkflowDefinition> _byId;
+    private IReadOnlyList<WorkflowDefinition> _definitions;
 
     public FileSystemWorkflowRegistry(ILogger<FileSystemWorkflowRegistry> logger)
     {
@@ -29,10 +29,7 @@ public sealed class FileSystemWorkflowRegistry : IWorkflowRegistry, IWorkflowReg
 
     public WorkflowDefinition? GetById(string workflowId)
     {
-        if (string.IsNullOrWhiteSpace(workflowId))
-        {
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(workflowId)) return null;
 
         lock (_sync)
         {
@@ -52,16 +49,12 @@ public sealed class FileSystemWorkflowRegistry : IWorkflowRegistry, IWorkflowReg
         }
 
         if (definitions.Count == 0)
-        {
             _logger.LogWarning("No workflow definitions loaded from ~/.mullai/workflows.");
-        }
         else
-        {
             _logger.LogInformation(
                 "Loaded {WorkflowCount} workflow definition(s): {WorkflowIds}",
                 definitions.Count,
                 string.Join(", ", definitions.Select(d => d.Id)));
-        }
     }
 
     private IReadOnlyList<WorkflowDefinition> LoadDefinitions()
@@ -86,14 +79,10 @@ public sealed class FileSystemWorkflowRegistry : IWorkflowRegistry, IWorkflowReg
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase);
 
         foreach (var file in files)
-        {
             try
             {
                 var yaml = File.ReadAllText(file);
-                if (string.IsNullOrWhiteSpace(yaml))
-                {
-                    continue;
-                }
+                if (string.IsNullOrWhiteSpace(yaml)) continue;
 
                 if (TryDeserializeList(deserializer, yaml, out var list))
                 {
@@ -102,32 +91,26 @@ public sealed class FileSystemWorkflowRegistry : IWorkflowRegistry, IWorkflowReg
                 }
 
                 var definition = deserializer.Deserialize<WorkflowDefinition>(yaml);
-                if (definition is not null && !string.IsNullOrWhiteSpace(definition.Id))
-                {
-                    results.Add(definition);
-                }
+                if (definition is not null && !string.IsNullOrWhiteSpace(definition.Id)) results.Add(definition);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to load workflow definition from {WorkflowFile}.", file);
             }
-        }
 
         return results
             .Where(def => !string.IsNullOrWhiteSpace(def.Id))
             .ToArray();
     }
 
-    private static bool TryDeserializeList(IDeserializer deserializer, string yaml, out List<WorkflowDefinition> definitions)
+    private static bool TryDeserializeList(IDeserializer deserializer, string yaml,
+        out List<WorkflowDefinition> definitions)
     {
         definitions = [];
         try
         {
             var list = deserializer.Deserialize<List<WorkflowDefinition>>(yaml);
-            if (list is null || list.Count == 0)
-            {
-                return false;
-            }
+            if (list is null || list.Count == 0) return false;
 
             definitions = list;
             return true;

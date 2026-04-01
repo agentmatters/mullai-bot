@@ -1,12 +1,12 @@
-using Mullai.Web.Components;
+using System.Text.Json;
+using Mullai.Abstractions.Configuration;
+using Mullai.Global.ServiceConfiguration;
 using Mullai.Middleware.Middlewares;
 using Mullai.TaskRuntime;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Execution;
 using Mullai.TaskRuntime.Models;
-using System.Text.Json;
-using Mullai.Abstractions.Configuration;
-using Mullai.Global.ServiceConfiguration;
+using Mullai.Web.Components;
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -35,17 +35,11 @@ functionCallingMiddleware.OnToolCallObserved = observation =>
     toolCallFeed.Publish(observation);
 
     var context = MullaiTaskExecutionContext.Current;
-    if (context is null)
-    {
-        return;
-    }
+    if (context is null) return;
 
     var status = statusStore.GetAsync(context.TaskId).GetAwaiter().GetResult();
     var workflowId = status?.WorkflowId;
-    if (string.IsNullOrWhiteSpace(workflowId))
-    {
-        return;
-    }
+    if (string.IsNullOrWhiteSpace(workflowId)) return;
 
     var eventType = observation.IsFinished ? "tool_call_finished" : "tool_call_started";
     var createdAt = observation.FinishedAt ?? observation.StartedAt;
@@ -81,7 +75,7 @@ functionCallingMiddleware.OnToolCallObserved = observation =>
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseExceptionHandler("/Error", true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }

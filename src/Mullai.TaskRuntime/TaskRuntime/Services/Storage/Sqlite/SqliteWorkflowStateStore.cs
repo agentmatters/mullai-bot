@@ -6,15 +6,15 @@ namespace Mullai.TaskRuntime.Services.Storage.Sqlite;
 public sealed class SqliteWorkflowStateStore : IWorkflowStateStore
 {
     private const string InitSql = """
-        CREATE TABLE IF NOT EXISTS workflow_state (
-            workflow_id TEXT NOT NULL,
-            state_key TEXT NOT NULL,
-            json_value TEXT NOT NULL,
-            updated_at_utc TEXT NOT NULL,
-            PRIMARY KEY (workflow_id, state_key)
-        );
-        CREATE INDEX IF NOT EXISTS idx_workflow_state_workflow ON workflow_state(workflow_id);
-        """;
+                                   CREATE TABLE IF NOT EXISTS workflow_state (
+                                       workflow_id TEXT NOT NULL,
+                                       state_key TEXT NOT NULL,
+                                       json_value TEXT NOT NULL,
+                                       updated_at_utc TEXT NOT NULL,
+                                       PRIMARY KEY (workflow_id, state_key)
+                                   );
+                                   CREATE INDEX IF NOT EXISTS idx_workflow_state_workflow ON workflow_state(workflow_id);
+                                   """;
 
     public SqliteWorkflowStateStore()
     {
@@ -24,7 +24,8 @@ public sealed class SqliteWorkflowStateStore : IWorkflowStateStore
         command.ExecuteNonQuery();
     }
 
-    public Task<WorkflowStateRecord?> GetAsync(string workflowId, string key, CancellationToken cancellationToken = default)
+    public Task<WorkflowStateRecord?> GetAsync(string workflowId, string key,
+        CancellationToken cancellationToken = default)
     {
         using var connection = SqliteStoreHelper.CreateConnection();
         using var command = connection.CreateCommand();
@@ -32,15 +33,13 @@ public sealed class SqliteWorkflowStateStore : IWorkflowStateStore
         command.Parameters.AddWithValue("$workflowId", workflowId);
         command.Parameters.AddWithValue("$key", key);
         using var reader = command.ExecuteReader();
-        if (!reader.Read())
-        {
-            return Task.FromResult<WorkflowStateRecord?>(null);
-        }
+        if (!reader.Read()) return Task.FromResult<WorkflowStateRecord?>(null);
 
         return Task.FromResult<WorkflowStateRecord?>(ReadRecord(reader));
     }
 
-    public Task<IReadOnlyCollection<WorkflowStateRecord>> GetAllAsync(string workflowId, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<WorkflowStateRecord>> GetAllAsync(string workflowId,
+        CancellationToken cancellationToken = default)
     {
         using var connection = SqliteStoreHelper.CreateConnection();
         using var command = connection.CreateCommand();
@@ -48,25 +47,23 @@ public sealed class SqliteWorkflowStateStore : IWorkflowStateStore
         command.Parameters.AddWithValue("$workflowId", workflowId);
         using var reader = command.ExecuteReader();
         var results = new List<WorkflowStateRecord>();
-        while (reader.Read())
-        {
-            results.Add(ReadRecord(reader));
-        }
+        while (reader.Read()) results.Add(ReadRecord(reader));
 
         return Task.FromResult<IReadOnlyCollection<WorkflowStateRecord>>(results);
     }
 
-    public Task UpsertAsync(string workflowId, string key, string jsonValue, CancellationToken cancellationToken = default)
+    public Task UpsertAsync(string workflowId, string key, string jsonValue,
+        CancellationToken cancellationToken = default)
     {
         using var connection = SqliteStoreHelper.CreateConnection();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO workflow_state (workflow_id, state_key, json_value, updated_at_utc)
-            VALUES ($workflowId, $key, $jsonValue, $updatedAtUtc)
-            ON CONFLICT(workflow_id, state_key) DO UPDATE SET
-                json_value = excluded.json_value,
-                updated_at_utc = excluded.updated_at_utc;
-            """;
+                              INSERT INTO workflow_state (workflow_id, state_key, json_value, updated_at_utc)
+                              VALUES ($workflowId, $key, $jsonValue, $updatedAtUtc)
+                              ON CONFLICT(workflow_id, state_key) DO UPDATE SET
+                                  json_value = excluded.json_value,
+                                  updated_at_utc = excluded.updated_at_utc;
+                              """;
         command.Parameters.AddWithValue("$workflowId", workflowId);
         command.Parameters.AddWithValue("$key", key);
         command.Parameters.AddWithValue("$jsonValue", jsonValue);

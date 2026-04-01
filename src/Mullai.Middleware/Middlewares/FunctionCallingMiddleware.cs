@@ -6,26 +6,26 @@ using Mullai.Abstractions.Observability;
 namespace Mullai.Middleware.Middlewares;
 
 /// <summary>
-/// Middleware that intercepts every tool invocation and:
-/// 1. Logs it (existing behaviour)
-/// 2. Publishes a <see cref="ToolCallObservation"/> via an optional callback
-///    so the UI layer can display live tool call info without coupling to the middleware.
+///     Middleware that intercepts every tool invocation and:
+///     1. Logs it (existing behaviour)
+///     2. Publishes a <see cref="ToolCallObservation" /> via an optional callback
+///     so the UI layer can display live tool call info without coupling to the middleware.
 /// </summary>
 public class FunctionCallingMiddleware
 {
     private readonly ILogger<FunctionCallingMiddleware> _logger;
 
-    /// <summary>
-    /// Optional observer callback. Inject from the TUI bootstrap layer
-    /// to receive real-time tool call events without creating a dependency
-    /// from the middleware onto the UI.
-    /// </summary>
-    public Action<ToolCallObservation>? OnToolCallObserved { get; set; }
-
     public FunctionCallingMiddleware(ILogger<FunctionCallingMiddleware> logger)
     {
         _logger = logger;
     }
+
+    /// <summary>
+    ///     Optional observer callback. Inject from the TUI bootstrap layer
+    ///     to receive real-time tool call events without creating a dependency
+    ///     from the middleware onto the UI.
+    /// </summary>
+    public Action<ToolCallObservation>? OnToolCallObserved { get; set; }
 
     public async ValueTask<object?> InvokeAsync(
         AIAgent agent,
@@ -46,18 +46,18 @@ public class FunctionCallingMiddleware
         var callId = Guid.NewGuid().ToString("N");
         object? result = null;
         string? error = null;
-        bool succeeded = false;
+        var succeeded = false;
 
         // Emit 'started' observation
         var startObservation = new ToolCallObservation(
-            CallId: callId,
-            ToolName: context.Function.Name,
-            Arguments: new Dictionary<string, object?>(context.Arguments),
-            Succeeded: false,
-            Result: null,
-            Error: null,
-            StartedAt: startedAt,
-            FinishedAt: null);
+            callId,
+            context.Function.Name,
+            new Dictionary<string, object?>(context.Arguments),
+            false,
+            null,
+            null,
+            startedAt,
+            null);
         OnToolCallObserved?.Invoke(startObservation);
 
         try
@@ -74,14 +74,14 @@ public class FunctionCallingMiddleware
         finally
         {
             var finalObservation = new ToolCallObservation(
-                CallId: callId,
-                ToolName: context.Function.Name,
-                Arguments: new Dictionary<string, object?>(context.Arguments),
-                Succeeded: succeeded,
-                Result: result?.ToString(),
-                Error: error,
-                StartedAt: startedAt,
-                FinishedAt: DateTimeOffset.UtcNow);
+                callId,
+                context.Function.Name,
+                new Dictionary<string, object?>(context.Arguments),
+                succeeded,
+                result?.ToString(),
+                error,
+                startedAt,
+                DateTimeOffset.UtcNow);
 
             OnToolCallObserved?.Invoke(finalObservation);
         }

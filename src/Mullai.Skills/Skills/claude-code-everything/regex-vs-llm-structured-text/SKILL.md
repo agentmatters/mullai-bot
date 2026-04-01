@@ -6,7 +6,8 @@ origin: ECC
 
 # Regex vs LLM for Structured Text Parsing
 
-A practical decision framework for parsing structured text (quizzes, forms, invoices, documents). The key insight: regex handles 95-98% of cases cheaply and deterministically. Reserve expensive LLM calls for the remaining edge cases.
+A practical decision framework for parsing structured text (quizzes, forms, invoices, documents). The key insight: regex
+handles 95-98% of cases cheaply and deterministically. Reserve expensive LLM calls for the remaining edge cases.
 
 ## When to Activate
 
@@ -186,13 +187,13 @@ def process_document(
 
 From a production quiz parsing pipeline (410 items):
 
-| Metric | Value |
-|--------|-------|
-| Regex success rate | 98.0% |
-| Low confidence items | 8 (2.0%) |
-| LLM calls needed | ~5 |
-| Cost savings vs all-LLM | ~95% |
-| Test coverage | 93% |
+| Metric                  | Value    |
+|-------------------------|----------|
+| Regex success rate      | 98.0%    |
+| Low confidence items    | 8 (2.0%) |
+| LLM calls needed        | ~5       |
+| Cost savings vs all-LLM | ~95%     |
+| Test coverage           | 93%      |
 
 ## Best Practices
 

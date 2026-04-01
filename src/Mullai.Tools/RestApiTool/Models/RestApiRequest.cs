@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Mullai.Tools.RestApiTool.Models;
 
 public class RestApiRequest

@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Mullai.Abstractions.Models;
 using Mullai.Providers.Common;
 
@@ -17,11 +16,8 @@ public class CerebrasModelAdapter : IModelMetadataAdapter
         // No auth required for models endpoint according to user
         var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
         var response = await httpClient.GetFromJsonAsync<CerebrasModelsResponse>(ModelsEndpoint, options);
-        
-        if (response?.Data == null)
-        {
-            return new List<MullaiModelDescriptor>();
-        }
+
+        if (response?.Data == null) return new List<MullaiModelDescriptor>();
 
         return response.Data.Select(Adapt).ToList();
     }
@@ -42,11 +38,13 @@ public class CerebrasModelAdapter : IModelMetadataAdapter
             Enabled = true,
             Priority = 1,
             Capabilities = capabilities,
-            Pricing = data.Pricing != null ? new ModelPricing
-            {
-                InputPer1kTokens = ParsePricing(data.Pricing.Prompt),
-                OutputPer1kTokens = ParsePricing(data.Pricing.Completion)
-            } : null
+            Pricing = data.Pricing != null
+                ? new ModelPricing
+                {
+                    InputPer1kTokens = ParsePricing(data.Pricing.Prompt),
+                    OutputPer1kTokens = ParsePricing(data.Pricing.Completion)
+                }
+                : null
         };
     }
 
@@ -54,10 +52,8 @@ public class CerebrasModelAdapter : IModelMetadataAdapter
     {
         if (string.IsNullOrEmpty(pricing)) return 0;
         if (decimal.TryParse(pricing, out var result))
-        {
             // Assuming the pricing is per token in the response, Mullai wants per 1M tokens
             return result * 1000000m;
-        }
         return 0;
     }
 }

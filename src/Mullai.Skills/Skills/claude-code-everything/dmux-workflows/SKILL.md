@@ -18,11 +18,13 @@ Orchestrate parallel AI agent sessions using dmux, a tmux pane manager for agent
 ## What is dmux
 
 dmux is a tmux-based orchestration tool that manages AI agent panes:
+
 - Press `n` to create a new pane with a prompt
 - Press `m` to merge pane output back to the main session
 - Supports: Claude Code, Codex, OpenCode, Cline, Gemini, Qwen
 
-**Install:** Install dmux from its repository after reviewing the package. See [github.com/standardagents/dmux](https://github.com/standardagents/dmux)
+**Install:** Install dmux from its repository after reviewing the package.
+See [github.com/standardagents/dmux](https://github.com/standardagents/dmux)
 
 ## Quick Start
 
@@ -129,12 +131,12 @@ git merge feat/billing
 
 ## Complementary Tools
 
-| Tool | What It Does | When to Use |
-|------|-------------|-------------|
-| **dmux** | tmux pane management for agents | Parallel agent sessions |
-| **Superset** | Terminal IDE for 10+ parallel agents | Large-scale orchestration |
-| **Claude Code Task tool** | In-process subagent spawning | Programmatic parallelism within a session |
-| **Codex multi-agent** | Built-in agent roles | Codex-specific parallel work |
+| Tool                      | What It Does                         | When to Use                               |
+|---------------------------|--------------------------------------|-------------------------------------------|
+| **dmux**                  | tmux pane management for agents      | Parallel agent sessions                   |
+| **Superset**              | Terminal IDE for 10+ parallel agents | Large-scale orchestration                 |
+| **Claude Code Task tool** | In-process subagent spawning         | Programmatic parallelism within a session |
+| **Codex multi-agent**     | Built-in agent roles                 | Codex-specific parallel work              |
 
 ## ECC Helper
 
@@ -159,6 +161,7 @@ Example `plan.json`:
 ```
 
 The helper:
+
 - Creates one branch-backed git worktree per worker
 - Optionally overlays selected `seedPaths` from the main checkout into each worker worktree
 - Writes per-worker `task.md`, `handoff.md`, and `status.md` files under `.orchestration/<session>/`
@@ -166,7 +169,8 @@ The helper:
 - Launches each worker command in its own pane
 - Leaves the main pane free for the orchestrator
 
-Use `seedPaths` when workers need access to dirty or untracked local files that are not yet part of `HEAD`, such as local orchestration scripts, draft plans, or docs:
+Use `seedPaths` when workers need access to dirty or untracked local files that are not yet part of `HEAD`, such as
+local orchestration scripts, draft plans, or docs:
 
 ```json
 {
@@ -185,7 +189,8 @@ Use `seedPaths` when workers need access to dirty or untracked local files that 
 
 ## Troubleshooting
 
-- **Pane not responding:** Switch to the pane directly or inspect it with `tmux capture-pane -pt <session>:0.<pane-index>`.
+- **Pane not responding:** Switch to the pane directly or inspect it with
+  `tmux capture-pane -pt <session>:0.<pane-index>`.
 - **Merge conflicts:** Use git worktrees to isolate file changes per pane.
 - **High token usage:** Reduce number of parallel panes. Each pane is a full agent session.
 - **tmux not found:** Install with `brew install tmux` (macOS) or `apt install tmux` (Linux).

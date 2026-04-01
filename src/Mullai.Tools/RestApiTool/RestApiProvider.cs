@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using Mullai.Tools.RestApiTool.Models;
 
@@ -13,21 +12,16 @@ public class RestApiProvider(HttpClient httpClient)
             var httpRequest = new HttpRequestMessage(new HttpMethod(request.Method), request.Url);
 
             if (request.Headers != null)
-            {
                 foreach (var header in request.Headers)
                 {
-                    if (header.Key.Equals("Content-Type", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue; // Set via content
-                    }
+                    if (header.Key.Equals("Content-Type",
+                            StringComparison.OrdinalIgnoreCase)) continue; // Set via content
                     httpRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
                 }
-            }
 
             if (!string.IsNullOrEmpty(request.Body))
-            {
-                httpRequest.Content = new StringContent(request.Body, Encoding.UTF8, request.ContentType ?? "application/json");
-            }
+                httpRequest.Content =
+                    new StringContent(request.Body, Encoding.UTF8, request.ContentType ?? "application/json");
 
             var response = await httpClient.SendAsync(httpRequest);
             var content = await response.Content.ReadAsStringAsync();

@@ -3,10 +3,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Mullai.Channels.Core.Abstractions;
 using Mullai.Channels.Core.Models;
-using System.Text.Json;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
 
 namespace Mullai.Channels.Telegram;
 
@@ -15,10 +15,6 @@ public class TelegramChannelAdapter : IChannelAdapter, IHostedService
     private readonly ITelegramBotClient _botClient;
     private readonly ILogger<TelegramChannelAdapter> _logger;
     private readonly TelegramOptions _options;
-
-    public string ChannelId => "Telegram";
-
-    public event Func<ChannelMessage, Task>? OnMessageReceived;
 
     public TelegramChannelAdapter(
         ITelegramBotClient botClient,
@@ -30,18 +26,51 @@ public class TelegramChannelAdapter : IChannelAdapter, IHostedService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    public string ChannelId => "Telegram";
+
+    public event Func<ChannelMessage, Task>? OnMessageReceived;
+
+    public Task ProcessIncomingMessageAsync(object requestData)
+    {
+        throw new NotSupportedException(
+            "TelegramChannelAdapter uses Long Polling and does not support incoming webhooks.");
+    }
+
+    public async Task SendMessageAsync(ChannelMessage response)
+    {
+        try
+        {
+            if (!long.TryParse(response.UserId, out var chatId))
+            {
+                _logger.LogError("Invalid UserId for Telegram chat: {UserId}", response.UserId);
+                return;
+            }
+
+            await _botClient.SendMessage(
+                chatId,
+                response.TextContent
+            );
+
+            _logger.LogInformation("Sent message to ChatId {ChatId}", chatId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to send message to Telegram ChatId {UserId}", response.UserId);
+        }
+    }
+
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("Starting Telegram Long Polling service...");
 
         _botClient.StartReceiving(
-            updateHandler: HandleUpdateAsync,
-            errorHandler: HandlePollingErrorAsync,
-            receiverOptions: new ReceiverOptions
+            HandleUpdateAsync,
+            HandlePollingErrorAsync,
+            new ReceiverOptions
             {
-                AllowedUpdates = Array.Empty<global::Telegram.Bot.Types.Enums.UpdateType>() // Receive all update types
+                AllowedUpdates = Array.Empty<UpdateType>() // Receive all update types
             },
-            cancellationToken: cancellationToken
+            cancellationToken
         );
 
         return Task.CompletedTask;
@@ -53,14 +82,13 @@ public class TelegramChannelAdapter : IChannelAdapter, IHostedService
         return Task.CompletedTask;
     }
 
-    private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+    private async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update,
+        CancellationToken cancellationToken)
     {
         try
         {
-            if (update?.Message == null || string.IsNullOrWhiteSpace(update.Message.Text))
-            {
-                return; // Ignore empty or non-text messages
-            }
+            if (update?.Message == null ||
+                string.IsNullOrWhiteSpace(update.Message.Text)) return; // Ignore empty or non-text messages
 
             var channelMessage = new ChannelMessage
             {
@@ -82,37 +110,10 @@ public class TelegramChannelAdapter : IChannelAdapter, IHostedService
         }
     }
 
-    private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+    private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception,
+        CancellationToken cancellationToken)
     {
         _logger.LogError(exception, "Telegram Polling Error occurred");
         return Task.CompletedTask;
-    }
-
-    public Task ProcessIncomingMessageAsync(object requestData)
-    {
-        throw new NotSupportedException("TelegramChannelAdapter uses Long Polling and does not support incoming webhooks.");
-    }
-
-    public async Task SendMessageAsync(ChannelMessage response)
-    {
-        try
-        {
-            if (!long.TryParse(response.UserId, out var chatId))
-            {
-                _logger.LogError("Invalid UserId for Telegram chat: {UserId}", response.UserId);
-                return;
-            }
-
-            await _botClient.SendMessage(
-                chatId: chatId,
-                text: response.TextContent
-            );
-
-            _logger.LogInformation("Sent message to ChatId {ChatId}", chatId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to send message to Telegram ChatId {UserId}", response.UserId);
-        }
     }
 }

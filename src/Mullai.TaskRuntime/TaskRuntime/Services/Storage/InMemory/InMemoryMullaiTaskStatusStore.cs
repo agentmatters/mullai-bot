@@ -15,25 +15,29 @@ public class InMemoryMullaiTaskStatusStore : IMullaiTaskStatusStore
         return Task.CompletedTask;
     }
 
-    public Task MarkRunningAsync(MullaiTaskWorkItem workItem, string? response = null, MullaiUsage? usage = null, CancellationToken cancellationToken = default)
+    public Task MarkRunningAsync(MullaiTaskWorkItem workItem, string? response = null, MullaiUsage? usage = null,
+        CancellationToken cancellationToken = default)
     {
-        Upsert(workItem, MullaiTaskState.Running, response: response, usage: usage);
+        Upsert(workItem, MullaiTaskState.Running, response, usage: usage);
         return Task.CompletedTask;
     }
 
-    public Task MarkRetryScheduledAsync(MullaiTaskWorkItem workItem, string error, CancellationToken cancellationToken = default)
+    public Task MarkRetryScheduledAsync(MullaiTaskWorkItem workItem, string error,
+        CancellationToken cancellationToken = default)
     {
         Upsert(workItem, MullaiTaskState.RetryScheduled, error: error);
         return Task.CompletedTask;
     }
 
-    public Task MarkSucceededAsync(MullaiTaskWorkItem workItem, string response, MullaiUsage? usage = null, CancellationToken cancellationToken = default)
+    public Task MarkSucceededAsync(MullaiTaskWorkItem workItem, string response, MullaiUsage? usage = null,
+        CancellationToken cancellationToken = default)
     {
-        Upsert(workItem, MullaiTaskState.Succeeded, response: response, usage: usage);
+        Upsert(workItem, MullaiTaskState.Succeeded, response, usage: usage);
         return Task.CompletedTask;
     }
 
-    public Task MarkFailedAsync(MullaiTaskWorkItem workItem, string error, CancellationToken cancellationToken = default)
+    public Task MarkFailedAsync(MullaiTaskWorkItem workItem, string error,
+        CancellationToken cancellationToken = default)
     {
         Upsert(workItem, MullaiTaskState.Failed, error: error);
         return Task.CompletedTask;
@@ -45,7 +49,8 @@ public class InMemoryMullaiTaskStatusStore : IMullaiTaskStatusStore
         return Task.FromResult(snapshot);
     }
 
-    public Task<IReadOnlyCollection<MullaiTaskStatusSnapshot>> GetRecentAsync(int take = 50, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<MullaiTaskStatusSnapshot>> GetRecentAsync(int take = 50,
+        CancellationToken cancellationToken = default)
     {
         var resolvedTake = Math.Max(1, take);
         var result = _status.Values

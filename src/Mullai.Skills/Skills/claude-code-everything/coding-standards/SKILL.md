@@ -20,24 +20,28 @@ Universal coding standards applicable across all projects.
 ## Code Quality Principles
 
 ### 1. Readability First
+
 - Code is read more than written
 - Clear variable and function names
 - Self-documenting code preferred over comments
 - Consistent formatting
 
 ### 2. KISS (Keep It Simple, Stupid)
+
 - Simplest solution that works
 - Avoid over-engineering
 - No premature optimization
 - Easy to understand > clever code
 
 ### 3. DRY (Don't Repeat Yourself)
+
 - Extract common logic into functions
 - Create reusable components
 - Share utilities across modules
 - Avoid copy-paste programming
 
 ### 4. YAGNI (You Aren't Gonna Need It)
+
 - Don't build features before they're needed
 - Avoid speculative generality
 - Add complexity only when required
@@ -379,13 +383,15 @@ name = user.name
  * const results = await searchMarkets('election', 5)
  * console.log(results[0].name) // "Trump vs Biden"
  * ```
- */
+
+*/
 export async function searchMarkets(
-  query: string,
-  limit: number = 10
+query: string,
+limit: number = 10
 ): Promise<Market[]> {
-  // Implementation
+// Implementation
 }
+
 ```
 
 ## Performance Best Practices
@@ -474,6 +480,7 @@ test('test search', () => { })
 Watch for these anti-patterns:
 
 ### 1. Long Functions
+
 ```typescript
 // FAIL: BAD: Function > 50 lines
 function processMarketData() {
@@ -489,6 +496,7 @@ function processMarketData() {
 ```
 
 ### 2. Deep Nesting
+
 ```typescript
 // FAIL: BAD: 5+ levels of nesting
 if (user) {
@@ -514,6 +522,7 @@ if (!hasPermission) return
 ```
 
 ### 3. Magic Numbers
+
 ```typescript
 // FAIL: BAD: Unexplained numbers
 if (retryCount > 3) { }
@@ -527,4 +536,5 @@ if (retryCount > MAX_RETRIES) { }
 setTimeout(callback, DEBOUNCE_DELAY_MS)
 ```
 
-**Remember**: Code quality is not negotiable. Clear, maintainable code enables rapid development and confident refactoring.
+**Remember**: Code quality is not negotiable. Clear, maintainable code enables rapid development and confident
+refactoring.

@@ -8,31 +8,30 @@
  * exit 0: success  exit 1: no projects
  */
 
-import { readProjects, loadContext, today, CONTEXTS_DIR } from './shared.mjs';
-import { renderListTable } from './shared.mjs';
+import {loadContext, readProjects, renderListTable, today} from './shared.mjs';
 
 const cwd = process.env.PWD || process.cwd();
 const projects = readProjects();
 const entries = Object.entries(projects);
 
 if (entries.length === 0) {
-  console.log('No projects registered. Run /ck:init to get started.');
-  process.exit(1);
+    console.log('No projects registered. Run /ck:init to get started.');
+    process.exit(1);
 }
 
 // Build enriched list sorted alphabetically by contextDir
 const enriched = entries
-  .map(([path, info]) => {
-    const context = loadContext(info.contextDir);
-    return {
-      name: info.name,
-      contextDir: info.contextDir,
-      path,
-      context,
-      lastUpdated: info.lastUpdated,
-    };
-  })
-  .sort((a, b) => a.contextDir.localeCompare(b.contextDir));
+    .map(([path, info]) => {
+        const context = loadContext(info.contextDir);
+        return {
+            name: info.name,
+            contextDir: info.contextDir,
+            path,
+            context,
+            lastUpdated: info.lastUpdated,
+        };
+    })
+    .sort((a, b) => a.contextDir.localeCompare(b.contextDir));
 
 const table = renderListTable(enriched, cwd, today());
 console.log('');

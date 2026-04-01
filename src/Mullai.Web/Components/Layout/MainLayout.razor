@@ -5,7 +5,7 @@
 
 <div class="app-shell @(_sidebarOpen ? "sidebar-open" : string.Empty)">
     <aside class="app-sidebar" aria-label="Sidebar">
-        <LeftNav OnNavigate="CloseSidebar" />
+        <LeftNav OnNavigate="CloseSidebar"/>
     </aside>
 
     <div class="app-overlay" @onclick="CloseSidebar" aria-hidden="true"></div>
@@ -17,7 +17,7 @@
                     Subtitle="@_headerSubtitle"
                     SessionId="@_sessionLabel"
                     Status="Active"
-                    OnToggleSidebar="ToggleSidebar" />
+                    OnToggleSidebar="ToggleSidebar"/>
         }
         <section class="app-content">
             <CascadingValue Value="this" IsFixed="true">
@@ -31,7 +31,7 @@
     private bool _sidebarOpen;
     private string _headerTitle = "Mullai";
     private string? _headerSubtitle;
-    private string _sessionLabel = "Mullai Assistant";
+    private readonly string _sessionLabel = "Mullai Assistant";
 
     protected override void OnInitialized()
     {
@@ -39,7 +39,7 @@
         NavigationManager.LocationChanged += HandleLocationChanged;
     }
 
-    private void HandleLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         UpdateHeaderForLocation();
         _sidebarOpen = false;
@@ -47,7 +47,7 @@
     }
 
     private bool _isSettingsPage;
-    
+
     private void UpdateHeaderForLocation()
     {
         var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
@@ -65,11 +65,18 @@
     }
 
     public void ToggleSidebar()
-        => _sidebarOpen = !_sidebarOpen;
+    {
+        _sidebarOpen = !_sidebarOpen;
+    }
 
     private void CloseSidebar()
-        => _sidebarOpen = false;
+    {
+        _sidebarOpen = false;
+    }
 
     public void Dispose()
-        => NavigationManager.LocationChanged -= HandleLocationChanged;
+    {
+        NavigationManager.LocationChanged -= HandleLocationChanged;
+    }
+
 }

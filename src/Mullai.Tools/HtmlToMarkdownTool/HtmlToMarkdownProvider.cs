@@ -11,18 +11,13 @@ public class HtmlToMarkdownProvider(HttpClient httpClient)
         try
         {
             if (!url.StartsWith("http://") && !url.StartsWith("https://"))
-            {
                 return "Error: URL must start with http:// or https://";
-            }
 
             var response = await httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                return $"Error: Failed to fetch URL. Status: {response.StatusCode}";
-            }
+            if (!response.IsSuccessStatusCode) return $"Error: Failed to fetch URL. Status: {response.StatusCode}";
 
             var html = await response.Content.ReadAsStringAsync();
-            
+
             return _converter.Convert(html);
         }
         catch (Exception ex)

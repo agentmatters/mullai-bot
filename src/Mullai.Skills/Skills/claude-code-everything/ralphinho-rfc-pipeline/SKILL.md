@@ -6,9 +6,11 @@ origin: ECC
 
 # Ralphinho RFC Pipeline
 
-Inspired by [humanplane](https://github.com/humanplane) style RFC decomposition patterns and multi-unit orchestration workflows.
+Inspired by [humanplane](https://github.com/humanplane) style RFC decomposition patterns and multi-unit orchestration
+workflows.
 
-Use this skill when a feature is too large for a single agent pass and must be split into independently verifiable work units.
+Use this skill when a feature is too large for a single agent pass and must be split into independently verifiable work
+units.
 
 ## Pipeline Stages
 
@@ -23,6 +25,7 @@ Use this skill when a feature is too large for a single agent pass and must be s
 ## Unit Spec Template
 
 Each work unit should include:
+
 - `id`
 - `depends_on`
 - `scope`
@@ -54,6 +57,7 @@ Each work unit should include:
 ## Recovery
 
 If a unit stalls:
+
 - evict from active queue
 - snapshot findings
 - regenerate narrowed unit scope

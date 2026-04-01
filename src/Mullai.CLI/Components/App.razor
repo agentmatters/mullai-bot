@@ -1,20 +1,18 @@
 @namespace Mullai.CLI.Components
-@using Microsoft.AspNetCore.Components.Routing
-@using RazorConsole.Components
 
 @inject NavigationManager Nav
 
 <Panel>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
-            <RouteView RouteData="routeData" />
+            <RouteView RouteData="routeData"/>
         </Found>
         <NotFound>
-            <Markup Content="Page not found." Foreground="@Color.Red" />
+            <Markup Content="Page not found." Foreground="@Color.Red"/>
             <TextButton Content="← Back to Chat"
                         OnClick="@(() => Nav.NavigateTo("/"))"
                         BackgroundColor="@Color.Grey15"
-                        FocusedColor="@Color.Yellow" />
+                        FocusedColor="@Color.Yellow"/>
         </NotFound>
     </Router>
 </Panel>

@@ -2,35 +2,24 @@ using System.ComponentModel;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Mullai.Tools.WeatherTool;
-using Mullai.Tools.CliTool;
-using Mullai.Tools.BashTool;
-using Mullai.Tools.TodoTool;
-using Mullai.Tools.WebTool;
-using Mullai.Tools.CodeSearchTool;
-using Mullai.Tools.FileSystemTool;
-using Mullai.Tools.WorkflowTool;
-using Mullai.Tools.WorkflowStateTool;
-using Mullai.Tools.RestApiTool;
-using Mullai.Tools.HtmlToMarkdownTool;
-using Mullai.Abstractions.Configuration;
 using ModelContextProtocol.Client;
+using Mullai.Abstractions.Configuration;
 
 namespace Mullai.Tools.Registry;
 
 [Description("A tool to discover and dynamically load other available tools into the current agent session.")]
 public class DynamicToolLoader
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IList<AITool> _sessionTools;
-    private readonly ILogger<DynamicToolLoader> _logger;
+    private readonly HashSet<string> _allowedDynamicTools = new(StringComparer.OrdinalIgnoreCase);
     private readonly IMullaiConfigurationManager _configManager;
     private readonly HashSet<string> _loadedToolGroups = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _allowedDynamicTools = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ILogger<DynamicToolLoader> _logger;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IList<AITool> _sessionTools;
 
     public DynamicToolLoader(
-        IServiceProvider serviceProvider, 
-        IList<AITool> sessionTools, 
+        IServiceProvider serviceProvider,
+        IList<AITool> sessionTools,
         ILogger<DynamicToolLoader> logger,
         IMullaiConfigurationManager configManager,
         IEnumerable<string>? allowedDynamicTools = null)
@@ -39,11 +28,10 @@ public class DynamicToolLoader
         _sessionTools = sessionTools;
         _logger = logger;
         _configManager = configManager;
-        
+
         if (allowedDynamicTools != null)
-        {
-            foreach (var tool in allowedDynamicTools) _allowedDynamicTools.Add(tool);
-        }
+            foreach (var tool in allowedDynamicTools)
+                _allowedDynamicTools.Add(tool);
 
         // Track initially loaded tool groups based on assumptions we make in AgentFactory
         _loadedToolGroups.Add("FileSystemTool");
@@ -54,7 +42,7 @@ public class DynamicToolLoader
     public IEnumerable<string> GetAvailableTools()
     {
         var allAvailable = _configManager.GetAllAvailableToolGroups();
-        
+
         // Only show tools that are in the allowed dynamic list for this agent
         return allAvailable.Where(t => _allowedDynamicTools.Contains(t));
     }
@@ -65,23 +53,21 @@ public class DynamicToolLoader
         return _loadedToolGroups;
     }
 
-    [Description("Loads a specific tool group (e.g., 'WeatherTool' or 'MCP:MyServer') into the current session so it can be used in subsequent requests.")]
-    public async Task<string> LoadToolGroup([Description("The exact name of the tool group to load, as retrieved from GetAvailableTools.")] string toolGroupName)
+    [Description(
+        "Loads a specific tool group (e.g., 'WeatherTool' or 'MCP:MyServer') into the current session so it can be used in subsequent requests.")]
+    public async Task<string> LoadToolGroup(
+        [Description("The exact name of the tool group to load, as retrieved from GetAvailableTools.")]
+        string toolGroupName)
     {
-        if (string.IsNullOrWhiteSpace(toolGroupName))
-        {
-            return "Error: Please provide a valid tool group name.";
-        }
+        if (string.IsNullOrWhiteSpace(toolGroupName)) return "Error: Please provide a valid tool group name.";
 
         if (_loadedToolGroups.Contains(toolGroupName))
-        {
-            return $"Tool group {toolGroupName} is already loaded in the current session. You can use its functions immediately.";
-        }
+            return
+                $"Tool group {toolGroupName} is already loaded in the current session. You can use its functions immediately.";
 
         if (!_allowedDynamicTools.Contains(toolGroupName))
-        {
-            return $"Error: Tool group '{toolGroupName}' is not authorized for dynamic loading in this agent's configuration.";
-        }
+            return
+                $"Error: Tool group '{toolGroupName}' is not authorized for dynamic loading in this agent's configuration.";
 
         IEnumerable<AITool> newTools;
 
@@ -97,10 +83,13 @@ public class DynamicToolLoader
                 "CodeSearchTool" => _serviceProvider.GetRequiredService<CodeSearchTool.CodeSearchTool>().AsAITools(),
                 "FileSystemTool" => _serviceProvider.GetRequiredService<FileSystemTool.FileSystemTool>().AsAITools(),
                 "WorkflowTool" => _serviceProvider.GetRequiredService<WorkflowTool.WorkflowTool>().AsAITools(),
-                "WorkflowStateTool" => _serviceProvider.GetRequiredService<WorkflowStateTool.WorkflowStateTool>().AsAITools(),
+                "WorkflowStateTool" => _serviceProvider.GetRequiredService<WorkflowStateTool.WorkflowStateTool>()
+                    .AsAITools(),
                 "RestApiTool" => _serviceProvider.GetRequiredService<RestApiTool.RestApiTool>().AsAITools(),
-                "HtmlToMarkdownTool" => _serviceProvider.GetRequiredService<HtmlToMarkdownTool.HtmlToMarkdownTool>().AsAITools(),
-                _ when toolGroupName.StartsWith("MCP:", StringComparison.OrdinalIgnoreCase) => await LoadMcpToolsAsync(toolGroupName[4..]),
+                "HtmlToMarkdownTool" => _serviceProvider.GetRequiredService<HtmlToMarkdownTool.HtmlToMarkdownTool>()
+                    .AsAITools(),
+                _ when toolGroupName.StartsWith("MCP:", StringComparison.OrdinalIgnoreCase) => await LoadMcpToolsAsync(
+                    toolGroupName[4..]),
                 _ => Array.Empty<AITool>()
             };
         }
@@ -112,19 +101,16 @@ public class DynamicToolLoader
 
 
         if (!newTools.Any())
-        {
-            return $"Error: The tool group '{toolGroupName}' was not found or has no tools. Please check GetAvailableTools for valid values.";
-        }
+            return
+                $"Error: The tool group '{toolGroupName}' was not found or has no tools. Please check GetAvailableTools for valid values.";
 
-        foreach (var tool in newTools)
-        {
-            _sessionTools.Add(tool);
-        }
+        foreach (var tool in newTools) _sessionTools.Add(tool);
 
         _loadedToolGroups.Add(toolGroupName);
         _logger.LogInformation("Successfully loaded tool group {ToolGroupName} into session", toolGroupName);
 
-        return $"Successfully loaded {toolGroupName}. The functions from this tool group are now available for you to call.";
+        return
+            $"Successfully loaded {toolGroupName}. The functions from this tool group are now available for you to call.";
     }
 
     public async Task<IEnumerable<AITool>> LoadMcpToolsAsync(string serverName)
@@ -147,10 +133,7 @@ public class DynamicToolLoader
                 foreach (var req in server.Requirements)
                 {
                     var val = _configManager.GetMcpSecret(req.Key);
-                    if (!string.IsNullOrEmpty(val))
-                    {
-                        envVars[req.Key] = val;
-                    }
+                    if (!string.IsNullOrEmpty(val)) envVars[req.Key] = val;
                 }
 
                 mcpClient = await McpClient.CreateAsync(new StdioClientTransport(new StdioClientTransportOptions
@@ -171,8 +154,9 @@ public class DynamicToolLoader
             }
 
             var tools = await mcpClient.ListToolsAsync();
-            _logger.LogInformation("Successfully loaded {Count} tools from MCP server {ServerName}", tools.Count, serverName);
-            return tools.Cast<AITool>();
+            _logger.LogInformation("Successfully loaded {Count} tools from MCP server {ServerName}", tools.Count,
+                serverName);
+            return tools;
         }
         catch (Exception ex)
         {

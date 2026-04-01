@@ -7,7 +7,8 @@ tools: Read, Write, Edit, Bash, Grep, Glob
 
 # Agent Eval Skill
 
-A lightweight CLI tool for comparing coding agents head-to-head on reproducible tasks. Every "which coding agent is best?" comparison runs on vibes — this tool systematizes it.
+A lightweight CLI tool for comparing coding agents head-to-head on reproducible tasks. Every "which coding agent is
+best?" comparison runs on vibes — this tool systematizes it.
 
 ## When to Activate
 
@@ -46,15 +47,16 @@ commit: "abc1234"  # pin to specific commit for reproducibility
 
 ### Git Worktree Isolation
 
-Each agent run gets its own git worktree — no Docker required. This provides reproducibility isolation so agents cannot interfere with each other or corrupt the base repo.
+Each agent run gets its own git worktree — no Docker required. This provides reproducibility isolation so agents cannot
+interfere with each other or corrupt the base repo.
 
 ### Metrics Collected
 
-| Metric | What It Measures |
-|--------|-----------------|
-| Pass rate | Did the agent produce code that passes the judge? |
-| Cost | API spend per task (when available) |
-| Time | Wall-clock seconds to completion |
+| Metric      | What It Measures                                  |
+|-------------|---------------------------------------------------|
+| Pass rate   | Did the agent produce code that passes the judge? |
+| Cost        | API spend per task (when available)               |
+| Time        | Wall-clock seconds to completion                  |
 | Consistency | Pass rate across repeated runs (e.g., 3/3 = 100%) |
 
 ## Workflow
@@ -77,6 +79,7 @@ agent-eval run --task tasks/add-retry-logic.yaml --agent claude-code --agent aid
 ```
 
 Each run:
+
 1. Creates a fresh git worktree from the specified commit
 2. Hands the prompt to the agent
 3. Runs the judge criteria

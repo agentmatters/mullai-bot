@@ -10,9 +10,9 @@ namespace Mullai.Workflows.Services;
 
 public sealed class WorkflowFactory : IWorkflowFactory
 {
-    private readonly IWorkflowToolsProvider _toolsProvider;
-    private readonly ILoggerFactory _loggerFactory;
     private readonly FunctionCallingMiddleware _functionCallingMiddleware;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly IWorkflowToolsProvider _toolsProvider;
 
     public WorkflowFactory(
         IWorkflowToolsProvider toolsProvider,
@@ -21,20 +21,15 @@ public sealed class WorkflowFactory : IWorkflowFactory
     {
         _toolsProvider = toolsProvider ?? throw new ArgumentNullException(nameof(toolsProvider));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
-        _functionCallingMiddleware = functionCallingMiddleware ?? throw new ArgumentNullException(nameof(functionCallingMiddleware));
+        _functionCallingMiddleware = functionCallingMiddleware ??
+                                     throw new ArgumentNullException(nameof(functionCallingMiddleware));
     }
 
     public Workflow Build(WorkflowDefinition definition, IChatClient chatClient)
     {
-        if (definition is null)
-        {
-            throw new ArgumentNullException(nameof(definition));
-        }
+        if (definition is null) throw new ArgumentNullException(nameof(definition));
 
-        if (chatClient is null)
-        {
-            throw new ArgumentNullException(nameof(chatClient));
-        }
+        if (chatClient is null) throw new ArgumentNullException(nameof(chatClient));
 
         return definition.Kind switch
         {
@@ -47,18 +42,17 @@ public sealed class WorkflowFactory : IWorkflowFactory
     private Workflow BuildSingleAgent(WorkflowDefinition definition, IChatClient chatClient)
     {
         var agentDefinition = definition.Agents.FirstOrDefault()
-            ?? throw new InvalidOperationException($"Workflow '{definition.Id}' requires one agent definition.");
+                              ?? throw new InvalidOperationException(
+                                  $"Workflow '{definition.Id}' requires one agent definition.");
 
         var agent = CreateAgent(agentDefinition, chatClient);
-        return AgentWorkflowBuilder.BuildSequential(definition.Name, [agent]);
+        return AgentWorkflowBuilder.BuildSequential(definition.Name, agent);
     }
 
     private Workflow BuildParallelAgents(WorkflowDefinition definition, IChatClient chatClient)
     {
         if (definition.Agents.Count < 2)
-        {
             throw new InvalidOperationException($"Workflow '{definition.Id}' requires at least two agents.");
-        }
 
         var agents = definition.Agents
             .Select(agent => CreateAgent(agent, chatClient))

@@ -1,24 +1,22 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Mullai.Providers.LLMProviders.Mistral;
-
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Mullai.Providers.Tests.LLMProviders.Mistral;
 
 public class MistralIntegrationTests
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-    private readonly IConfiguration _configuration;
     private readonly string? _apiKey;
+    private readonly IConfiguration _configuration;
+    private readonly ITestOutputHelper _testOutputHelper;
 
     public MistralIntegrationTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         _configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true)
-            .AddJsonFile("appsettings.Test.json", optional: true)
+            .AddJsonFile("appsettings.json", true)
+            .AddJsonFile("appsettings.Test.json", true)
             .AddEnvironmentVariables()
             .Build();
 
@@ -49,7 +47,7 @@ public class MistralIntegrationTests
         Assert.NotNull(response);
         Assert.NotEmpty(response.Messages);
         Assert.False(string.IsNullOrEmpty(response.Messages[0].Text));
-        
+
         _testOutputHelper.WriteLine($"Response: {response.Messages[0].Text}");
     }
 
@@ -73,17 +71,14 @@ public class MistralIntegrationTests
 
         // Act
         var updates = new List<ChatResponseUpdate>();
-        await foreach (var update in client.GetStreamingResponseAsync(messages))
-        {
-            updates.Add(update);
-        }
+        await foreach (var update in client.GetStreamingResponseAsync(messages)) updates.Add(update);
 
         // Assert
         Assert.NotEmpty(updates);
         var fullText = string.Concat(updates.Select(u => u.Text));
         Assert.Contains("1", fullText);
         Assert.Contains("5", fullText);
-        
+
         _testOutputHelper.WriteLine($"Streaming Response: {fullText}");
     }
 }

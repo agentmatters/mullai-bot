@@ -1,6 +1,7 @@
 # Search & Indexing Guide
 
-Search allows you to find specific moments inside videos using natural language queries, exact keywords, or visual scene descriptions.
+Search allows you to find specific moments inside videos using natural language queries, exact keywords, or visual scene
+descriptions.
 
 ## Prerequisites
 
@@ -19,20 +20,22 @@ video = coll.get_video(video_id)
 video.index_spoken_words(force=True)
 ```
 
-This transcribes the audio track and builds a searchable index over the spoken content. Required for semantic search and keyword search.
+This transcribes the audio track and builds a searchable index over the spoken content. Required for semantic search and
+keyword search.
 
 **Parameters:**
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `language_code` | `str\|None` | `None` | Language code of the video |
-| `segmentation_type` | `SegmentationType` | `SegmentationType.sentence` | Segmentation type (`sentence` or `llm`) |
-| `force` | `bool` | `False` | Set to `True` to skip if already indexed (avoids "already exists" error) |
-| `callback_url` | `str\|None` | `None` | Webhook URL for async notification |
+| Parameter           | Type               | Default                     | Description                                                              |
+|---------------------|--------------------|-----------------------------|--------------------------------------------------------------------------|
+| `language_code`     | `str\|None`        | `None`                      | Language code of the video                                               |
+| `segmentation_type` | `SegmentationType` | `SegmentationType.sentence` | Segmentation type (`sentence` or `llm`)                                  |
+| `force`             | `bool`             | `False`                     | Set to `True` to skip if already indexed (avoids "already exists" error) |
+| `callback_url`      | `str\|None`        | `None`                      | Webhook URL for async notification                                       |
 
 ### Scene Index
 
-Index visual content by generating AI descriptions of scenes. Like spoken word indexing, this raises an error if a scene index already exists. Extract the existing `scene_index_id` from the error message.
+Index visual content by generating AI descriptions of scenes. Like spoken word indexing, this raises an error if a scene
+index already exists. Extract the existing `scene_index_id` from the error message.
 
 ```python
 import re
@@ -53,11 +56,11 @@ except Exception as e:
 
 **Extraction types:**
 
-| Type | Description | Best For |
-|------|-------------|----------|
-| `SceneExtractionType.shot_based` | Splits on visual shot boundaries | General purpose, action content |
-| `SceneExtractionType.time_based` | Splits at fixed intervals | Uniform sampling, long static content |
-| `SceneExtractionType.transcript` | Splits based on transcript segments | Speech-driven scene boundaries |
+| Type                             | Description                         | Best For                              |
+|----------------------------------|-------------------------------------|---------------------------------------|
+| `SceneExtractionType.shot_based` | Splits on visual shot boundaries    | General purpose, action content       |
+| `SceneExtractionType.time_based` | Splits at fixed intervals           | Uniform sampling, long static content |
+| `SceneExtractionType.transcript` | Splits based on transcript segments | Speech-driven scene boundaries        |
 
 **Parameters for `time_based`:**
 
@@ -103,7 +106,8 @@ Returns segments containing the exact keyword or phrase.
 
 Visual content queries matched against indexed scene descriptions. Requires a prior `index_scenes()` call.
 
-`index_scenes()` returns a `scene_index_id`. Pass it to `video.search()` to target a specific scene index (especially important when a video has multiple scene indexes):
+`index_scenes()` returns a `scene_index_id`. Pass it to `video.search()` to target a specific scene index (especially
+important when a video has multiple scene indexes):
 
 ```python
 from videodb import SearchType, IndexType
@@ -129,10 +133,14 @@ except InvalidRequestError as e:
 
 **Important notes:**
 
-- Use `SearchType.semantic` with `index_type=IndexType.scene` — this is the most reliable combination and works on all plans.
-- `SearchType.scene` exists but may not be available on all plans (e.g. Free tier). Prefer `SearchType.semantic` with `IndexType.scene`.
-- The `scene_index_id` parameter is optional. If omitted, the search runs against all scene indexes on the video. Pass it to target a specific index.
-- You can create multiple scene indexes per video (with different prompts or extraction types) and search them independently using `scene_index_id`.
+- Use `SearchType.semantic` with `index_type=IndexType.scene` — this is the most reliable combination and works on all
+  plans.
+- `SearchType.scene` exists but may not be available on all plans (e.g. Free tier). Prefer `SearchType.semantic` with
+  `IndexType.scene`.
+- The `scene_index_id` parameter is optional. If omitted, the search runs against all scene indexes on the video. Pass
+  it to target a specific index.
+- You can create multiple scene indexes per video (with different prompts or extraction types) and search them
+  independently using `scene_index_id`.
 
 ### Scene Search with Metadata Filtering
 
@@ -150,7 +158,9 @@ results = video.search(
 )
 ```
 
-See the [scene_level_metadata_indexing cookbook](https://github.com/video-db/videodb-cookbook/blob/main/quickstart/scene_level_metadata_indexing.ipynb) for a full example of custom metadata indexing and filtered search.
+See
+the [scene_level_metadata_indexing cookbook](https://github.com/video-db/videodb-cookbook/blob/main/quickstart/scene_level_metadata_indexing.ipynb)
+for a full example of custom metadata indexing and filtered search.
 
 ## Working with Results
 
@@ -206,7 +216,9 @@ for shot in results.get_shots():
     print(f"Video: {shot.video_id} [{shot.start:.1f}s - {shot.end:.1f}s]")
 ```
 
-> **Note:** Collection-level search only supports `SearchType.semantic`. Using `SearchType.keyword` or `SearchType.scene` with `coll.search()` will raise `NotImplementedError`. For keyword or scene search, use `video.search()` on individual videos instead.
+> **Note:** Collection-level search only supports `SearchType.semantic`. Using `SearchType.keyword` or
+`SearchType.scene` with `coll.search()` will raise `NotImplementedError`. For keyword or scene search, use
+`video.search()` on individual videos instead.
 
 ## Search + Compile
 
@@ -225,6 +237,10 @@ print(stream_url)
 - **Combine index types**: Index both spoken words and scenes to enable all search types on the same video.
 - **Refine queries**: Semantic search works best with descriptive, natural language phrases rather than single keywords.
 - **Use keyword search for precision**: When you need exact term matches, keyword search avoids semantic drift.
-- **Handle "No results found"**: `video.search()` raises `InvalidRequestError` when no results match. Always wrap search calls in try/except and treat `"No results found"` as an empty result set.
-- **Filter scene search noise**: Semantic scene search can return low-relevance results for vague queries. Use `score_threshold=0.3` (or higher) to filter noise.
-- **Idempotent indexing**: Use `index_spoken_words(force=True)` to safely re-index. `index_scenes()` has no `force` parameter — wrap it in try/except and extract the existing `scene_index_id` from the error message with `re.search(r"id\s+([a-f0-9]+)", str(e))`.
+- **Handle "No results found"**: `video.search()` raises `InvalidRequestError` when no results match. Always wrap search
+  calls in try/except and treat `"No results found"` as an empty result set.
+- **Filter scene search noise**: Semantic scene search can return low-relevance results for vague queries. Use
+  `score_threshold=0.3` (or higher) to filter noise.
+- **Idempotent indexing**: Use `index_spoken_words(force=True)` to safely re-index. `index_scenes()` has no `force`
+  parameter — wrap it in try/except and extract the existing `scene_index_id` from the error message with
+  `re.search(r"id\s+([a-f0-9]+)", str(e))`.

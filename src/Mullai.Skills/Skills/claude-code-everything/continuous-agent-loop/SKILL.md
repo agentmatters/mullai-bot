@@ -6,7 +6,8 @@ origin: ECC
 
 # Continuous Agent Loop
 
-This is the v1.8+ canonical loop skill name. It supersedes `autonomous-loops` while keeping compatibility for one release.
+This is the v1.8+ canonical loop skill name. It supersedes `autonomous-loops` while keeping compatibility for one
+release.
 
 ## Loop Selection Flow
 
@@ -25,6 +26,7 @@ Start
 ## Combined Pattern
 
 Recommended production stack:
+
 1. RFC decomposition (`ralphinho-rfc-pipeline`)
 2. quality gates (`plankton-code-quality` + `/quality-gate`)
 3. eval loop (`eval-harness`)

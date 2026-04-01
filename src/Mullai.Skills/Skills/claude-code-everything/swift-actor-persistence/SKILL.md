@@ -6,7 +6,8 @@ origin: ECC
 
 # Swift Actors for Thread-Safe Persistence
 
-Patterns for building thread-safe data persistence layers using Swift actors. Combines in-memory caching with file-backed storage, leveraging the actor model to eliminate data races at compile time.
+Patterns for building thread-safe data persistence layers using Swift actors. Combines in-memory caching with
+file-backed storage, leveraging the actor model to eliminate data races at compile time.
 
 ## When to Activate
 
@@ -110,14 +111,14 @@ final class QuestionListViewModel {
 
 ## Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| Actor (not class + lock) | Compiler-enforced thread safety, no manual synchronization |
-| In-memory cache + file persistence | Fast reads from cache, durable writes to disk |
-| Synchronous init loading | Avoids async initialization complexity |
-| Dictionary keyed by ID | O(1) lookups by identifier |
-| Generic over `Codable & Identifiable` | Reusable across any model type |
-| Atomic file writes (`.atomic`) | Prevents partial writes on crash |
+| Decision                              | Rationale                                                  |
+|---------------------------------------|------------------------------------------------------------|
+| Actor (not class + lock)              | Compiler-enforced thread safety, no manual synchronization |
+| In-memory cache + file persistence    | Fast reads from cache, durable writes to disk              |
+| Synchronous init loading              | Avoids async initialization complexity                     |
+| Dictionary keyed by ID                | O(1) lookups by identifier                                 |
+| Generic over `Codable & Identifiable` | Reusable across any model type                             |
+| Atomic file writes (`.atomic`)        | Prevents partial writes on crash                           |
 
 ## Best Practices
 

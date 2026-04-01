@@ -1,33 +1,24 @@
 using Mullai.Tools.FileSystemTool;
-using Xunit;
-
-using System.Threading.Tasks;
-using System.IO;
-using System;
-using System.Linq;
 
 namespace Mullai.Tools.Tests.FileSystemTool;
 
 public class FileSystemToolTests : IDisposable
 {
-    private readonly Mullai.Tools.FileSystemTool.FileSystemTool _tool;
     private readonly string _testDirectory;
+    private readonly Tools.FileSystemTool.FileSystemTool _tool;
 
     public FileSystemToolTests()
     {
         var provider = new FileSystemProvider();
-        _tool = new Mullai.Tools.FileSystemTool.FileSystemTool(provider);
-        
-        _testDirectory = Path.Combine(Path.GetTempPath(), "MullaiFileSystemToolTests_" + Guid.NewGuid().ToString());
+        _tool = new Tools.FileSystemTool.FileSystemTool(provider);
+
+        _testDirectory = Path.Combine(Path.GetTempPath(), "MullaiFileSystemToolTests_" + Guid.NewGuid());
         Directory.CreateDirectory(_testDirectory);
     }
 
     public void Dispose()
     {
-        if (Directory.Exists(_testDirectory))
-        {
-            Directory.Delete(_testDirectory, true);
-        }
+        if (Directory.Exists(_testDirectory)) Directory.Delete(_testDirectory, true);
     }
 
     [Fact]
@@ -68,7 +59,7 @@ public class FileSystemToolTests : IDisposable
         // Assert
         Assert.NotNull(tools);
         Assert.Equal(7, tools.Count);
-        
+
         var toolNames = tools.Select(t => t.Name).ToList();
         Assert.Contains("ReadFileSystemFile", toolNames);
         Assert.Contains("WriteFileSystemFile", toolNames);

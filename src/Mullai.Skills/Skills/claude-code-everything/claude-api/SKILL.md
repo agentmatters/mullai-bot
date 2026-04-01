@@ -18,13 +18,14 @@ Build applications with the Anthropic Claude API and SDKs.
 
 ## Model Selection
 
-| Model | ID | Best For |
-|-------|-----|----------|
-| Opus 4.1 | `claude-opus-4-1` | Complex reasoning, architecture, research |
-| Sonnet 4 | `claude-sonnet-4-0` | Balanced coding, most development tasks |
+| Model     | ID                        | Best For                                    |
+|-----------|---------------------------|---------------------------------------------|
+| Opus 4.1  | `claude-opus-4-1`         | Complex reasoning, architecture, research   |
+| Sonnet 4  | `claude-sonnet-4-0`       | Balanced coding, most development tasks     |
 | Haiku 3.5 | `claude-3-5-haiku-latest` | Fast responses, high-volume, cost-sensitive |
 
-Default to Sonnet 4 unless the task requires deep reasoning (Opus) or speed/cost optimization (Haiku). For production, prefer pinned snapshot IDs over aliases.
+Default to Sonnet 4 unless the task requires deep reasoning (Opus) or speed/cost optimization (Haiku). For production,
+prefer pinned snapshot IDs over aliases.
 
 ## Python SDK
 
@@ -297,13 +298,13 @@ while True:
 
 ## Cost Optimization
 
-| Strategy | Savings | When to Use |
-|----------|---------|-------------|
-| Prompt caching | Up to 90% on cached tokens | Repeated system prompts or context |
-| Batches API | 50% | Non-time-sensitive bulk processing |
-| Haiku instead of Sonnet | ~75% | Simple tasks, classification, extraction |
-| Shorter max_tokens | Variable | When you know output will be short |
-| Streaming | None (same cost) | Better UX, same price |
+| Strategy                | Savings                    | When to Use                              |
+|-------------------------|----------------------------|------------------------------------------|
+| Prompt caching          | Up to 90% on cached tokens | Repeated system prompts or context       |
+| Batches API             | 50%                        | Non-time-sensitive bulk processing       |
+| Haiku instead of Sonnet | ~75%                       | Simple tasks, classification, extraction |
+| Shorter max_tokens      | Variable                   | When you know output will be short       |
+| Streaming               | None (same cost)           | Better UX, same price                    |
 
 ## Error Handling
 

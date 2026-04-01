@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Mullai.Tools.WeatherTool.Models;
 
 /// <summary>
-/// Represents the response from the Open-Meteo weather forecast API.
+///     Represents the response from the Open-Meteo weather forecast API.
 /// </summary>
 public class WeatherForecastResponse
 {
@@ -24,8 +24,7 @@ public class WeatherForecastResponse
 
     public double Elevation { get; set; }
 
-    [JsonPropertyName("hourly_units")]
-    public HourlyUnits HourlyUnits { get; set; } = new();
+    [JsonPropertyName("hourly_units")] public HourlyUnits HourlyUnits { get; set; } = new();
 
     public HourlyData Hourly { get; set; } = new();
 }

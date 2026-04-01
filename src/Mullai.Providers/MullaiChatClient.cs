@@ -1,20 +1,19 @@
-using System.Diagnostics;
-using System.Text;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Mullai.OpenTelemetry.OpenTelemetry;
-using Mullai.Abstractions.Configuration;
 using Mullai.Abstractions;
-using Mullai.Providers.Common.Models;
-using System.Text.Json;
+using Mullai.Abstractions.Configuration;
+using Mullai.OpenTelemetry.OpenTelemetry;
 
 namespace Mullai.Providers;
 
 /// <summary>
-/// An IChatClient implementation that wraps multiple ordered provider-model clients,
-/// automatically falls back to the next on failure, and instruments every
-/// invocation with OpenTelemetry traces and structured log events.
+///     An IChatClient implementation that wraps multiple ordered provider-model clients,
+///     automatically falls back to the next on failure, and instruments every
+///     invocation with OpenTelemetry traces and structured log events.
 /// </summary>
 public class MullaiChatClient : IMullaiChatClient
 {
@@ -22,19 +21,19 @@ public class MullaiChatClient : IMullaiChatClient
     internal static readonly ActivitySource ActivitySource =
         new(OpenTelemetrySettings.ServiceName, "1.0.0");
 
-    private IReadOnlyList<(string Label, IChatClient Client)> _clients;
-    private readonly ILogger<MullaiChatClient> _logger;
-    private readonly ChatClientMetadata _metadata;
     private readonly IMullaiConfigurationManager _configManager;
-    private readonly Microsoft.Extensions.Configuration.IConfiguration _configuration;
+    private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
+    private readonly ILogger<MullaiChatClient> _logger;
     private readonly ConcurrentDictionary<string, IChatClient> _onDemandClients = new();
+
+    private IReadOnlyList<(string Label, IChatClient Client)> _clients;
 
     public MullaiChatClient(
         IReadOnlyList<(string Label, IChatClient Client)> clients,
         ILogger<MullaiChatClient> logger,
         IMullaiConfigurationManager configManager,
-        Microsoft.Extensions.Configuration.IConfiguration configuration,
+        IConfiguration configuration,
         HttpClient httpClient)
     {
         _clients = clients ?? Array.Empty<(string, IChatClient)>();
@@ -42,32 +41,12 @@ public class MullaiChatClient : IMullaiChatClient
         _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _metadata = new ChatClientMetadata("MullaiChatClient");
+        Metadata = new ChatClientMetadata("MullaiChatClient");
 
         _configManager.OnConfigurationChanged += RefreshClients;
     }
 
-    private void RefreshClients()
-    {
-        _logger.LogInformation("Configuration changed. Refreshing MullaiChatClient providers.");
-        try
-        {
-            var config = _configManager.GetProvidersConfig();
-            var customProviders = _configManager.GetCustomProviders();
-            var newClients = MullaiChatClientFactory.BuildOrderedClients(
-                config,
-                customProviders,
-                _configuration,
-                _configManager,
-                _httpClient);
-
-            UpdateClients(newClients);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to refresh MullaiChatClient providers after configuration change.");
-        }
-    }
+    public ChatClientMetadata Metadata { get; }
 
     public void UpdateClients(IReadOnlyList<(string Label, IChatClient Client)> newClients)
     {
@@ -76,9 +55,7 @@ public class MullaiChatClient : IMullaiChatClient
 
         // Dispose old clients to avoid memory leaks if they were replaced
         if (oldClients != null)
-        {
             foreach (var (_, client) in oldClients)
-            {
                 try
                 {
                     client.Dispose();
@@ -87,11 +64,8 @@ public class MullaiChatClient : IMullaiChatClient
                 {
                     /* ignore */
                 }
-            }
-        }
     }
 
-    public ChatClientMetadata Metadata => _metadata;
     public string ActiveLabel
     {
         get
@@ -102,10 +76,9 @@ public class MullaiChatClient : IMullaiChatClient
                 var provider = context.Provider;
                 var model = context.Model;
                 if (!string.IsNullOrEmpty(provider) && !string.IsNullOrEmpty(model))
-                {
                     return $"{provider}/{model} (Override)";
-                }
             }
+
             return _clients.Count > 0 ? _clients[0].Label : "No Providers Configured";
         }
     }
@@ -125,10 +98,8 @@ public class MullaiChatClient : IMullaiChatClient
         parentActivity?.SetTag("mullai.client.provider_count", _clients.Count);
 
         if (_clients.Count == 0)
-        {
             throw new InvalidOperationException(
                 "No AI providers are configured. Please use the /config command to set up at least one provider and API key.");
-        }
 
         _logger.LogInformation(
             "MullaiChatClient starting GetResponseAsync with {ProviderCount} provider(s). Instructions: {HasInstructions}, Tools: {ToolCount}, Messages: {MessageCount}",
@@ -139,12 +110,11 @@ public class MullaiChatClient : IMullaiChatClient
 
         var (overrideLabel, overrideClient) = await GetEffectiveClientAsync(options, cancellationToken);
         if (overrideClient != null)
-        {
-            return await ExecuteWithClientAsync(overrideLabel, overrideClient, messageList, options, parentActivity, 1, 1, cancellationToken);
-        }
+            return await ExecuteWithClientAsync(overrideLabel, overrideClient, messageList, options, parentActivity, 1,
+                1, cancellationToken);
 
         Exception? lastException = null;
-        int attemptIndex = 0;
+        var attemptIndex = 0;
 
         foreach (var (label, client) in _clients)
         {
@@ -152,7 +122,7 @@ public class MullaiChatClient : IMullaiChatClient
             var (providerName, modelId) = ParseLabel(label);
 
             using var attemptActivity = ActivitySource.StartActivity(
-                $"MullaiChatClient.Attempt",
+                "MullaiChatClient.Attempt",
                 ActivityKind.Client);
 
             attemptActivity?.SetTag("mullai.provider", providerName);
@@ -165,7 +135,8 @@ public class MullaiChatClient : IMullaiChatClient
 
             try
             {
-                return await ExecuteWithClientAsync(label, client, messageList, options, parentActivity, attemptIndex, _clients.Count, cancellationToken);
+                return await ExecuteWithClientAsync(label, client, messageList, options, parentActivity, attemptIndex,
+                    _clients.Count, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -195,8 +166,7 @@ public class MullaiChatClient : IMullaiChatClient
     public async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages,
         ChatOptions? options = null,
-        [System.Runtime.CompilerServices.EnumeratorCancellation]
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var messageList = messages as IList<ChatMessage> ?? messages.ToList();
 
@@ -232,27 +202,62 @@ public class MullaiChatClient : IMullaiChatClient
 
         var sw = Stopwatch.StartNew();
         var chunkCount = 0;
-        
+
         await foreach (var update in StreamFromClient(
                            client,
                            messageList,
                            options,
-                           onFirstToken: () =>
+                           () =>
                            {
                                parentActivity?.SetTag("mullai.winning_provider", providerName);
                                parentActivity?.SetTag("mullai.winning_model", modelId);
                                parentActivity?.SetTag("mullai.winning_attempt", attemptIndex);
                            },
-                           onToken: () => chunkCount++,
+                           () => chunkCount++,
                            cancellationToken))
-        {
             yield return update;
-        }
 
         sw.Stop();
 
         parentActivity?.SetTag("mullai.chunk_count", chunkCount);
         parentActivity?.SetTag("mullai.duration_ms", sw.ElapsedMilliseconds);
+    }
+
+    public object? GetService(Type serviceType, object? key = null)
+    {
+        if (_clients.Count > 0)
+            return _clients[0].Client.GetService(serviceType, key);
+        return null;
+    }
+
+    public void Dispose()
+    {
+        foreach (var (_, client) in _clients)
+            client.Dispose();
+
+        ActivitySource.Dispose();
+    }
+
+    private void RefreshClients()
+    {
+        _logger.LogInformation("Configuration changed. Refreshing MullaiChatClient providers.");
+        try
+        {
+            var config = _configManager.GetProvidersConfig();
+            var customProviders = _configManager.GetCustomProviders();
+            var newClients = MullaiChatClientFactory.BuildOrderedClients(
+                config,
+                customProviders,
+                _configuration,
+                _configManager,
+                _httpClient);
+
+            UpdateClients(newClients);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to refresh MullaiChatClient providers after configuration change.");
+        }
     }
 
     private async IAsyncEnumerable<ChatResponseUpdate> StreamFromClient(
@@ -261,10 +266,9 @@ public class MullaiChatClient : IMullaiChatClient
         ChatOptions? options,
         Action onFirstToken,
         Action onToken,
-        [System.Runtime.CompilerServices.EnumeratorCancellation]
-        CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        bool first = true;
+        var first = true;
 
         await foreach (var update in client.GetStreamingResponseAsync(messages, options, cancellationToken))
         {
@@ -287,7 +291,7 @@ public class MullaiChatClient : IMullaiChatClient
             CancellationToken cancellationToken)
     {
         Exception? lastException = null;
-        int attemptIndex = 0;
+        var attemptIndex = 0;
 
         foreach (var (label, client) in _clients)
         {
@@ -300,10 +304,7 @@ public class MullaiChatClient : IMullaiChatClient
                     .GetStreamingResponseAsync(messages, options, cancellationToken)
                     .GetAsyncEnumerator(cancellationToken);
 
-                if (await enumerator.MoveNextAsync())
-                {
-                    return (client, providerName, modelId, attemptIndex);
-                }
+                if (await enumerator.MoveNextAsync()) return (client, providerName, modelId, attemptIndex);
             }
             catch (Exception ex)
             {
@@ -314,21 +315,6 @@ public class MullaiChatClient : IMullaiChatClient
         throw new InvalidOperationException(
             $"All providers failed before streaming started. Last error: {lastException?.Message}",
             lastException);
-    }
-
-    public object? GetService(Type serviceType, object? key = null)
-    {
-        if (_clients.Count > 0)
-            return _clients[0].Client.GetService(serviceType, key);
-        return null;
-    }
-
-    public void Dispose()
-    {
-        foreach (var (_, client) in _clients)
-            client.Dispose();
-
-        ActivitySource.Dispose();
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────
@@ -346,7 +332,7 @@ public class MullaiChatClient : IMullaiChatClient
         var (providerName, modelId) = ParseLabel(label);
 
         using var attemptActivity = ActivitySource.StartActivity(
-            $"MullaiChatClient.Attempt",
+            "MullaiChatClient.Attempt",
             ActivityKind.Client);
 
         attemptActivity?.SetTag("mullai.provider", providerName);
@@ -397,23 +383,21 @@ public class MullaiChatClient : IMullaiChatClient
         }
     }
 
-    private async Task<(string Label, IChatClient? Client)> GetEffectiveClientAsync(ChatOptions? options, CancellationToken cancellationToken)
+    private async Task<(string Label, IChatClient? Client)> GetEffectiveClientAsync(ChatOptions? options,
+        CancellationToken cancellationToken)
     {
         var context = MullaiRequestContext.Current;
         var providerOverride = context?.Provider;
         var modelOverride = context?.Model ?? options?.ModelId;
 
         // If no model override, we might still have a provider override, but usually both are needed for a specific pick.
-        if (string.IsNullOrEmpty(modelOverride))
-        {
-            return (string.Empty, null);
-        }
+        if (string.IsNullOrEmpty(modelOverride)) return (string.Empty, null);
 
         // Try to find in priority list first if provider is specified or if we can find a unique match for modelId
         foreach (var (label, client) in _clients)
         {
             var (p, m) = ParseLabel(label);
-            if (string.Equals(m, modelOverride, StringComparison.OrdinalIgnoreCase) && 
+            if (string.Equals(m, modelOverride, StringComparison.OrdinalIgnoreCase) &&
                 (providerOverride == null || string.Equals(p, providerOverride, StringComparison.OrdinalIgnoreCase)))
             {
                 _logger.LogInformation("MullaiChatClient using client override from standard list: {Label}", label);
@@ -425,19 +409,19 @@ public class MullaiChatClient : IMullaiChatClient
         if (!string.IsNullOrEmpty(providerOverride))
         {
             var label = $"{providerOverride}/{modelOverride}";
-            
-            _logger.LogInformation("MullaiChatClient using on-demand client override: {Label}", label);
-            
-            var client = _onDemandClients.GetOrAdd(label, l => 
-                MullaiChatClientFactory.TryCreateClient(providerOverride, modelOverride!, _configuration, _configManager, _httpClient)!);
 
-            if (client != null)
-            {
-                return (label, client);
-            }
+            _logger.LogInformation("MullaiChatClient using on-demand client override: {Label}", label);
+
+            var client = _onDemandClients.GetOrAdd(label, l =>
+                MullaiChatClientFactory.TryCreateClient(providerOverride, modelOverride!, _configuration,
+                    _configManager, _httpClient)!);
+
+            if (client != null) return (label, client);
         }
-        
-        _logger.LogDebug("MullaiChatClient: No effective client override found for Provider={Provider}, Model={Model}. Using default chain.", providerOverride, modelOverride);
+
+        _logger.LogDebug(
+            "MullaiChatClient: No effective client override found for Provider={Provider}, Model={Model}. Using default chain.",
+            providerOverride, modelOverride);
 
         return (string.Empty, null);
     }

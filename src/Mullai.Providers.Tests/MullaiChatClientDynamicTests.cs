@@ -1,11 +1,9 @@
-using System.Net;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Mullai.Abstractions;
 using Mullai.Abstractions.Configuration;
-using Xunit;
 
 namespace Mullai.Providers.Tests;
 
@@ -13,8 +11,8 @@ public class MullaiChatClientDynamicTests
 {
     private readonly Mock<IMullaiConfigurationManager> _configManagerMock = new();
     private readonly Mock<IConfiguration> _configMock = new();
-    private readonly Mock<ILogger<MullaiChatClient>> _loggerMock = new();
     private readonly HttpClient _httpClient = new();
+    private readonly Mock<ILogger<MullaiChatClient>> _loggerMock = new();
 
     [Fact]
     public async Task GetResponseAsync_WithRequestContext_UsesOverride()
@@ -38,11 +36,13 @@ public class MullaiChatClientDynamicTests
         // Define the behavior for the override client (which is already in the list for this test)
         // Wait, if it's in the list, it should just pick it.
         mockDefaultClient
-            .Setup(c => c.GetResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ChatResponse(new ChatMessage(ChatRole.Assistant, "Default Response")));
 
         mockOverrideClient
-            .Setup(c => c.GetResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ChatResponse(new ChatMessage(ChatRole.Assistant, "Override Response")));
 
         // Add the override client to the list
@@ -87,7 +87,8 @@ public class MullaiChatClientDynamicTests
             _httpClient);
 
         mockClientB
-            .Setup(c => c.GetResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions>(), It.IsAny<CancellationToken>()))
+            .Setup(c => c.GetResponseAsync(It.IsAny<IEnumerable<ChatMessage>>(), It.IsAny<ChatOptions>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ChatResponse(new ChatMessage(ChatRole.Assistant, "ModelB Response")));
 
         // Act

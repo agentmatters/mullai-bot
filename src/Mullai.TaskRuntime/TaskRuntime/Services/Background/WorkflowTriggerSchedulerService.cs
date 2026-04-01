@@ -1,22 +1,21 @@
 using Cronos;
-using Microsoft.Extensions.Options;
+using Mullai.Abstractions.WorkflowState;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
 using Mullai.Workflows.Abstractions;
 using Mullai.Workflows.Models;
-using Mullai.Abstractions.WorkflowState;
 
 namespace Mullai.TaskRuntime.Services.Background;
 
 public sealed class WorkflowTriggerSchedulerService : BackgroundService
 {
-    private readonly IWorkflowRegistry _registry;
+    private readonly ILogger<WorkflowTriggerSchedulerService> _logger;
     private readonly IMullaiTaskQueue _queue;
-    private readonly IMullaiTaskStatusStore _statusStore;
+    private readonly IWorkflowRegistry _registry;
     private readonly MullaiTaskRuntimeOptions _runtimeOptions;
     private readonly IWorkflowStateStore _stateStore;
-    private readonly ILogger<WorkflowTriggerSchedulerService> _logger;
+    private readonly IMullaiTaskStatusStore _statusStore;
 
     public WorkflowTriggerSchedulerService(
         IWorkflowRegistry registry,
@@ -50,10 +49,7 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
                 var activeKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
                 foreach (var workflow in workflows)
                 {
-                    if (!workflow.IsEnabled)
-                    {
-                        continue;
-                    }
+                    if (!workflow.IsEnabled) continue;
 
                     foreach (var trigger in workflow.Triggers.Where(t => t.Enabled))
                     {
@@ -63,36 +59,28 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
                         if (!schedules.TryGetValue(key, out var schedule))
                         {
                             schedule = CreateSchedule(workflow, trigger, timeZone);
-                            if (schedule is null)
-                            {
-                                continue;
-                            }
+                            if (schedule is null) continue;
 
                             schedules[key] = schedule;
                         }
 
                         if (schedule.NextRunUtc is not null && schedule.NextRunUtc <= now)
                         {
-                            if (!await IsStopConditionMetAsync(workflow.Id, trigger, stoppingToken).ConfigureAwait(false))
-                            {
+                            if (!await IsStopConditionMetAsync(workflow.Id, trigger, stoppingToken)
+                                    .ConfigureAwait(false))
                                 await EnqueueWorkflowAsync(workflow, trigger, stoppingToken).ConfigureAwait(false);
-                            }
                             else
-                            {
                                 _logger.LogInformation(
                                     "Skipping trigger {TriggerId} for workflow {WorkflowId} due to stop condition.",
                                     trigger.Id,
                                     workflow.Id);
-                            }
                             schedule.NextRunUtc = ComputeNextRun(schedule, now, timeZone);
                         }
                     }
                 }
 
                 foreach (var stale in schedules.Keys.Where(k => !activeKeys.Contains(k)).ToList())
-                {
                     schedules.Remove(stale);
-                }
             }
             catch (Exception ex)
             {
@@ -110,7 +98,8 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
         }
     }
 
-    private TriggerSchedule? CreateSchedule(WorkflowDefinition workflow, WorkflowTriggerDefinition trigger, TimeZoneInfo timeZone)
+    private TriggerSchedule? CreateSchedule(WorkflowDefinition workflow, WorkflowTriggerDefinition trigger,
+        TimeZoneInfo timeZone)
     {
         if (trigger.Type.Equals("cron", StringComparison.OrdinalIgnoreCase))
         {
@@ -136,7 +125,8 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Invalid cron expression '{Cron}' for workflow {WorkflowId}.", trigger.Cron, workflow.Id);
+                _logger.LogWarning(ex, "Invalid cron expression '{Cron}' for workflow {WorkflowId}.", trigger.Cron,
+                    workflow.Id);
                 return null;
             }
         }
@@ -145,7 +135,8 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
         {
             if (trigger.IntervalSeconds is null || trigger.IntervalSeconds <= 0)
             {
-                _logger.LogWarning("Interval trigger on workflow {WorkflowId} is missing intervalSeconds.", workflow.Id);
+                _logger.LogWarning("Interval trigger on workflow {WorkflowId} is missing intervalSeconds.",
+                    workflow.Id);
                 return null;
             }
 
@@ -154,7 +145,8 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
                 trigger.Id,
                 workflow.Id,
                 trigger.IntervalSeconds);
-            return new TriggerSchedule(trigger.Type, null, trigger.IntervalSeconds, DateTimeOffset.Now.AddSeconds(trigger.IntervalSeconds.Value));
+            return new TriggerSchedule(trigger.Type, null, trigger.IntervalSeconds,
+                DateTimeOffset.Now.AddSeconds(trigger.IntervalSeconds.Value));
         }
 
         _logger.LogInformation(
@@ -167,14 +159,10 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
     private static DateTimeOffset? ComputeNextRun(TriggerSchedule schedule, DateTimeOffset now, TimeZoneInfo timeZone)
     {
         if (schedule.Type.Equals("cron", StringComparison.OrdinalIgnoreCase) && schedule.CronExpression is not null)
-        {
             return schedule.CronExpression.GetNextOccurrence(now, timeZone);
-        }
 
-        if (schedule.Type.Equals("interval", StringComparison.OrdinalIgnoreCase) && schedule.IntervalSeconds is not null)
-        {
-            return now.AddSeconds(schedule.IntervalSeconds.Value);
-        }
+        if (schedule.Type.Equals("interval", StringComparison.OrdinalIgnoreCase) &&
+            schedule.IntervalSeconds is not null) return now.AddSeconds(schedule.IntervalSeconds.Value);
 
         return null;
     }
@@ -226,21 +214,13 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
         WorkflowTriggerDefinition trigger,
         CancellationToken cancellationToken)
     {
-        if (!trigger.Properties.TryGetValue("stopKey", out var key) || string.IsNullOrWhiteSpace(key))
-        {
-            return false;
-        }
+        if (!trigger.Properties.TryGetValue("stopKey", out var key) || string.IsNullOrWhiteSpace(key)) return false;
 
         var record = await _stateStore.GetAsync(workflowId, key, cancellationToken).ConfigureAwait(false);
-        if (record is null)
-        {
-            return false;
-        }
+        if (record is null) return false;
 
         if (!trigger.Properties.TryGetValue("stopValue", out var stopValue) || string.IsNullOrWhiteSpace(stopValue))
-        {
             return IsTruthy(record.JsonValue);
-        }
 
         return NormalizeJsonValue(record.JsonValue)
             .Equals(stopValue.Trim(), StringComparison.OrdinalIgnoreCase);
@@ -257,16 +237,15 @@ public sealed class WorkflowTriggerSchedulerService : BackgroundService
     {
         var trimmed = json.Trim();
         if (trimmed.StartsWith("\"", StringComparison.Ordinal) && trimmed.EndsWith("\"", StringComparison.Ordinal))
-        {
             return trimmed[1..^1];
-        }
 
         return trimmed;
     }
 
     private sealed class TriggerSchedule
     {
-        public TriggerSchedule(string type, CronExpression? cronExpression, int? intervalSeconds, DateTimeOffset? nextRunUtc)
+        public TriggerSchedule(string type, CronExpression? cronExpression, int? intervalSeconds,
+            DateTimeOffset? nextRunUtc)
         {
             Type = type;
             CronExpression = cronExpression;

@@ -235,6 +235,7 @@ public <T> T withRetry(Supplier<T> supplier, int maxRetries) {
 
 **Security Note**: The `X-Forwarded-For` header is untrusted by default because clients can spoof it.
 Only use forwarded headers when:
+
 1. Your app is behind a trusted reverse proxy (nginx, AWS ALB, etc.)
 2. You have registered `ForwardedHeaderFilter` as a bean
 3. You have configured `server.forward-headers-strategy=NATIVE` or `FRAMEWORK` in application properties
@@ -295,7 +296,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
 ## Background Jobs
 
-Use Spring’s `@Scheduled` or integrate with queues (e.g., Kafka, SQS, RabbitMQ). Keep handlers idempotent and observable.
+Use Spring’s `@Scheduled` or integrate with queues (e.g., Kafka, SQS, RabbitMQ). Keep handlers idempotent and
+observable.
 
 ## Observability
 
@@ -311,4 +313,5 @@ Use Spring’s `@Scheduled` or integrate with queues (e.g., Kafka, SQS, RabbitMQ
 - Use `@Transactional(readOnly = true)` for queries
 - Enforce null-safety via `@NonNull` and `Optional` where appropriate
 
-**Remember**: Keep controllers thin, services focused, repositories simple, and errors handled centrally. Optimize for maintainability and testability.
+**Remember**: Keep controllers thin, services focused, repositories simple, and errors handled centrally. Optimize for
+maintainability and testability.

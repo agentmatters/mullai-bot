@@ -21,8 +21,8 @@ public class WebProvider(HttpClient httpClient)
                     name = "web_search_exa",
                     arguments = new
                     {
-                        query = query,
-                        numResults = numResults,
+                        query,
+                        numResults,
                         type = "auto"
                     }
                 }
@@ -47,7 +47,6 @@ public class WebProvider(HttpClient httpClient)
             var responseText = await response.Content.ReadAsStringAsync();
             var lines = responseText.Split('\n');
             foreach (var line in lines)
-            {
                 if (line.StartsWith("data: "))
                 {
                     var data = line.Substring(6);
@@ -56,11 +55,8 @@ public class WebProvider(HttpClient httpClient)
                         result.TryGetProperty("content", out var content) &&
                         content.ValueKind == JsonValueKind.Array &&
                         content.GetArrayLength() > 0)
-                    {
                         return content[0].GetProperty("text").GetString() ?? "No content found.";
-                    }
                 }
-            }
 
             return "No search results found.";
         }
@@ -75,23 +71,16 @@ public class WebProvider(HttpClient httpClient)
         try
         {
             if (!url.StartsWith("http://") && !url.StartsWith("https://"))
-            {
                 return "Error: URL must start with http:// or https://";
-            }
 
             var response = await httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode)
-            {
-                return $"Error: Failed to fetch URL. Status: {response.StatusCode}";
-            }
+            if (!response.IsSuccessStatusCode) return $"Error: Failed to fetch URL. Status: {response.StatusCode}";
 
             var content = await response.Content.ReadAsStringAsync();
             // Basic text extraction if it's HTML (very naive)
             if (response.Content.Headers.ContentType?.MediaType == "text/html")
-            {
                 // In a real scenario, we'd use a library. For now, we return the raw HTML or a simplified version.
                 return content.Length > 10000 ? content.Substring(0, 10000) + "\n... (truncated)" : content;
-            }
 
             return content;
         }

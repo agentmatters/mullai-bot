@@ -5,7 +5,8 @@
 > - `docs/architecture/runtime/API.md`
 > - `docs/architecture/runtime/OPERATIONS.md`
 
-This task runtime is designed so `Mullai.Web` (and other hosts) can process many concurrent `MullaiAgent` workloads from:
+This task runtime is designed so `Mullai.Web` (and other hosts) can process many concurrent `MullaiAgent` workloads
+from:
 
 - client/API submissions
 - recurring schedules (cron-like jobs)

@@ -8,8 +8,8 @@ namespace Mullai.CLI.Clients;
 
 public class CliMullaiClient : BaseMullaiClient
 {
-    private readonly IConfiguration _configuration;
     private readonly IMullaiConfigurationManager _configManager;
+    private readonly IConfiguration _configuration;
     private readonly HttpClient _httpClient;
 
     public CliMullaiClient(
@@ -27,10 +27,7 @@ public class CliMullaiClient : BaseMullaiClient
     {
         RefreshAgentClients(agent =>
         {
-            if (agent.ChatClient is not MullaiChatClient mullaiClient)
-            {
-                return;
-            }
+            if (agent.ChatClient is not MullaiChatClient mullaiClient) return;
 
             var config = _configManager.GetProvidersConfig();
             var customProviders = _configManager.GetCustomProviders();

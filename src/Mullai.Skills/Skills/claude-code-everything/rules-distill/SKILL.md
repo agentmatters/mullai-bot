@@ -6,9 +6,11 @@ origin: ECC
 
 # Rules Distill
 
-Scan installed skills, extract cross-cutting principles that appear in multiple skills, and distill them into rules — appending to existing rule files, revising outdated content, or creating new rule files.
+Scan installed skills, extract cross-cutting principles that appear in multiple skills, and distill them into rules —
+appending to existing rule files, revising outdated content, or creating new rule files.
 
-Applies the "deterministic collection + LLM judgment" principle: scripts collect facts exhaustively, then an LLM cross-reads the full context and produces verdicts.
+Applies the "deterministic collection + LLM judgment" principle: scripts collect facts exhaustively, then an LLM
+cross-reads the full context and produces verdicts.
 
 ## When to Use
 
@@ -47,17 +49,21 @@ Proceeding to cross-read analysis...
 
 ### Phase 2: Cross-read, Match & Verdict (LLM Judgment)
 
-Extraction and matching are unified in a single pass. Rules files are small enough (~800 lines total) that the full text can be provided to the LLM — no grep pre-filtering needed.
+Extraction and matching are unified in a single pass. Rules files are small enough (~800 lines total) that the full text
+can be provided to the LLM — no grep pre-filtering needed.
 
 #### Batching
 
-Group skills into **thematic clusters** based on their descriptions. Analyze each cluster in a subagent with the full rules text.
+Group skills into **thematic clusters** based on their descriptions. Analyze each cluster in a subagent with the full
+rules text.
 
 #### Cross-batch Merge
 
 After all batches complete, merge candidates across batches:
+
 - Deduplicate candidates with the same or overlapping principles
-- Re-check the "2+ skills" requirement using evidence from **all** batches combined — a principle found in 1 skill per batch but 2+ skills total is valid
+- Re-check the "2+ skills" requirement using evidence from **all** batches combined — a principle found in 1 skill per
+  batch but 2+ skills total is valid
 
 #### Subagent Prompt
 
@@ -118,14 +124,14 @@ For each candidate, compare against the full rules text and assign a verdict:
 
 #### Verdict Reference
 
-| Verdict | Meaning | Presented to User |
-|---------|---------|-------------------|
-| **Append** | Add to existing section | Target + draft |
-| **Revise** | Fix inaccurate/insufficient content | Target + reason + before/after |
-| **New Section** | Add new section to existing file | Target + draft |
-| **New File** | Create new rule file | Filename + full draft |
-| **Already Covered** | Covered in rules (possibly different wording) | Reason (1 line) |
-| **Too Specific** | Should stay in skills | Link to relevant skill |
+| Verdict             | Meaning                                       | Presented to User              |
+|---------------------|-----------------------------------------------|--------------------------------|
+| **Append**          | Add to existing section                       | Target + draft                 |
+| **Revise**          | Fix inaccurate/insufficient content           | Target + reason + before/after |
+| **New Section**     | Add new section to existing file              | Target + draft                 |
+| **New File**        | Create new rule file                          | Filename + full draft          |
+| **Already Covered** | Covered in rules (possibly different wording) | Reason (1 line)                |
+| **Too Specific**    | Should stay in skills                         | Link to relevant skill         |
 
 #### Verdict Quality Requirements
 
@@ -165,6 +171,7 @@ Skills scanned: {N} | Rules: {M} files | Candidates: {K}
 #### User Actions
 
 User responds with numbers to:
+
 - **Approve**: Apply draft to rules as-is
 - **Modify**: Edit draft before applying
 - **Skip**: Do not apply this candidate
@@ -260,5 +267,7 @@ Results saved to results.json
 
 - **What, not How**: Extract principles (rules territory) only. Code examples and commands stay in skills.
 - **Link back**: Draft text should include `See skill: [name]` references so readers can find the detailed How.
-- **Deterministic collection, LLM judgment**: Scripts guarantee exhaustiveness; the LLM guarantees contextual understanding.
-- **Anti-abstraction safeguard**: The 3-layer filter (2+ skills evidence, actionable behavior test, violation risk) prevents overly abstract principles from entering rules.
+- **Deterministic collection, LLM judgment**: Scripts guarantee exhaustiveness; the LLM guarantees contextual
+  understanding.
+- **Anti-abstraction safeguard**: The 3-layer filter (2+ skills evidence, actionable behavior test, violation risk)
+  prevents overly abstract principles from entering rules.

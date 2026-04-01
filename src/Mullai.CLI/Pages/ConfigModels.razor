@@ -1,34 +1,28 @@
 @page "/config/models"
-@namespace Mullai.CLI.Pages
-
-@using System
-@using System.Collections.Generic
-@using System.Linq
-@using Microsoft.AspNetCore.Components
-@using RazorConsole.Components
-@using Spectre.Console
-@using Mullai.CLI.Controllers
 @using Mullai.Abstractions.Models
+@using Mullai.CLI.Controllers
+@using Spinner = Spectre.Console.Spinner
+@namespace Mullai.CLI.Pages
 
 @inject ConfigController Config
 @inject NavigationManager Nav
 
-<Figlet Content="Models" Color="@Color.Yellow" />
+<Figlet Content="Models" Color="@Color.Yellow"/>
 
 <Padder Padding="@(new Padding(1, 0, 0, 0))">
     <Rows>
         @if (_providers == null)
         {
-            <Markup Content="Loading providers..." Foreground="@Color.Grey" />
+            <Markup Content="Loading providers..." Foreground="@Color.Grey"/>
         }
         else if (_providers.Count == 0)
         {
-            <Markup Content="No providers available. Configure API keys first." Foreground="@Color.Yellow" />
+            <Markup Content="No providers available. Configure API keys first." Foreground="@Color.Yellow"/>
         }
         else
         {
-            <Markup Content="Select a provider to manage:" Foreground="@Color.White" />
-            <Newline />
+            <Markup Content="Select a provider to manage:" Foreground="@Color.White"/>
+            <Newline/>
 
             @foreach (var provider in _providers)
             {
@@ -40,22 +34,23 @@
                     <TextButton Content="@($" {statusIcon} {provider.Name} ({provider.Models.Count} models) ")"
                                 OnClick="@(() => ToggleProvider(provider.Name, isEnabled))"
                                 BackgroundColor="@Color.Grey15"
-                                FocusedColor="@statusColor" />
+                                FocusedColor="@statusColor"/>
                     <TextButton Content="  📋 Models  "
                                 OnClick="@(() => SelectProvider(provider.Name))"
                                 BackgroundColor="@Color.Grey15"
-                                FocusedColor="@Color.Blue" />
+                                FocusedColor="@Color.Blue"/>
                     <TextButton Content="  🔄 Refresh  "
                                 OnClick="@(() => RefreshModels(provider.Name))"
                                 BackgroundColor="@Color.Grey15"
-                                FocusedColor="@Color.Cyan1" />
+                                FocusedColor="@Color.Cyan1"/>
                 </Columns>
             }
 
             @if (_selectedProvider != null)
             {
-                <Newline />
-                <Markup Content="@($"Models for {_selectedProvider}:")" Foreground="@Color.Blue" Decoration="@Decoration.Bold" />
+                <Newline/>
+                <Markup Content="@($"Models for {_selectedProvider}:")" Foreground="@Color.Blue"
+                        Decoration="@Decoration.Bold"/>
 
                 @if (_filteredModels != null && _filteredModels.Count > 0)
                 {
@@ -71,47 +66,48 @@
                         <TextButton Content="@($" {icon} {model.ModelName}  ctx:{model.ContextWindow:N0}  {pricing} ")"
                                     OnClick="@(() => ToggleModel(_selectedProvider, model.ModelId, isModelEnabled))"
                                     BackgroundColor="@Color.Grey15"
-                                    FocusedColor="@color" />
+                                    FocusedColor="@color"/>
                     }
 
                     @if (_filteredModels.Count > 20)
                     {
-                        <Markup Content="@($"... and {_filteredModels.Count - 20} more models")" Foreground="@Color.Grey" />
+                        <Markup Content="@($"... and {_filteredModels.Count - 20} more models")"
+                                Foreground="@Color.Grey"/>
                     }
                 }
                 else
                 {
-                    <Markup Content="No models found. Try refreshing." Foreground="@Color.Yellow" />
+                    <Markup Content="No models found. Try refreshing." Foreground="@Color.Yellow"/>
                 }
             }
         }
 
         @if (_statusMessage != null)
         {
-            <Newline />
-            <Markup Content="@_statusMessage" Foreground="@Color.Green" />
+            <Newline/>
+            <Markup Content="@_statusMessage" Foreground="@Color.Green"/>
         }
 
         @if (_isLoading)
         {
-            <Newline />
+            <Newline/>
             <Columns>
-                <RazorConsole.Components.Spinner SpinnerType="@Spectre.Console.Spinner.Known.Dots" />
-                <Markup Content="@_loadingMessage" Foreground="@Color.Grey" />
+                <RazorConsole.Components.Spinner SpinnerType="@Spinner.Known.Dots"/>
+                <Markup Content="@_loadingMessage" Foreground="@Color.Grey"/>
             </Columns>
         }
     </Rows>
 </Padder>
 
-<Newline />
+<Newline/>
 <TextButton Content="  ← Back to Settings  "
             OnClick="@(() => Nav.NavigateTo("/config"))"
             BackgroundColor="@Color.Grey15"
-            FocusedColor="@Color.Yellow" />
+            FocusedColor="@Color.Yellow"/>
 
-<Newline />
+<Newline/>
 <Align Horizontal="@HorizontalAlignment.Center">
-    <Markup Content="Tab to navigate • Enter to toggle/select" Foreground="@Color.Grey58" />
+    <Markup Content="Tab to navigate • Enter to toggle/select" Foreground="@Color.Grey58"/>
 </Align>
 
 @code {
@@ -181,4 +177,5 @@
         _statusMessage = $"Model {modelId} {(!currentlyEnabled ? "enabled" : "disabled")}.";
         StateHasChanged();
     }
+
 }

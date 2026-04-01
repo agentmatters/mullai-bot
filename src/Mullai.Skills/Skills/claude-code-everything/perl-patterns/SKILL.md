@@ -18,7 +18,9 @@ Idiomatic Perl 5.36+ patterns and best practices for building robust, maintainab
 
 ## How It Works
 
-Apply these patterns as a bias toward modern Perl 5.36+ defaults: signatures, explicit modules, focused error handling, and testable boundaries. The examples below are meant to be copied as starting points, then tightened for the actual app, dependency stack, and deployment model in front of you.
+Apply these patterns as a bias toward modern Perl 5.36+ defaults: signatures, explicit modules, focused error handling,
+and testable boundaries. The examples below are meant to be copied as starting points, then tightened for the actual
+app, dependency stack, and deployment model in front of you.
 
 ## Core Principles
 
@@ -455,20 +457,20 @@ on test => sub {
 
 ## Quick Reference: Modern Perl Idioms
 
-| Legacy Pattern | Modern Replacement |
-|---|---|
-| `use strict; use warnings;` | `use v5.36;` |
-| `my ($x, $y) = @_;` | `sub foo($x, $y) { ... }` |
-| `@{ $ref }` | `$ref->@*` |
-| `%{ $ref }` | `$ref->%*` |
-| `open FH, "< $file"` | `open my $fh, '<:encoding(UTF-8)', $file` |
-| `blessed hashref` | `Moo` class with types |
-| `$1, $2, $3` | `$+{name}` (named captures) |
-| `eval { }; if ($@)` | `Try::Tiny` or native `try/catch` (5.40+) |
-| `BEGIN { require Exporter; }` | `use Exporter 'import';` |
-| Manual file ops | `Path::Tiny` |
-| `blessed($o) && $o->isa('X')` | `$o isa 'X'` (5.32+) |
-| `builtin::true / false` | `use builtin 'true', 'false';` (5.36+, experimental) |
+| Legacy Pattern                | Modern Replacement                                   |
+|-------------------------------|------------------------------------------------------|
+| `use strict; use warnings;`   | `use v5.36;`                                         |
+| `my ($x, $y) = @_;`           | `sub foo($x, $y) { ... }`                            |
+| `@{ $ref }`                   | `$ref->@*`                                           |
+| `%{ $ref }`                   | `$ref->%*`                                           |
+| `open FH, "< $file"`          | `open my $fh, '<:encoding(UTF-8)', $file`            |
+| `blessed hashref`             | `Moo` class with types                               |
+| `$1, $2, $3`                  | `$+{name}` (named captures)                          |
+| `eval { }; if ($@)`           | `Try::Tiny` or native `try/catch` (5.40+)            |
+| `BEGIN { require Exporter; }` | `use Exporter 'import';`                             |
+| Manual file ops               | `Path::Tiny`                                         |
+| `blessed($o) && $o->isa('X')` | `$o isa 'X'` (5.32+)                                 |
+| `builtin::true / false`       | `use builtin 'true', 'false';` (5.36+, experimental) |
 
 ## Anti-Patterns
 
@@ -501,4 +503,5 @@ use Module::Runtime 'require_module';    # Good: safe module loading
 require_module($module);
 ```
 
-**Remember**: Modern Perl is clean, readable, and safe. Let `use v5.36` handle the boilerplate, use Moo for objects, and prefer CPAN's battle-tested modules over hand-rolled solutions.
+**Remember**: Modern Perl is clean, readable, and safe. Let `use v5.36` handle the boilerplate, use Moo for objects, and
+prefer CPAN's battle-tested modules over hand-rolled solutions.

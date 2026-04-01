@@ -23,9 +23,11 @@ public class RateLimitMiddleware
                 MaxRetryAttempts = 3,
                 Delay = TimeSpan.FromSeconds(4),
                 BackoffType = DelayBackoffType.Exponential,
-                OnRetry = args => 
+                OnRetry = args =>
                 {
-                    _logger.LogWarning(args.Outcome.Exception, "Rate limit hit. Retrying in {Delay}. Attempt {AttemptNumber}", args.RetryDelay, args.AttemptNumber);
+                    _logger.LogWarning(args.Outcome.Exception,
+                        "Rate limit hit. Retrying in {Delay}. Attempt {AttemptNumber}", args.RetryDelay,
+                        args.AttemptNumber);
                     return default;
                 }
             })
@@ -33,16 +35,16 @@ public class RateLimitMiddleware
     }
 
     public async Task<AgentResponse> InvokeAsync(
-        IEnumerable<ChatMessage> messages, 
-        AgentSession? session, 
-        AgentRunOptions? options, 
-        AIAgent innerAgent, 
+        IEnumerable<ChatMessage> messages,
+        AgentSession? session,
+        AgentRunOptions? options,
+        AIAgent innerAgent,
         CancellationToken cancellationToken)
     {
-        return await _pipeline.ExecuteAsync(async ct => 
-        {
-            return await innerAgent.RunAsync(messages, session, options, ct).ConfigureAwait(false);
-        }, cancellationToken).ConfigureAwait(false);
+        return await _pipeline
+            .ExecuteAsync(
+                async ct => { return await innerAgent.RunAsync(messages, session, options, ct).ConfigureAwait(false); },
+                cancellationToken).ConfigureAwait(false);
     }
 
     private static bool IsRateLimitException(Exception ex)
@@ -50,19 +52,16 @@ public class RateLimitMiddleware
         // Many providers use HTTP 429 Too Many Requests for rate limits.
         // It might be an HttpRequestException or an HttpOperationException or AIException.
         // Usually, 429 status code or message containing "429" or "rate limit" or "TooManyRequests"
-        if (ex.Message.Contains("429") || 
-            ex.Message.Contains("rate limit", StringComparison.OrdinalIgnoreCase) || 
+        if (ex.Message.Contains("429") ||
+            ex.Message.Contains("rate limit", StringComparison.OrdinalIgnoreCase) ||
             ex.Message.Contains("Too Many Requests", StringComparison.OrdinalIgnoreCase))
-        {
             return true;
-        }
 
         var exceptionType = ex.GetType().Name;
-        if (exceptionType.Contains("RateLimit", StringComparison.OrdinalIgnoreCase) || 
-            exceptionType.Contains("ClientResultException", StringComparison.OrdinalIgnoreCase)) 
-        {
-             if (ex.Message.Contains("429")) return true;
-        }
+        if (exceptionType.Contains("RateLimit", StringComparison.OrdinalIgnoreCase) ||
+            exceptionType.Contains("ClientResultException", StringComparison.OrdinalIgnoreCase))
+            if (ex.Message.Contains("429"))
+                return true;
 
         return false;
     }

@@ -5,15 +5,16 @@ origin: ECC
 
 # skill-stocktake
 
-Slash command (`/skill-stocktake`) that audits all Claude skills and commands using a quality checklist + AI holistic judgment. Supports two modes: Quick Scan for recently changed skills, and Full Stocktake for a complete review.
+Slash command (`/skill-stocktake`) that audits all Claude skills and commands using a quality checklist + AI holistic
+judgment. Supports two modes: Quick Scan for recently changed skills, and Full Stocktake for a complete review.
 
 ## Scope
 
 The command targets the following paths **relative to the directory where it is invoked**:
 
-| Path | Description |
-|------|-------------|
-| `~/.claude/skills/` | Global skills (all projects) |
+| Path                    | Description                                    |
+|-------------------------|------------------------------------------------|
+| `~/.claude/skills/`     | Global skills (all projects)                   |
 | `{cwd}/.claude/skills/` | Project-level skills (if the directory exists) |
 
 **At the start of Phase 1, the command explicitly lists which paths were found and scanned.**
@@ -31,9 +32,9 @@ If the project has no `.claude/skills/` directory, only global skills and comman
 
 ## Modes
 
-| Mode | Trigger | Duration |
-|------|---------|---------|
-| Quick Scan | `results.json` exists (default) | 5–10 min |
+| Mode           | Trigger                                           | Duration  |
+|----------------|---------------------------------------------------|-----------|
+| Quick Scan     | `results.json` exists (default)                   | 5–10 min  |
 | Full Stocktake | `results.json` absent, or `/skill-stocktake full` | 20–30 min |
 
 **Results cache:** `~/.claude/skills/skill-stocktake/results.json`
@@ -96,7 +97,8 @@ The subagent reads each skill, applies the checklist, and returns per-skill JSON
 
 `{ "verdict": "Keep"|"Improve"|"Update"|"Retire"|"Merge into [X]", "reason": "..." }`
 
-**Chunk guidance:** Process ~20 skills per subagent invocation to keep context manageable. Save intermediate results to `results.json` (`status: "in_progress"`) after each chunk.
+**Chunk guidance:** Process ~20 skills per subagent invocation to keep context manageable. Save intermediate results to
+`results.json` (`status: "in_progress"`) after each chunk.
 
 After all skills are evaluated: set `status: "completed"`, proceed to Phase 3.
 
@@ -113,34 +115,40 @@ Each skill is evaluated against this checklist:
 
 Verdict criteria:
 
-| Verdict | Meaning |
-|---------|---------|
-| Keep | Useful and current |
-| Improve | Worth keeping, but specific improvements needed |
-| Update | Referenced technology is outdated (verify with WebSearch) |
-| Retire | Low quality, stale, or cost-asymmetric |
+| Verdict        | Meaning                                                       |
+|----------------|---------------------------------------------------------------|
+| Keep           | Useful and current                                            |
+| Improve        | Worth keeping, but specific improvements needed               |
+| Update         | Referenced technology is outdated (verify with WebSearch)     |
+| Retire         | Low quality, stale, or cost-asymmetric                        |
 | Merge into [X] | Substantial overlap with another skill; name the merge target |
 
 Evaluation is **holistic AI judgment** — not a numeric rubric. Guiding dimensions:
+
 - **Actionability**: code examples, commands, or steps that let you act immediately
 - **Scope fit**: name, trigger, and content are aligned; not too broad or narrow
 - **Uniqueness**: value not replaceable by MEMORY.md / CLAUDE.md / another skill
 - **Currency**: technical references work in the current environment
 
 **Reason quality requirements** — the `reason` field must be self-contained and decision-enabling:
+
 - Do NOT write "unchanged" alone — always restate the core evidence
 - For **Retire**: state (1) what specific defect was found, (2) what covers the same need instead
-  - Bad: `"Superseded"`
-  - Good: `"disable-model-invocation: true already set; superseded by continuous-learning-v2 which covers all the same patterns plus confidence scoring. No unique content remains."`
+    - Bad: `"Superseded"`
+    - Good:
+      `"disable-model-invocation: true already set; superseded by continuous-learning-v2 which covers all the same patterns plus confidence scoring. No unique content remains."`
 - For **Merge**: name the target and describe what content to integrate
-  - Bad: `"Overlaps with X"`
-  - Good: `"42-line thin content; Step 4 of chatlog-to-article already covers the same workflow. Integrate the 'article angle' tip as a note in that skill."`
+    - Bad: `"Overlaps with X"`
+    - Good:
+      `"42-line thin content; Step 4 of chatlog-to-article already covers the same workflow. Integrate the 'article angle' tip as a note in that skill."`
 - For **Improve**: describe the specific change needed (what section, what action, target size if relevant)
-  - Bad: `"Too long"`
-  - Good: `"276 lines; Section 'Framework Comparison' (L80–140) duplicates ai-era-architecture-principles; delete it to reach ~150 lines."`
+    - Bad: `"Too long"`
+    - Good:
+      `"276 lines; Section 'Framework Comparison' (L80–140) duplicates ai-era-architecture-principles; delete it to reach ~150 lines."`
 - For **Keep** (mtime-only change in Quick Scan): restate the original verdict rationale, do not write "unchanged"
-  - Bad: `"Unchanged"`
-  - Good: `"mtime updated but content unchanged. Unique Python reference explicitly imported by rules/python/; no overlap found."`
+    - Bad: `"Unchanged"`
+    - Good:
+      `"mtime updated but content unchanged. Unique Python reference explicitly imported by rules/python/; no overlap found."`
 
 ### Phase 3 — Summary Table
 
@@ -150,12 +158,13 @@ Evaluation is **holistic AI judgment** — not a numeric rubric. Guiding dimensi
 ### Phase 4 — Consolidation
 
 1. **Retire / Merge**: present detailed justification per file before confirming with user:
-   - What specific problem was found (overlap, staleness, broken references, etc.)
-   - What alternative covers the same functionality (for Retire: which existing skill/rule; for Merge: the target file and what content to integrate)
-   - Impact of removal (any dependent skills, MEMORY.md references, or workflows affected)
+    - What specific problem was found (overlap, staleness, broken references, etc.)
+    - What alternative covers the same functionality (for Retire: which existing skill/rule; for Merge: the target file
+      and what content to integrate)
+    - Impact of removal (any dependent skills, MEMORY.md references, or workflows affected)
 2. **Improve**: present specific improvement suggestions with rationale:
-   - What to change and why (e.g., "trim 430→200 lines because sections X/Y duplicate python-patterns")
-   - User decides whether to act
+    - What to change and why (e.g., "trim 430→200 lines because sections X/Y duplicate python-patterns")
+    - User decides whether to act
 3. **Update**: present updated content with sources checked
 4. Check MEMORY.md line count; propose compression if >100 lines
 
@@ -188,6 +197,7 @@ Obtain via Bash: `date -u +%Y-%m-%dT%H:%M:%SZ`. Never use a date-only approximat
 
 ## Notes
 
-- Evaluation is blind: the same checklist applies to all skills regardless of origin (ECC, self-authored, auto-extracted)
+- Evaluation is blind: the same checklist applies to all skills regardless of origin (ECC, self-authored,
+  auto-extracted)
 - Archive / delete operations always require explicit user confirmation
 - No verdict branching by skill origin

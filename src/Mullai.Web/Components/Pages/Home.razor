@@ -1,7 +1,6 @@
 @page "/"
 @rendermode InteractiveServer
 @using Microsoft.Extensions.Options
-@using System.Threading.Channels
 @using Mullai.TaskRuntime.Abstractions
 @using Mullai.TaskRuntime.Models
 @using Mullai.TaskRuntime.Options
@@ -24,7 +23,7 @@
             <div class="hero-container">
                 <h1 class="hero-title">Design. Deploy. Automate. With Mullai.</h1>
                 <p class="hero-subtitle">Let Mullai handle the heavy lifting. Build your first workflow today.</p>
-                
+
                 <div class="suggested-prompts">
                     <div class="prompt-card" @onclick="@(() => SetDraftAndSubmit("What is Mullai?"))">
                         <div class="prompt-icon">✨</div>
@@ -55,15 +54,15 @@
                                          IsUser="message.IsUser"
                                          Content="@message.Content"
                                          IsPending="message.IsPending"
-                                         IsError="message.IsError" />
+                                         IsError="message.IsError"/>
                     }
                     else if (entry is ThoughtTimelineEntry thought)
                     {
-                        <ThoughtIndicator @key="thought.Id" />
+                        <ThoughtIndicator @key="thought.Id"/>
                     }
                     else if (entry is ToolTimelineEntry tool)
                     {
-                        <ToolCallItem @key="tool.Id" FeedItem="tool.FeedItem" />
+                        <ToolCallItem @key="tool.Id" FeedItem="tool.FeedItem"/>
                     }
                 }
             </div>
@@ -71,13 +70,13 @@
     </div>
 
     <div class="chat-composer-outer">
-        <ChatComposer @bind-Value="_draft" 
+        <ChatComposer @bind-Value="_draft"
                       @bind-SelectedProvider="_selectedProvider"
                       @bind-SelectedModel="_selectedModel"
                       @bind-SelectedAgent="_selectedAgent"
                       InputTokenCount="_inputTokens"
                       OutputTokenCount="_outputTokens"
-                      OnSubmit="HandleSubmitAsync" />
+                      OnSubmit="HandleSubmitAsync"/>
     </div>
 </div>
 
@@ -163,7 +162,7 @@
 
         var pendingThought = new ThoughtTimelineEntry();
         _timeline.Add(pendingThought);
-        
+
         await ScrollToBottomAsync(true);
 
         var maxAttempts = Math.Max(1, RuntimeOptions.Value.DefaultMaxAttempts);
@@ -205,6 +204,7 @@
                     _timeline.Remove(pending.ResponseEntry);
                 }
             }
+
             _timeline.Remove(pendingThought);
             var errorMessage = new ChatTimelineEntry
             {
@@ -270,15 +270,16 @@
                 continue;
             }
 
-            if (UpdatePendingResponse(pending, update.Response, isFinal: false, isError: false))
+            if (UpdatePendingResponse(pending, update.Response, false, false))
             {
                 if (update.CumulativeInputTokenCount > 0 || update.CumulativeOutputTokenCount > 0)
                 {
                     _inputTokens = update.CumulativeInputTokenCount;
                     _outputTokens = update.CumulativeOutputTokenCount;
                 }
-                
-                await InvokeAsync(async () => {
+
+                await InvokeAsync(async () =>
+                {
                     StateHasChanged();
                     await ScrollToBottomAsync();
                 });
@@ -308,7 +309,7 @@
                 var responseText = status.Response ?? string.Empty;
                 if (responseText.Length > 0)
                 {
-                    changed |= UpdatePendingResponse(pending, responseText, isFinal: false, isError: false);
+                    changed |= UpdatePendingResponse(pending, responseText, false, false);
                 }
 
                 continue;
@@ -323,8 +324,8 @@
             changed |= UpdatePendingResponse(
                 pending,
                 finalContent,
-                isFinal: true,
-                isError: status.State != MullaiTaskState.Succeeded);
+                true,
+                status.State != MullaiTaskState.Succeeded);
 
             var totalUsage = await StatusStore.GetTotalUsageAsync(_sessionKey, cancellationToken);
             if (totalUsage.InputTokenCount > 0 || totalUsage.OutputTokenCount > 0)
@@ -527,7 +528,7 @@
 
     private sealed class ThoughtTimelineEntry : TimelineEntry
     {
-        public bool IsPending { get; set; } = true;
+        public bool IsPending { get; } = true;
     }
 
     private sealed class PendingAssistantMessage
@@ -535,4 +536,5 @@
         public ChatTimelineEntry? ResponseEntry { get; set; }
         public required ThoughtTimelineEntry ThoughtEntry { get; init; }
     }
+
 }

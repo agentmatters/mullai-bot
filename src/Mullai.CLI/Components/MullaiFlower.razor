@@ -1,8 +1,5 @@
 @namespace Mullai.CLI.Components
 
-@using Spectre.Console
-@using RazorConsole.Components
-
 <SpectreCanvas Pixels="@Pixels" CanvasWidth="@Width" CanvasHeight="@Height" PixelWidth="2"/>
 
 @code {
@@ -14,26 +11,26 @@
     {
         var pixels = new List<(int, int, Color)>();
 
-        Color p = Color.HotPink;    // Petal
-        Color d = Color.DeepPink1;   // Petal Detail
-        Color c = Color.Yellow;     // Center
+        var p = Color.HotPink; // Petal
+        var d = Color.DeepPink1; // Petal Detail
+        var c = Color.Yellow; // Center
 
         // 8x8 grid: High-efficiency 4-petal bloom
-        Color?[,] sprite = new Color?[8, 8]
+        var sprite = new Color?[8, 8]
         {
-            { null, null, p,    p,    p,    p,    null, null },
-            { null, p,    p,    d,    d,    p,    p,    null },
-            { p,    p,    d,    c,    c,    d,    p,    p    },
-            { p,    d,    c,    c,    c,    c,    d,    p    },
-            { p,    d,    c,    c,    c,    c,    d,    p    },
-            { p,    p,    d,    c,    c,    d,    p,    p    },
-            { null, p,    p,    d,    d,    p,    p,    null },
-            { null, null, p,    p,    p,    p,    null, null },
+            { null, null, p, p, p, p, null, null },
+            { null, p, p, d, d, p, p, null },
+            { p, p, d, c, c, d, p, p },
+            { p, d, c, c, c, c, d, p },
+            { p, d, c, c, c, c, d, p },
+            { p, p, d, c, c, d, p, p },
+            { null, p, p, d, d, p, p, null },
+            { null, null, p, p, p, p, null, null }
         };
 
-        for (int y = 0; y < 8; y++)
+        for (var y = 0; y < 8; y++)
         {
-            for (int x = 0; x < 8; x++)
+            for (var x = 0; x < 8; x++)
             {
                 if (sprite[y, x].HasValue)
                 {
@@ -44,4 +41,5 @@
 
         Pixels = pixels.ToArray();
     }
+
 }

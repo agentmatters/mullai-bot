@@ -18,7 +18,7 @@
                         <div class="trigger-name">@trigger.DisplayName</div>
                         <div class="trigger-id">Trigger ID: <code>@trigger.TriggerId</code></div>
                     </div>
-                    
+
                     <div class="trigger-inputs">
                         <div class="input-group">
                             <label>Payload (JSON)</label>
@@ -26,12 +26,13 @@
                         </div>
                         <div class="input-group">
                             <label>Secret (Optional)</label>
-                            <input type="text" @bind="trigger.Secret" placeholder="x-mullai-secret" />
+                            <input type="text" @bind="trigger.Secret" placeholder="x-mullai-secret"/>
                         </div>
                     </div>
 
                     <div class="trigger-actions">
-                        <button class="send-button" @onclick="() => OnSendWebhook.InvokeAsync(trigger)" disabled="@trigger.IsSending">
+                        <button class="send-button" @onclick="() => OnSendWebhook.InvokeAsync(trigger)"
+                                disabled="@trigger.IsSending">
                             @if (trigger.IsSending)
                             {
                                 <span class="spinner"></span>
@@ -44,7 +45,8 @@
                         </button>
                         @if (!string.IsNullOrEmpty(trigger.Status))
                         {
-                            <span class="trigger-status @(trigger.Status.Contains("Failed") || trigger.Status.Contains("Error") ? "failed" : "success")">
+                            <span
+                                class="trigger-status @(trigger.Status.Contains("Failed") || trigger.Status.Contains("Error") ? "failed" : "success")">
                                 @trigger.Status
                             </span>
                         }
@@ -68,4 +70,5 @@
         public string Status { get; set; } = string.Empty;
         public bool IsSending { get; set; }
     }
+
 }

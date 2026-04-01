@@ -1,20 +1,18 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-
 using Microsoft.Extensions.AI;
 using Moq;
 using Moq.Protected;
 using Mullai.Providers.LLMProviders.Mistral;
-using Xunit;
 
 namespace Mullai.Providers.Tests.LLMProviders.Mistral;
 
 public class MistralChatClientTests
 {
+    private readonly Uri _endpoint = new("https://api.mistral.ai/v1/chat/completions");
     private readonly Mock<HttpMessageHandler> _handlerMock;
     private readonly HttpClient _httpClient;
-    private readonly Uri _endpoint = new("https://api.mistral.ai/v1/chat/completions");
 
     public MistralChatClientTests()
     {
@@ -36,7 +34,7 @@ public class MistralChatClientTests
         };
 
         var json = JsonSerializer.Serialize(mistralResponse);
-        
+
         _handlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
                 "SendAsync",
@@ -59,12 +57,12 @@ public class MistralChatClientTests
         // Assert
         Assert.Equal("Hello from mocked Mistral", response.Messages[0].Text);
         Assert.Equal("msg-123", response.ResponseId);
-        
+
         _handlerMock.Protected().Verify(
             "SendAsync",
             Times.Once(),
-            ItExpr.Is<HttpRequestMessage>(req => 
-                req.Headers.Authorization != null && 
+            ItExpr.Is<HttpRequestMessage>(req =>
+                req.Headers.Authorization != null &&
                 req.Headers.Authorization.Scheme == "Bearer" &&
                 req.Headers.Authorization.Parameter == "test-key"),
             ItExpr.IsAny<CancellationToken>());
@@ -98,9 +96,7 @@ public class MistralChatClientTests
         // Act
         var updates = new List<ChatResponseUpdate>();
         await foreach (var update in client.GetStreamingResponseAsync(new[] { new ChatMessage(ChatRole.User, "hi") }))
-        {
             updates.Add(update);
-        }
 
         // Assert
         Assert.Equal(2, updates.Count);

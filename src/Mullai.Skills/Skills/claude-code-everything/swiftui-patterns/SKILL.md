@@ -5,7 +5,8 @@ description: SwiftUI architecture patterns, state management with @Observable, v
 
 # SwiftUI Patterns
 
-Modern SwiftUI patterns for building declarative, performant user interfaces on Apple platforms. Covers the Observation framework, view composition, type-safe navigation, and performance optimization.
+Modern SwiftUI patterns for building declarative, performant user interfaces on Apple platforms. Covers the Observation
+framework, view composition, type-safe navigation, and performance optimization.
 
 ## When to Activate
 
@@ -21,18 +22,19 @@ Modern SwiftUI patterns for building declarative, performant user interfaces on 
 
 Choose the simplest wrapper that fits:
 
-| Wrapper | Use Case |
-|---------|----------|
-| `@State` | View-local value types (toggles, form fields, sheet presentation) |
-| `@Binding` | Two-way reference to parent's `@State` |
-| `@Observable` class + `@State` | Owned model with multiple properties |
-| `@Observable` class (no wrapper) | Read-only reference passed from parent |
-| `@Bindable` | Two-way binding to an `@Observable` property |
-| `@Environment` | Shared dependencies injected via `.environment()` |
+| Wrapper                          | Use Case                                                          |
+|----------------------------------|-------------------------------------------------------------------|
+| `@State`                         | View-local value types (toggles, form fields, sheet presentation) |
+| `@Binding`                       | Two-way reference to parent's `@State`                            |
+| `@Observable` class + `@State`   | Owned model with multiple properties                              |
+| `@Observable` class (no wrapper) | Read-only reference passed from parent                            |
+| `@Bindable`                      | Two-way binding to an `@Observable` property                      |
+| `@Environment`                   | Shared dependencies injected via `.environment()`                 |
 
 ### @Observable ViewModel
 
-Use `@Observable` (not `ObservableObject`) — it tracks property-level changes so SwiftUI only re-renders views that read the changed property:
+Use `@Observable` (not `ObservableObject`) — it tracks property-level changes so SwiftUI only re-renders views that read
+the changed property:
 
 ```swift
 @Observable

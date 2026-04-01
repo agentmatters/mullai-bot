@@ -1,15 +1,12 @@
-@using Mullai.Workflows.Models
-@using Mullai.TaskRuntime.Models
-
 <div class="execution-view">
     <div class="execution-controls">
         <label class="input-label">Workflow Input</label>
-        <textarea class="workflow-input" 
-                  rows="5" 
+        <textarea class="workflow-input"
+                  rows="5"
                   placeholder="Enter context or parameters for this workflow..."
                   @bind="InputValue"
                   disabled="@(!IsEnabled || IsRunning)"></textarea>
-        
+
         <div class="execution-actions">
             <button class="run-button" @onclick="OnRun" disabled="@(!IsEnabled || IsRunning)">
                 @if (IsRunning)
@@ -63,7 +60,7 @@
 @code {
     [Parameter] public string Input { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> InputChanged { get; set; }
-    
+
     [Parameter] public bool IsRunning { get; set; }
     [Parameter] public string Status { get; set; } = "Idle";
     [Parameter] public string Response { get; set; } = string.Empty;
@@ -91,11 +88,12 @@
     {
         _inputValue = Input;
     }
-    
+
     [Parameter] public EventCallback OnRunClicked { get; set; }
 
     private async Task OnRun()
     {
         await OnRunClicked.InvokeAsync();
     }
+
 }

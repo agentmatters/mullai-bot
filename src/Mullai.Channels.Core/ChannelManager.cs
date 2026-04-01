@@ -1,18 +1,18 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Mullai.Agents;
-using Mullai.Channels.Core.Clients;
 using Mullai.Channels.Core.Abstractions;
+using Mullai.Channels.Core.Clients;
 using Mullai.Channels.Core.Models;
-using System.Collections.Concurrent;
 
 namespace Mullai.Channels.Core;
 
 public class ChannelManager
 {
-    private readonly IEnumerable<IChannelAdapter> _channelAdapters;
     private readonly AgentFactory _agentFactory;
-    private readonly ILogger<ChannelManager> _logger;
+    private readonly IEnumerable<IChannelAdapter> _channelAdapters;
     private readonly ConcurrentDictionary<string, ChannelMullaiClient> _clients;
+    private readonly ILogger<ChannelManager> _logger;
 
     public ChannelManager(
         IEnumerable<IChannelAdapter> channelAdapters,
@@ -45,8 +45,8 @@ public class ChannelManager
             // Using the Assistant as default. We can make this configurable later based on ChannelId or UserId
             var client = _clients.GetOrAdd(message.UserId, _ => new ChannelMullaiClient(_agentFactory));
 
-            string fullResponse = "";
-            
+            var fullResponse = "";
+
             // We await the textual response completely before returning it
             // as most chat platforms are not built for character-by-character streaming webhook repsonses
             fullResponse = await client.RunAsync(message.TextContent);
@@ -71,13 +71,15 @@ public class ChannelManager
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error handling message from {UserId} on {ChannelId}", message.UserId, message.ChannelId);
+            _logger.LogError(ex, "Error handling message from {UserId} on {ChannelId}", message.UserId,
+                message.ChannelId);
             // Optionally, we could send a generic error message back to the channel here
         }
     }
 
     public IChannelAdapter? GetAdapter(string channelId)
     {
-        return _channelAdapters.FirstOrDefault(a => string.Equals(a.ChannelId, channelId, StringComparison.OrdinalIgnoreCase));
+        return _channelAdapters.FirstOrDefault(a =>
+            string.Equals(a.ChannelId, channelId, StringComparison.OrdinalIgnoreCase));
     }
 }

@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj" />
-    <ProjectReference Include="..\Mullai.Agents\Mullai.Agents.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj"/>
+        <ProjectReference Include="..\Mullai.Agents\Mullai.Agents.csproj"/>
+    </ItemGroup>
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
 
 </Project>

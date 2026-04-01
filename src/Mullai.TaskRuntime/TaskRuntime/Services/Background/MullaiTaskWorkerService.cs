@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+using System.Text.Json;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Execution;
 using Mullai.TaskRuntime.Models;
@@ -10,15 +10,15 @@ namespace Mullai.TaskRuntime.Services.Background;
 
 public class MullaiTaskWorkerService : BackgroundService
 {
-    private readonly IMullaiTaskQueue _queue;
-    private readonly IMullaiTaskStatusStore _statusStore;
     private readonly IMullaiTaskExecutor _executor;
+    private readonly ILogger<MullaiTaskWorkerService> _logger;
+    private readonly IMullaiTaskQueue _queue;
     private readonly IMullaiTaskResponseChannel _responseChannel;
     private readonly IWorkflowRunEventStore _runEventStore;
     private readonly MullaiTaskRuntimeOptions _runtimeOptions;
-    private readonly IWorkflowRegistry _workflowRegistry;
+    private readonly IMullaiTaskStatusStore _statusStore;
     private readonly IWorkflowOutputDispatcher _workflowOutputDispatcher;
-    private readonly ILogger<MullaiTaskWorkerService> _logger;
+    private readonly IWorkflowRegistry _workflowRegistry;
 
     public MullaiTaskWorkerService(
         IMullaiTaskQueue queue,
@@ -37,7 +37,8 @@ public class MullaiTaskWorkerService : BackgroundService
         _responseChannel = responseChannel ?? throw new ArgumentNullException(nameof(responseChannel));
         _runEventStore = runEventStore ?? throw new ArgumentNullException(nameof(runEventStore));
         _workflowRegistry = workflowRegistry ?? throw new ArgumentNullException(nameof(workflowRegistry));
-        _workflowOutputDispatcher = workflowOutputDispatcher ?? throw new ArgumentNullException(nameof(workflowOutputDispatcher));
+        _workflowOutputDispatcher = workflowOutputDispatcher ??
+                                    throw new ArgumentNullException(nameof(workflowOutputDispatcher));
         _runtimeOptions = runtimeOptions?.Value ?? throw new ArgumentNullException(nameof(runtimeOptions));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -62,7 +63,7 @@ public class MullaiTaskWorkerService : BackgroundService
             MullaiTaskWorkItem workItem;
             try
             {
-                    workItem = await _queue.DequeueAsync(stoppingToken).ConfigureAwait(false);
+                workItem = await _queue.DequeueAsync(stoppingToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -73,7 +74,8 @@ public class MullaiTaskWorkerService : BackgroundService
         }
     }
 
-    private async Task ProcessWorkItemAsync(int workerId, MullaiTaskWorkItem workItem, CancellationToken cancellationToken)
+    private async Task ProcessWorkItemAsync(int workerId, MullaiTaskWorkItem workItem,
+        CancellationToken cancellationToken)
     {
         var workflowId = GetWorkflowId(workItem);
 
@@ -103,7 +105,8 @@ public class MullaiTaskWorkerService : BackgroundService
                 workItem,
                 async responseSoFar =>
                 {
-                    await _statusStore.MarkRunningAsync(workItem, responseSoFar, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    await _statusStore.MarkRunningAsync(workItem, responseSoFar, cancellationToken: cancellationToken)
+                        .ConfigureAwait(false);
                     await AppendRunEventAsync(
                         workflowId,
                         workItem.TaskId,
@@ -113,7 +116,8 @@ public class MullaiTaskWorkerService : BackgroundService
                             response = responseSoFar
                         },
                         cancellationToken).ConfigureAwait(false);
-                    var totalUsage = await _statusStore.GetTotalUsageAsync(workItem.SessionKey, cancellationToken).ConfigureAwait(false);
+                    var totalUsage = await _statusStore.GetTotalUsageAsync(workItem.SessionKey, cancellationToken)
+                        .ConfigureAwait(false);
                     var feedItem = new TaskResponseFeedItem
                     {
                         TaskId = workItem.TaskId,
@@ -126,8 +130,9 @@ public class MullaiTaskWorkerService : BackgroundService
                     await _responseChannel.Writer.WriteAsync(feedItem, cancellationToken).ConfigureAwait(false);
                 },
                 cancellationToken).ConfigureAwait(false);
-            
-            await _statusStore.MarkSucceededAsync(workItem, result.Response, result.Usage, cancellationToken).ConfigureAwait(false);
+
+            await _statusStore.MarkSucceededAsync(workItem, result.Response, result.Usage, cancellationToken)
+                .ConfigureAwait(false);
             await AppendRunEventAsync(
                 workflowId,
                 workItem.TaskId,
@@ -138,10 +143,11 @@ public class MullaiTaskWorkerService : BackgroundService
                     usage = result.Usage
                 },
                 cancellationToken).ConfigureAwait(false);
-            
+
             if (result.Usage != null)
             {
-                var totalUsageAfterSuccess = await _statusStore.GetTotalUsageAsync(workItem.SessionKey, cancellationToken).ConfigureAwait(false);
+                var totalUsageAfterSuccess = await _statusStore
+                    .GetTotalUsageAsync(workItem.SessionKey, cancellationToken).ConfigureAwait(false);
                 var finalFeedItem = new TaskResponseFeedItem
                 {
                     TaskId = workItem.TaskId,
@@ -210,12 +216,9 @@ public class MullaiTaskWorkerService : BackgroundService
         object payload,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(workflowId))
-        {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(workflowId)) return;
 
-        var json = System.Text.Json.JsonSerializer.Serialize(payload);
+        var json = JsonSerializer.Serialize(payload);
         var runEvent = new WorkflowRunEvent
         {
             TaskId = taskId,
@@ -230,10 +233,7 @@ public class MullaiTaskWorkerService : BackgroundService
 
     private static string? GetWorkflowId(MullaiTaskWorkItem workItem)
     {
-        if (workItem.Metadata is null)
-        {
-            return null;
-        }
+        if (workItem.Metadata is null) return null;
 
         return workItem.Metadata.TryGetValue("workflowId", out var workflowId) &&
                !string.IsNullOrWhiteSpace(workflowId)
@@ -249,15 +249,10 @@ public class MullaiTaskWorkerService : BackgroundService
         if (workItem.Metadata is null ||
             !workItem.Metadata.TryGetValue("workflowId", out var workflowId) ||
             string.IsNullOrWhiteSpace(workflowId))
-        {
             return;
-        }
 
         var definition = _workflowRegistry.GetById(workflowId);
-        if (definition is null || definition.Outputs.Count == 0)
-        {
-            return;
-        }
+        if (definition is null || definition.Outputs.Count == 0) return;
 
         await AppendRunEventAsync(
             workflowId,

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using Mullai.Workflows.Abstractions;
 using Mullai.Workflows.Models;
 
@@ -15,7 +14,8 @@ public sealed class LogWorkflowOutputHandler : IWorkflowOutputHandler
 
     public string Type => "log";
 
-    public Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output, CancellationToken cancellationToken)
+    public Task HandleAsync(WorkflowOutputContext context, WorkflowOutputDefinition output,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Workflow {WorkflowId} output (log): {Response}",

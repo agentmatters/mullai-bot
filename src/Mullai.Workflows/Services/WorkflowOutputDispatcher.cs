@@ -9,7 +9,8 @@ public sealed class WorkflowOutputDispatcher : IWorkflowOutputDispatcher
     private readonly IReadOnlyDictionary<string, IWorkflowOutputHandler> _handlers;
     private readonly ILogger<WorkflowOutputDispatcher> _logger;
 
-    public WorkflowOutputDispatcher(IEnumerable<IWorkflowOutputHandler> handlers, ILogger<WorkflowOutputDispatcher> logger)
+    public WorkflowOutputDispatcher(IEnumerable<IWorkflowOutputHandler> handlers,
+        ILogger<WorkflowOutputDispatcher> logger)
     {
         _handlers = handlers.ToDictionary(handler => handler.Type, StringComparer.OrdinalIgnoreCase);
         _logger = logger;
@@ -17,17 +18,11 @@ public sealed class WorkflowOutputDispatcher : IWorkflowOutputDispatcher
 
     public async Task DispatchAsync(WorkflowOutputContext context, CancellationToken cancellationToken)
     {
-        if (context.Definition.Outputs.Count == 0)
-        {
-            return;
-        }
+        if (context.Definition.Outputs.Count == 0) return;
 
         foreach (var output in context.Definition.Outputs)
         {
-            if (!output.Enabled || string.IsNullOrWhiteSpace(output.Type))
-            {
-                continue;
-            }
+            if (!output.Enabled || string.IsNullOrWhiteSpace(output.Type)) continue;
 
             if (!_handlers.TryGetValue(output.Type.Trim(), out var handler))
             {

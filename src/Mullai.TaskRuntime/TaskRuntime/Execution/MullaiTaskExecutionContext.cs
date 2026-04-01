@@ -1,5 +1,3 @@
-using System.Threading;
-
 namespace Mullai.TaskRuntime.Execution;
 
 public static class MullaiTaskExecutionContext
@@ -29,10 +27,7 @@ public static class MullaiTaskExecutionContext
 
         public void Dispose()
         {
-            if (_isDisposed)
-            {
-                return;
-            }
+            if (_isDisposed) return;
 
             CurrentContext.Value = _previous;
             _isDisposed = true;

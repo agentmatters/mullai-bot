@@ -1,5 +1,4 @@
 @using Mullai.TaskRuntime.Models
-
 <div class="runs-view">
     <div class="runs-header">
         <h3>Execution History</h3>
@@ -17,78 +16,79 @@
     <div class="runs-table-container">
         <table class="runs-table">
             <thead>
-                <tr>
-                    <th>State</th>
-                    <th>Updated</th>
-                    <th>Summary</th>
-                    <th>Actions</th>
-                </tr>
+            <tr>
+                <th>State</th>
+                <th>Updated</th>
+                <th>Summary</th>
+                <th>Actions</th>
+            </tr>
             </thead>
             <tbody>
-                @if (FilteredRuns.Count == 0)
+            @if (FilteredRuns.Count == 0)
+            {
+                <tr>
+                    <td colspan="4" class="no-runs">No recent runs found.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var run in FilteredRuns)
                 {
-                    <tr>
-                        <td colspan="4" class="no-runs">No recent runs found.</td>
+                    <tr class="run-row">
+                        <td>
+                            <span class="run-state @run.State.ToLowerInvariant()">@run.State</span>
+                        </td>
+                        <td class="run-time">@run.UpdatedAtUtc.ToLocalTime().ToString("g")</td>
+                        <td class="run-summary">@run.Summary</td>
+                        <td>
+                            <button class="details-toggle" @onclick="() => ToggleDetails(run)">
+                                @(run.ShowDetails ? "Hide" : "Details")
+                            </button>
+                        </td>
                     </tr>
-                }
-                else
-                {
-                    @foreach (var run in FilteredRuns)
+                    @if (run.ShowDetails)
                     {
-                        <tr class="run-row">
-                            <td>
-                                <span class="run-state @run.State.ToLowerInvariant()">@run.State</span>
-                            </td>
-                            <td class="run-time">@run.UpdatedAtUtc.ToLocalTime().ToString("g")</td>
-                            <td class="run-summary">@run.Summary</td>
-                            <td>
-                                <button class="details-toggle" @onclick="() => ToggleDetails(run)">
-                                    @(run.ShowDetails ? "Hide" : "Details")
-                                </button>
+                        <tr class="run-details-row">
+                            <td colspan="4">
+                                <div class="run-full-text">
+                                    <pre>@run.FullText</pre>
+                                </div>
+                                <div class="run-events">
+                                    <h4>Run Events</h4>
+                                    @if (run.IsLoadingEvents)
+                                    {
+                                        <div class="run-events-status">Loading events...</div>
+                                    }
+                                    else if (!string.IsNullOrWhiteSpace(run.EventsError))
+                                    {
+                                        <div class="run-events-status error">@run.EventsError</div>
+                                    }
+                                    else if (run.Events.Count == 0)
+                                    {
+                                        <div class="run-events-status">No events captured.</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="run-events-list">
+                                            @foreach (var evt in run.Events)
+                                            {
+                                                <div class="run-event">
+                                                    <div class="run-event-meta">
+                                                        <span class="run-event-type">@evt.EventType</span>
+                                                        <span
+                                                            class="run-event-time">@evt.CreatedAtUtc.ToLocalTime().ToString("g")</span>
+                                                    </div>
+                                                    <pre>@evt.Payload</pre>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
                             </td>
                         </tr>
-                        @if (run.ShowDetails)
-                        {
-                            <tr class="run-details-row">
-                                <td colspan="4">
-                                    <div class="run-full-text">
-                                        <pre>@run.FullText</pre>
-                                    </div>
-                                    <div class="run-events">
-                                        <h4>Run Events</h4>
-                                        @if (run.IsLoadingEvents)
-                                        {
-                                        <div class="run-events-status">Loading events...</div>
-                                        }
-                                        else if (!string.IsNullOrWhiteSpace(run.EventsError))
-                                        {
-                                            <div class="run-events-status error">@run.EventsError</div>
-                                        }
-                                        else if (run.Events.Count == 0)
-                                        {
-                                            <div class="run-events-status">No events captured.</div>
-                                        }
-                                        else
-                                        {
-                                            <div class="run-events-list">
-                                                @foreach (var evt in run.Events)
-                                                {
-                                                    <div class="run-event">
-                                                        <div class="run-event-meta">
-                                                            <span class="run-event-type">@evt.EventType</span>
-                                                            <span class="run-event-time">@evt.CreatedAtUtc.ToLocalTime().ToString("g")</span>
-                                                        </div>
-                                                        <pre>@evt.Payload</pre>
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
                     }
                 }
+            }
             </tbody>
         </table>
     </div>
@@ -97,18 +97,22 @@
 @code {
     [Parameter] public List<WorkflowRunRow> Runs { get; set; } = [];
     [Parameter] public Func<WorkflowRunRow, Task>? OnLoadDetails { get; set; }
-    
+
     private string _stateFilter = string.Empty;
     private readonly List<string> _stateOptions = Enum.GetNames(typeof(MullaiTaskState)).ToList();
 
     private string StateFilter
     {
         get => _stateFilter;
-        set { _stateFilter = value; StateHasChanged(); }
+        set
+        {
+            _stateFilter = value;
+            StateHasChanged();
+        }
     }
 
-    private List<WorkflowRunRow> FilteredRuns => string.IsNullOrWhiteSpace(StateFilter) 
-        ? Runs 
+    private List<WorkflowRunRow> FilteredRuns => string.IsNullOrWhiteSpace(StateFilter)
+        ? Runs
         : Runs.Where(r => string.Equals(r.State, StateFilter, StringComparison.OrdinalIgnoreCase)).ToList();
 
     private async Task ToggleDetails(WorkflowRunRow run)
@@ -142,4 +146,5 @@
         public DateTimeOffset CreatedAtUtc { get; init; }
         public string Payload { get; init; } = string.Empty;
     }
+
 }

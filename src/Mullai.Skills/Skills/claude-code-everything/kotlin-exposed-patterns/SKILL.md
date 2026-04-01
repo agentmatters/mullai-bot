@@ -6,7 +6,8 @@ origin: ECC
 
 # Kotlin Exposed Patterns
 
-Comprehensive patterns for database access with JetBrains Exposed ORM, including DSL queries, DAO, transactions, and production-ready configuration.
+Comprehensive patterns for database access with JetBrains Exposed ORM, including DSL queries, DAO, transactions, and
+production-ready configuration.
 
 ## When to Use
 
@@ -19,7 +20,11 @@ Comprehensive patterns for database access with JetBrains Exposed ORM, including
 
 ## How It Works
 
-Exposed provides two query styles: DSL for direct SQL-like expressions and DAO for entity lifecycle management. HikariCP manages a pool of reusable database connections configured via `HikariConfig`. Flyway runs versioned SQL migration scripts at startup to keep the schema in sync. All database operations run inside `newSuspendedTransaction` blocks for coroutine safety and atomicity. The repository pattern wraps Exposed queries behind an interface so business logic stays decoupled from the data layer and tests can use an in-memory H2 database.
+Exposed provides two query styles: DSL for direct SQL-like expressions and DAO for entity lifecycle management. HikariCP
+manages a pool of reusable database connections configured via `HikariConfig`. Flyway runs versioned SQL migration
+scripts at startup to keep the schema in sync. All database operations run inside `newSuspendedTransaction` blocks for
+coroutine safety and atomicity. The repository pattern wraps Exposed queries behind an interface so business logic stays
+decoupled from the data layer and tests can use an in-memory H2 database.
 
 ## Examples
 
@@ -703,17 +708,19 @@ dependencies {
 
 ## Quick Reference: Exposed Patterns
 
-| Pattern | Description |
-|---------|-------------|
+| Pattern                            | Description                        |
+|------------------------------------|------------------------------------|
 | `object Table : UUIDTable("name")` | Define table with UUID primary key |
-| `newSuspendedTransaction { }` | Coroutine-safe transaction block |
-| `Table.selectAll().where { }` | Query with conditions |
-| `Table.insertAndGetId { }` | Insert and return generated ID |
-| `Table.update({ condition }) { }` | Update matching rows |
-| `Table.deleteWhere { }` | Delete matching rows |
-| `Table.batchInsert(items) { }` | Efficient bulk insert |
-| `innerJoin` / `leftJoin` | Join tables |
-| `orderBy` / `limit` / `offset` | Sort and paginate |
-| `count()` / `sum()` / `avg()` | Aggregation functions |
+| `newSuspendedTransaction { }`      | Coroutine-safe transaction block   |
+| `Table.selectAll().where { }`      | Query with conditions              |
+| `Table.insertAndGetId { }`         | Insert and return generated ID     |
+| `Table.update({ condition }) { }`  | Update matching rows               |
+| `Table.deleteWhere { }`            | Delete matching rows               |
+| `Table.batchInsert(items) { }`     | Efficient bulk insert              |
+| `innerJoin` / `leftJoin`           | Join tables                        |
+| `orderBy` / `limit` / `offset`     | Sort and paginate                  |
+| `count()` / `sum()` / `avg()`      | Aggregation functions              |
 
-**Remember**: Use the DSL style for simple queries and the DAO style when you need entity lifecycle management. Always use `newSuspendedTransaction` for coroutine support, and wrap database operations behind a repository interface for testability.
+**Remember**: Use the DSL style for simple queries and the DAO style when you need entity lifecycle management. Always
+use `newSuspendedTransaction` for coroutine support, and wrap database operations behind a repository interface for
+testability.

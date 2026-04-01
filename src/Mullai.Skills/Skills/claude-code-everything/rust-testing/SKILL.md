@@ -19,7 +19,8 @@ Comprehensive Rust testing patterns for writing reliable, maintainable tests fol
 ## How It Works
 
 1. **Identify target code** — Find the function, trait, or module to test
-2. **Write a test** — Use `#[test]` in a `#[cfg(test)]` module, rstest for parameterized tests, or proptest for property-based tests
+2. **Write a test** — Use `#[test]` in a `#[cfg(test)]` module, rstest for parameterized tests, or proptest for
+   property-based tests
 3. **Mock dependencies** — Use mockall to isolate the unit under test
 4. **Run tests (RED)** — Verify the test fails with the expected error
 5. **Implement (GREEN)** — Write minimal code to pass
@@ -432,11 +433,11 @@ cargo llvm-cov --fail-under-lines 80  # Fail if below threshold
 
 ### Coverage Targets
 
-| Code Type | Target |
-|-----------|--------|
-| Critical business logic | 100% |
-| Public API | 90%+ |
-| General code | 80%+ |
+| Code Type                | Target  |
+|--------------------------|---------|
+| Critical business logic  | 100%    |
+| Public API               | 90%+    |
+| General code             | 80%+    |
 | Generated / FFI bindings | Exclude |
 
 ## Testing Commands
@@ -455,6 +456,7 @@ cargo test -- --ignored           # Run ignored tests
 ## Best Practices
 
 **DO:**
+
 - Write tests FIRST (TDD)
 - Use `#[cfg(test)]` modules for unit tests
 - Test behavior, not implementation
@@ -464,6 +466,7 @@ cargo test -- --ignored           # Run ignored tests
 - Keep tests independent — no shared mutable state
 
 **DON'T:**
+
 - Use `#[should_panic]` when you can test `Result::is_err()` instead
 - Mock everything — prefer integration tests when feasible
 - Ignore flaky tests — fix or quarantine them
@@ -497,4 +500,5 @@ test:
       run: cargo llvm-cov --fail-under-lines 80
 ```
 
-**Remember**: Tests are documentation. They show how your code is meant to be used. Write them clearly and keep them up to date.
+**Remember**: Tests are documentation. They show how your code is meant to be used. Write them clearly and keep them up
+to date.

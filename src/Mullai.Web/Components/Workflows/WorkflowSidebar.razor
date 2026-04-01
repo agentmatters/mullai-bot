@@ -1,12 +1,10 @@
 @using Mullai.Workflows.Models
-@using Mullai.Workflows.Abstractions
-
 <aside class="workflow-sidebar">
     <div class="sidebar-header">
         <div class="sidebar-title">Workflows</div>
         <div class="sidebar-count">@Workflows.Count total</div>
     </div>
-    
+
     <div class="sidebar-list">
         @foreach (var workflow in Workflows)
         {

@@ -20,7 +20,8 @@ public sealed class InMemoryWorkflowOutputFailureStore : IWorkflowOutputFailureS
         return Task.FromResult(failure);
     }
 
-    public Task<IReadOnlyCollection<WorkflowOutputFailure>> GetRecentAsync(int take = 50, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyCollection<WorkflowOutputFailure>> GetRecentAsync(int take = 50,
+        CancellationToken cancellationToken = default)
     {
         var result = _failures.Values
             .OrderByDescending(f => f.FailedAtUtc)

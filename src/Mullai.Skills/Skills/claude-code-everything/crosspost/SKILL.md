@@ -25,18 +25,19 @@ Distribute content across multiple social platforms with platform-native adaptat
 
 ## Platform Specifications
 
-| Platform | Max Length | Link Handling | Hashtags | Media |
-|----------|-----------|---------------|----------|-------|
-| X | 280 chars (4000 for Premium) | Counted in length | Minimal (1-2 max) | Images, video, GIFs |
-| LinkedIn | 3000 chars | Not counted in length | 3-5 relevant | Images, video, docs, carousels |
-| Threads | 500 chars | Separate link attachment | None typical | Images, video |
-| Bluesky | 300 chars | Via facets (rich text) | None (use feeds) | Images |
+| Platform | Max Length                   | Link Handling            | Hashtags          | Media                          |
+|----------|------------------------------|--------------------------|-------------------|--------------------------------|
+| X        | 280 chars (4000 for Premium) | Counted in length        | Minimal (1-2 max) | Images, video, GIFs            |
+| LinkedIn | 3000 chars                   | Not counted in length    | 3-5 relevant      | Images, video, docs, carousels |
+| Threads  | 500 chars                    | Separate link attachment | None typical      | Images, video                  |
+| Bluesky  | 300 chars                    | Via facets (rich text)   | None (use feeds)  | Images                         |
 
 ## Workflow
 
 ### Step 1: Create Source Content
 
 Start with the core idea. Use `content-engine` skill for high-quality drafts:
+
 - Identify the single core message
 - Determine the primary platform (where the audience is biggest)
 - Draft the primary platform version first
@@ -44,6 +45,7 @@ Start with the core idea. Use `content-engine` skill for high-quality drafts:
 ### Step 2: Identify Target Platforms
 
 Ask the user or determine from context:
+
 - Which platforms to target
 - Priority order (primary gets the best version)
 - Any platform-specific requirements (e.g., LinkedIn needs professional tone)
@@ -53,23 +55,27 @@ Ask the user or determine from context:
 For each target platform, transform the content:
 
 **X adaptation:**
+
 - Open with a hook, not a summary
 - Cut to the core insight fast
 - Keep links out of main body when possible
 - Use thread format for longer content
 
 **LinkedIn adaptation:**
+
 - Strong first line (visible before "see more")
 - Short paragraphs with line breaks
 - Frame around lessons, results, or professional takeaways
 - More explicit context than X (LinkedIn audience needs framing)
 
 **Threads adaptation:**
+
 - Conversational, casual tone
 - Shorter than LinkedIn, less compressed than X
 - Visual-first if possible
 
 **Bluesky adaptation:**
+
 - Direct and concise (300 char limit)
 - Community-oriented tone
 - Use feeds/lists for topic targeting instead of hashtags
@@ -77,6 +83,7 @@ For each target platform, transform the content:
 ### Step 4: Post Primary Platform
 
 Post to the primary platform first:
+
 - Use `x-api` skill for X
 - Use platform-specific APIs or tools for others
 - Capture the post URL for cross-referencing
@@ -84,6 +91,7 @@ Post to the primary platform first:
 ### Step 5: Post to Secondary Platforms
 
 Post adapted versions to remaining platforms:
+
 - Stagger timing (not all at once — 30-60 min gaps)
 - Include cross-platform references where appropriate ("longer thread on X" etc.)
 
@@ -92,6 +100,7 @@ Post adapted versions to remaining platforms:
 ### Source: Product Launch
 
 **X version:**
+
 ```
 We just shipped [feature].
 
@@ -101,6 +110,7 @@ We just shipped [feature].
 ```
 
 **LinkedIn version:**
+
 ```
 Excited to share: we just launched [feature] at [Company].
 
@@ -114,6 +124,7 @@ Here's why it matters:
 ```
 
 **Threads version:**
+
 ```
 just shipped something cool — [feature]
 
@@ -125,6 +136,7 @@ link in bio
 ### Source: Technical Insight
 
 **X version:**
+
 ```
 TIL: [specific technical insight]
 
@@ -132,6 +144,7 @@ TIL: [specific technical insight]
 ```
 
 **LinkedIn version:**
+
 ```
 A pattern I've been using that's made a real difference:
 
@@ -145,6 +158,7 @@ A pattern I've been using that's made a real difference:
 ## API Integration
 
 ### Batch Crossposting Service (Example Pattern)
+
 If using a crossposting service (e.g., Postbridge, Buffer, or a custom API), the pattern looks like:
 
 ```python
@@ -168,7 +182,9 @@ resp.raise_for_status()
 ```
 
 ### Manual Posting
+
 Without Postbridge, post to each platform using its native API:
+
 - X: Use `x-api` skill patterns
 - LinkedIn: LinkedIn API v2 with OAuth 2.0
 - Threads: Threads API (Meta)
@@ -177,6 +193,7 @@ Without Postbridge, post to each platform using its native API:
 ## Quality Gate
 
 Before posting:
+
 - [ ] Each platform version reads naturally for that platform
 - [ ] No identical content across platforms
 - [ ] Length limits respected

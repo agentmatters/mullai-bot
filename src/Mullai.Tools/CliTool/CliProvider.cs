@@ -1,19 +1,35 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace Mullai.Tools.CliTool;
 
 /// <summary>
-/// A provider for executing command-line instructions.
+///     A provider for executing command-line instructions.
 /// </summary>
 public class CliProvider : IDisposable
 {
-    private readonly Dictionary<string, Process> _sessions = new();
-    private readonly bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
     private readonly string _eofToken = "===MULLAI_EOF_TOKEN===";
+    private readonly bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    private readonly Dictionary<string, Process> _sessions = new();
+
+    public void Dispose()
+    {
+        foreach (var session in _sessions.Values)
+            try
+            {
+                if (!session.HasExited) session.Kill();
+                session.Dispose();
+            }
+            catch
+            {
+            }
+
+        _sessions.Clear();
+    }
 
     /// <summary>
-    /// Creates a persistent shell session and returns its unique ID.
+    ///     Creates a persistent shell session and returns its unique ID.
     /// </summary>
     public string CreateSession()
     {
@@ -35,64 +51,51 @@ public class CliProvider : IDisposable
         process.Start();
 
         _sessions[sessionId] = process;
-        
+
         // Discard any initial shell startup text
         if (_isWindows)
-        {
             // Windows cmd.exe usually prints its version and copyright. 
             // We write empty commands and the EOF token so we can synchronize.
             ExecuteSessionCommandAsync(sessionId, "").GetAwaiter().GetResult();
-        }
         else
-        {
-             // On Linux/Mac, bash usually starts quietly without a command if not interactive, but for safety we sync it too.
+            // On Linux/Mac, bash usually starts quietly without a command if not interactive, but for safety we sync it too.
             ExecuteSessionCommandAsync(sessionId, "").GetAwaiter().GetResult();
-        }
 
         return sessionId;
     }
 
     /// <summary>
-    /// Executes a command in a specific shell session.
+    ///     Executes a command in a specific shell session.
     /// </summary>
     public async Task<string> ExecuteSessionCommandAsync(string sessionId, string command)
     {
         if (!_sessions.TryGetValue(sessionId, out var process))
-        {
             return $"Error: Session '{sessionId}' not found or already closed.";
-        }
 
-        if (process.HasExited)
-        {
-            return $"Error: Session '{sessionId}' has exited unexpectedly.";
-        }
+        if (process.HasExited) return $"Error: Session '{sessionId}' has exited unexpectedly.";
 
         // We append an echo of the EOF token so we know when the command finishes.
         string fullCommand;
         if (_isWindows)
-        {
-            fullCommand = string.IsNullOrWhiteSpace(command) 
-                ? $"echo {_eofToken}" 
+            fullCommand = string.IsNullOrWhiteSpace(command)
+                ? $"echo {_eofToken}"
                 : $"{command} 2>&1\r\necho {_eofToken}";
-        }
         else
-        {
             fullCommand = string.IsNullOrWhiteSpace(command)
                 ? $"echo '{_eofToken}'"
                 : $"{command} 2>&1\necho '{_eofToken}'";
-        }
 
         await process.StandardInput.WriteLineAsync(fullCommand);
         await process.StandardInput.FlushAsync();
 
-        var outputBuilder = new System.Text.StringBuilder();
+        var outputBuilder = new StringBuilder();
 
         // Read until we encounter our EOF token
         while (true)
         {
             var lineTask = process.StandardOutput.ReadLineAsync();
             var timeoutTask = Task.Delay(TimeSpan.FromMinutes(2)); // basic safety timeout
-            
+
             var completedTask = await Task.WhenAny(lineTask, timeoutTask);
             if (completedTask == timeoutTask)
             {
@@ -101,22 +104,13 @@ public class CliProvider : IDisposable
             }
 
             var line = await lineTask;
-            if (line == null) 
-            {
-                break; // stream closed
-            }
+            if (line == null) break; // stream closed
 
             // Sometimes Windows echo prints quotes or trailing spaces if not careful, we do a Contains check.
-            if (line.Contains(_eofToken))
-            {
-                break;
-            }
+            if (line.Contains(_eofToken)) break;
 
             // Exclude the echoed command itself in Windows cmd (cmd echoes by default)
-            if (_isWindows && !string.IsNullOrWhiteSpace(command) && line.Contains(command))
-            {
-                continue;
-            }
+            if (_isWindows && !string.IsNullOrWhiteSpace(command) && line.Contains(command)) continue;
 
             outputBuilder.AppendLine(line);
         }
@@ -126,7 +120,7 @@ public class CliProvider : IDisposable
     }
 
     /// <summary>
-    /// Closes a given shell session.
+    ///     Closes a given shell session.
     /// </summary>
     public string CloseSession(string sessionId)
     {
@@ -134,24 +128,23 @@ public class CliProvider : IDisposable
         {
             try
             {
-                if (!process.HasExited)
-                {
-                    process.Kill();
-                }
+                if (!process.HasExited) process.Kill();
                 process.Dispose();
             }
-            catch 
+            catch
             {
                 // ignore kill errors if already dead
             }
+
             _sessions.Remove(sessionId);
             return $"Session '{sessionId}' closed.";
         }
+
         return $"Session '{sessionId}' not found.";
     }
 
     /// <summary>
-    /// Executes a command in a single, isolated execution process (stateless).
+    ///     Executes a command in a single, isolated execution process (stateless).
     /// </summary>
     public async Task<string> ExecuteCommandAsync(string command)
     {
@@ -164,19 +157,5 @@ public class CliProvider : IDisposable
         {
             CloseSession(sessionId);
         }
-    }
-
-    public void Dispose()
-    {
-        foreach (var session in _sessions.Values)
-        {
-            try
-            {
-                if (!session.HasExited) session.Kill();
-                session.Dispose();
-            }
-            catch { }
-        }
-        _sessions.Clear();
     }
 }

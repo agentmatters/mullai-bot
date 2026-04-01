@@ -157,6 +157,7 @@ resp = oauth.post(
 ## Rate Limits
 
 X API rate limits vary by endpoint, auth method, and account tier, and they change over time. Always:
+
 - Check the current X developer docs before hardcoding assumptions
 - Read `x-rate-limit-remaining` and `x-rate-limit-reset` headers at runtime
 - Back off automatically instead of relying on static tables in code
@@ -197,6 +198,7 @@ else:
 ## Integration with Content Engine
 
 Use `content-engine` skill to generate platform-native content, then post via X API:
+
 1. Generate content with content-engine (X platform format)
 2. Validate length (280 chars for single tweet)
 3. Post via X API using patterns above

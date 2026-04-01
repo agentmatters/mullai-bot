@@ -11,10 +11,7 @@ public class TodoProvider
     {
         try
         {
-            if (!File.Exists(TodoFilePath))
-            {
-                return new List<TodoItem>();
-            }
+            if (!File.Exists(TodoFilePath)) return new List<TodoItem>();
 
             var content = await File.ReadAllTextAsync(TodoFilePath);
             return JsonSerializer.Deserialize<List<TodoItem>>(content) ?? new List<TodoItem>();
@@ -55,6 +52,7 @@ public class TodoProvider
             todo.Status = "completed";
             return await UpdateTodosAsync(todos);
         }
+
         return $"Error: Todo with ID '{id}' not found.";
     }
 }

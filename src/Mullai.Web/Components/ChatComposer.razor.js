@@ -15,7 +15,7 @@ export function scrollToSelected(containerSelector) {
 
     const selected = container.querySelector('.option.selected');
     if (selected) {
-        selected.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        selected.scrollIntoView({block: 'nearest', behavior: 'smooth'});
     }
 }
 

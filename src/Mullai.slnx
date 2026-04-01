@@ -1,27 +1,27 @@
 <Solution>
-  <Folder Name="/MCPServers/">
-    <Project Path="ToolKits/Search/Mullai.MCP.SerpApi/Mullai.MCP.SerpApi.csproj" />
-  </Folder>
-  <Project Path="Mullai.Abstractions/Mullai.Abstractions.csproj" />
-  <Project Path="Mullai.Agents/Mullai.Agents.csproj" />
-  <Project Path="Mullai.Channels.Api/Mullai.Channels.Api.csproj" />
-  <Project Path="Mullai.Channels.Core/Mullai.Channels.Core.csproj" />
-  <Project Path="Mullai.Channels.Telegram/Mullai.Channels.Telegram.csproj" />
-  <Project Path="Mullai.CLI\Mullai.CLI.csproj" />
-  <Project Path="Mullai.Global.ServiceConfiguration/Mullai.Global.ServiceConfiguration.csproj" />
-  <Project Path="Mullai.Logging/Mullai.Logging.csproj" />
-  <Project Path="Mullai.Memory/Mullai.Memory.csproj" />
-  <Project Path="Mullai.Middleware/Mullai.Middleware.csproj" />
-  <Project Path="Mullai.Providers/Mullai.Providers.csproj" />
-  <Project Path="Mullai.Skills/Mullai.Skills.csproj" />
-  <Project Path="Mullai.Telemetry\Mullai.Telemetry.csproj" />
-  <Project Path="Mullai.Tools/Mullai.Tools.csproj" />
-  <Project Path="Mullai.Tools.Tests/Mullai.Tools.Tests.csproj" />
-  <Project Path="Mullai.Providers.Tests/Mullai.Providers.Tests.csproj" />
-  <Project Path="Mullai.Workflows/Mullai.Workflows.csproj" />
-  <Project Path="Mullai.Web/Mullai.Web.csproj" />
-  <Project Path="Mullai.LocalMcp/Mullai.LocalMcp.csproj" />
+    <Folder Name="/MCPServers/">
+        <Project Path="ToolKits/Search/Mullai.MCP.SerpApi/Mullai.MCP.SerpApi.csproj"/>
+    </Folder>
+    <Project Path="Mullai.Abstractions/Mullai.Abstractions.csproj"/>
+    <Project Path="Mullai.Agents/Mullai.Agents.csproj"/>
+    <Project Path="Mullai.Channels.Api/Mullai.Channels.Api.csproj"/>
+    <Project Path="Mullai.Channels.Core/Mullai.Channels.Core.csproj"/>
+    <Project Path="Mullai.Channels.Telegram/Mullai.Channels.Telegram.csproj"/>
+    <Project Path="Mullai.CLI\Mullai.CLI.csproj"/>
+    <Project Path="Mullai.Global.ServiceConfiguration/Mullai.Global.ServiceConfiguration.csproj"/>
+    <Project Path="Mullai.Logging/Mullai.Logging.csproj"/>
+    <Project Path="Mullai.Memory/Mullai.Memory.csproj"/>
+    <Project Path="Mullai.Middleware/Mullai.Middleware.csproj"/>
+    <Project Path="Mullai.Providers/Mullai.Providers.csproj"/>
+    <Project Path="Mullai.Skills/Mullai.Skills.csproj"/>
+    <Project Path="Mullai.Telemetry\Mullai.Telemetry.csproj"/>
+    <Project Path="Mullai.Tools/Mullai.Tools.csproj"/>
+    <Project Path="Mullai.Tools.Tests/Mullai.Tools.Tests.csproj"/>
+    <Project Path="Mullai.Providers.Tests/Mullai.Providers.Tests.csproj"/>
+    <Project Path="Mullai.Workflows/Mullai.Workflows.csproj"/>
+    <Project Path="Mullai.Web/Mullai.Web.csproj"/>
+    <Project Path="Mullai.LocalMcp/Mullai.LocalMcp.csproj"/>
 
-  <Project Path="Mullai.TaskRuntime/Mullai.TaskRuntime.csproj" />
+    <Project Path="Mullai.TaskRuntime/Mullai.TaskRuntime.csproj"/>
 </Solution>
 

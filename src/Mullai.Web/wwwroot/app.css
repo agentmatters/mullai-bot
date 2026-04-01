@@ -265,12 +265,12 @@ select {
     transition: transform 160ms ease;
 }
 
-.toggle input:checked+.toggle-ui {
+.toggle input:checked + .toggle-ui {
     background: var(--accent);
     border-color: rgba(79, 70, 229, 0.35);
 }
 
-.toggle input:checked+.toggle-ui::after {
+.toggle input:checked + .toggle-ui::after {
     transform: translateX(18px);
 }
 
@@ -314,6 +314,7 @@ select {
     --workflow-surface-muted: #f7f7f7;
     --workflow-border: #e3e3e3;
 }
+
 /* Premium Mobile Menu Button */
 .mobile-menu-btn {
     display: none;

@@ -46,7 +46,8 @@ Locks file edits to a specific directory tree:
 /safety-guard freeze src/components/
 ```
 
-Any Write/Edit outside `src/components/` is blocked with an explanation. Useful when you want an agent to focus on one area without touching unrelated code.
+Any Write/Edit outside `src/components/` is blocked with an explanation. Useful when you want an agent to focus on one
+area without touching unrelated code.
 
 ### Mode 3: Guard Mode (Careful + Freeze combined)
 
@@ -66,7 +67,8 @@ Agents can read anything but only write to `src/api/`. Destructive commands are 
 
 ## Implementation
 
-Uses PreToolUse hooks to intercept Bash, Write, Edit, and MultiEdit tool calls. Checks the command/path against the active rules before allowing execution.
+Uses PreToolUse hooks to intercept Bash, Write, Edit, and MultiEdit tool calls. Checks the command/path against the
+active rules before allowing execution.
 
 ## Integration
 

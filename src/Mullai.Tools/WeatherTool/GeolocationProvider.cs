@@ -4,7 +4,7 @@ using Mullai.Tools.WeatherTool.Models;
 namespace Mullai.Tools.WeatherTool;
 
 /// <summary>
-/// Provider for retrieving geolocation data from the Open-Meteo Geocoding API.
+///     Provider for retrieving geolocation data from the Open-Meteo Geocoding API.
 /// </summary>
 public class GeolocationProvider
 {
@@ -12,7 +12,7 @@ public class GeolocationProvider
     private readonly HttpClient _httpClient;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GeolocationProvider"/> class.
+    ///     Initializes a new instance of the <see cref="GeolocationProvider" /> class.
     /// </summary>
     /// <param name="httpClient">The HTTP client to use for API requests.</param>
     public GeolocationProvider(HttpClient httpClient)
@@ -21,7 +21,7 @@ public class GeolocationProvider
     }
 
     /// <summary>
-    /// Searches for geolocation data for a given location name.
+    ///     Searches for geolocation data for a given location name.
     /// </summary>
     /// <param name="locationName">The name of the location to search for.</param>
     /// <returns>A list of geolocation results matching the search query.</returns>
@@ -30,9 +30,7 @@ public class GeolocationProvider
     public async Task<List<GeolocationResult>> SearchAsync(string locationName)
     {
         if (string.IsNullOrWhiteSpace(locationName))
-        {
             throw new ArgumentException("Location name cannot be null or empty.", nameof(locationName));
-        }
 
         var url = $"{BaseUrl}?name={Uri.EscapeDataString(locationName)}";
 
@@ -42,9 +40,9 @@ public class GeolocationProvider
             response.EnsureSuccessStatusCode();
 
             var json = await response.Content.ReadAsStringAsync();
-            var geolocationResponse = JsonSerializer.Deserialize<GeolocationResponse>(json, new JsonSerializerOptions 
-            { 
-                PropertyNameCaseInsensitive = true 
+            var geolocationResponse = JsonSerializer.Deserialize<GeolocationResponse>(json, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
             });
 
             return geolocationResponse?.Results ?? new List<GeolocationResult>();
@@ -60,7 +58,7 @@ public class GeolocationProvider
     }
 
     /// <summary>
-    /// Searches for the primary geolocation result for a given location name.
+    ///     Searches for the primary geolocation result for a given location name.
     /// </summary>
     /// <param name="locationName">The name of the location to search for.</param>
     /// <returns>The first geolocation result, or null if no results are found.</returns>
@@ -71,18 +69,15 @@ public class GeolocationProvider
     }
 
     /// <summary>
-    /// Gets the latitude and longitude for a given location name.
+    ///     Gets the latitude and longitude for a given location name.
     /// </summary>
     /// <param name="locationName">The name of the location to search for.</param>
     /// <returns>A tuple containing the latitude and longitude, or null if the location is not found.</returns>
     public async Task<(double Latitude, double Longitude)?> GetCoordinatesAsync(string locationName)
     {
         var result = await SearchFirstAsync(locationName);
-        
-        if (result == null)
-        {
-            return null;
-        }
+
+        if (result == null) return null;
 
         return (result.Latitude, result.Longitude);
     }

@@ -1,11 +1,11 @@
 <Project>
-  <PropertyGroup>
-    <LocalAgentsAIPath>$(MSBuildThisFileDirectory)../../agent-framework/dotnet/src/Microsoft.Agents.AI/Microsoft.Agents.AI.csproj</LocalAgentsAIPath>
-    <UseLocalAgentsAI Condition="Exists('$(LocalAgentsAIPath)')">false</UseLocalAgentsAI>
-  </PropertyGroup>
+    <PropertyGroup>
+        <LocalAgentsAIPath>$(MSBuildThisFileDirectory)../../agent-framework/dotnet/src/Microsoft.Agents.AI/Microsoft.Agents.AI.csproj</LocalAgentsAIPath>
+        <UseLocalAgentsAI Condition="Exists('$(LocalAgentsAIPath)')">false</UseLocalAgentsAI>
+    </PropertyGroup>
 
-  <ItemGroup Condition="'$(UseLocalAgentsAI)' == 'true'">
-    <PackageReference Remove="Microsoft.Agents.AI" />
-    <ProjectReference Include="$(LocalAgentsAIPath)" />
-  </ItemGroup>
+    <ItemGroup Condition="'$(UseLocalAgentsAI)' == 'true'">
+        <PackageReference Remove="Microsoft.Agents.AI"/>
+        <ProjectReference Include="$(LocalAgentsAIPath)"/>
+    </ItemGroup>
 </Project>

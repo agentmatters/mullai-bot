@@ -6,7 +6,8 @@ origin: ECC
 
 # Kotlin Coroutines & Flows
 
-Patterns for structured concurrency, Flow-based reactive streams, and coroutine testing in Android and Kotlin Multiplatform projects.
+Patterns for structured concurrency, Flow-based reactive streams, and coroutine testing in Android and Kotlin
+Multiplatform projects.
 
 ## When to Activate
 
@@ -98,7 +99,8 @@ class DashboardViewModel(
 }
 ```
 
-`WhileSubscribed(5_000)` keeps the upstream active for 5 seconds after the last subscriber leaves — survives configuration changes without restarting.
+`WhileSubscribed(5_000)` keeps the upstream active for 5 seconds after the last subscriber leaves — survives
+configuration changes without restarting.
 
 ### Combining Multiple Flows
 
@@ -179,7 +181,8 @@ withContext(Dispatchers.IO) { database.query() }
 withContext(Dispatchers.Main) { updateUi() }
 ```
 
-In KMP, use `Dispatchers.Default` and `Dispatchers.Main` (available on all platforms). `Dispatchers.IO` is JVM/Android only — use `Dispatchers.Default` on other platforms or provide via DI.
+In KMP, use `Dispatchers.Default` and `Dispatchers.Main` (available on all platforms). `Dispatchers.IO` is JVM/Android
+only — use `Dispatchers.Default` on other platforms or provide via DI.
 
 ## Cancellation
 
@@ -273,7 +276,8 @@ class FakeItemRepository : ItemRepository {
 
 - Using `GlobalScope` — leaks coroutines, no structured cancellation
 - Collecting Flows in `init {}` without a scope — use `viewModelScope.launch`
-- Using `MutableStateFlow` with mutable collections — always use immutable copies: `_state.update { it.copy(list = it.list + newItem) }`
+- Using `MutableStateFlow` with mutable collections — always use immutable copies:
+  `_state.update { it.copy(list = it.list + newItem) }`
 - Catching `CancellationException` — let it propagate for proper cancellation
 - Using `flowOn(Dispatchers.Main)` to collect — collection dispatcher is the caller's dispatcher
 - Creating `Flow` in `@Composable` without `remember` — recreates the flow every recomposition

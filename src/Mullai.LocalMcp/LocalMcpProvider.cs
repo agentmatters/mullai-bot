@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 using Mullai.Abstractions.Configuration;
@@ -18,7 +17,7 @@ public class LocalMcpProvider : IBuiltInMcpProvider
         // Use a relative path from the application base directory
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;
         _toolKitsPath = Path.Combine(baseDir, "McpToolkits");
-        
+
         _logger.LogInformation("Scanning for local MCP toolkits in {Path}", _toolKitsPath);
     }
 
@@ -48,10 +47,7 @@ public class LocalMcpProvider : IBuiltInMcpProvider
                     continue;
 
                 var descriptor = CreateDescriptorFromDll(dllFile);
-                if (descriptor != null)
-                {
-                    _cachedServers.Add(descriptor);
-                }
+                if (descriptor != null) _cachedServers.Add(descriptor);
             }
         }
         catch (Exception ex)
@@ -87,9 +83,7 @@ public class LocalMcpProvider : IBuiltInMcpProvider
             {
                 var attrs = type.GetCustomAttributes(typeof(McpConfigurationRequirementAttribute), true);
                 foreach (McpConfigurationRequirementAttribute attr in attrs)
-                {
                     if (!descriptor.Requirements.Any(r => r.Key == attr.Key))
-                    {
                         descriptor.Requirements.Add(new McpConfigurationRequirement
                         {
                             Key = attr.Key,
@@ -97,9 +91,6 @@ public class LocalMcpProvider : IBuiltInMcpProvider
                             IsSecret = attr.IsSecret,
                             HelpUrl = attr.HelpUrl
                         });
-
-                    }
-                }
             }
         }
         catch (Exception ex)
@@ -110,4 +101,3 @@ public class LocalMcpProvider : IBuiltInMcpProvider
         return descriptor;
     }
 }
-

@@ -1,10 +1,11 @@
-| name | description |
-|------|-------------|
+| name                          | description                                                                                                                                                                                                                         |
+|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | cloud-infrastructure-security | Use this skill when deploying to cloud platforms, configuring infrastructure, managing IAM policies, setting up logging/monitoring, or implementing CI/CD pipelines. Provides cloud security checklist aligned with best practices. |
 
 # Cloud & Infrastructure Security Skill
 
-This skill ensures cloud infrastructure, CI/CD pipelines, and deployment configurations follow security best practices and comply with industry standards.
+This skill ensures cloud infrastructure, CI/CD pipelines, and deployment configurations follow security best practices
+and comply with industry standards.
 
 ## When to Activate
 
@@ -358,4 +359,6 @@ resource "aws_db_instance" "good" {
 - [OWASP Cloud Security](https://owasp.org/www-project-cloud-security/)
 - [Terraform Security Best Practices](https://www.terraform.io/docs/cloud/guides/recommended-practices/)
 
-**Remember**: Cloud misconfigurations are the leading cause of data breaches. A single exposed S3 bucket or overly permissive IAM policy can compromise your entire infrastructure. Always follow the principle of least privilege and defense in depth.
+**Remember**: Cloud misconfigurations are the leading cause of data breaches. A single exposed S3 bucket or overly
+permissive IAM policy can compromise your entire infrastructure. Always follow the principle of least privilege and
+defense in depth.

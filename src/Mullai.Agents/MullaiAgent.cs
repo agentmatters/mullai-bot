@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Mullai.Abstractions;
@@ -9,47 +10,47 @@ namespace Mullai.Agents;
 public class MullaiAgent
 {
     private readonly AIAgent _agent;
-    private readonly IChatClient _client;
 
     public MullaiAgent(AIAgent agent, IChatClient client)
     {
         _agent = agent ?? throw new ArgumentNullException(nameof(agent));
-        _client = client ?? throw new ArgumentNullException(nameof(client));
+        ChatClient = client ?? throw new ArgumentNullException(nameof(client));
     }
 
-    public IChatClient ChatClient => _client;
+    public IChatClient ChatClient { get; }
 
     public string Name => _agent.Name;
-    
-    public string ProviderName => 
-        MullaiRequestContext.Current?.Provider ?? 
-        (_client as IMullaiChatClient)?.ActiveLabel?.Split('/')[0] ?? 
+
+    public string ProviderName =>
+        MullaiRequestContext.Current?.Provider ??
+        (ChatClient as IMullaiChatClient)?.ActiveLabel?.Split('/')[0] ??
         "Unknown";
 
-    public string ModelName => 
-        MullaiRequestContext.Current?.Model ?? 
-        (_client as IMullaiChatClient)?.ActiveLabel?.Split('/').ElementAtOrDefault(1) ?? 
+    public string ModelName =>
+        MullaiRequestContext.Current?.Model ??
+        (ChatClient as IMullaiChatClient)?.ActiveLabel?.Split('/').ElementAtOrDefault(1) ??
         "Unknown";
 
-    public async Task<AgentSession> CreateSessionAsync(CancellationToken cancellationToken = default) 
-        => await _agent.CreateSessionAsync(cancellationToken);
+    public async Task<AgentSession> CreateSessionAsync(CancellationToken cancellationToken = default)
+    {
+        return await _agent.CreateSessionAsync(cancellationToken);
+    }
 
     public async IAsyncEnumerable<object> RunStreamingAsync(
-        string userInput, 
-        AgentSession session, 
-        string? provider = null, 
-        string? model = null, 
-        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+        string userInput,
+        AgentSession session,
+        string? provider = null,
+        string? model = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (provider != null || model != null)
-        {
             MullaiRequestContext.Current = new MullaiRequestInfo { Provider = provider, Model = model };
-        }
 
         List<AgentResponseUpdate> updates = [];
         try
         {
-            await foreach (var update in _agent.RunStreamingAsync(userInput, session, cancellationToken: cancellationToken))
+            await foreach (var update in _agent.RunStreamingAsync(userInput, session,
+                               cancellationToken: cancellationToken))
             {
                 updates.Add(update);
                 yield return update;
@@ -58,15 +59,12 @@ public class MullaiAgent
         finally
         {
             // Reset context after enumeration if we set it
-            if (provider != null || model != null)
-            {
-                MullaiRequestContext.Current = null;
-            }
+            if (provider != null || model != null) MullaiRequestContext.Current = null;
         }
 
         if (updates.Any())
         {
-            AgentResponse collectedResponseFromStreaming = updates.ToAgentResponse();
+            var collectedResponseFromStreaming = updates.ToAgentResponse();
             if (collectedResponseFromStreaming.Usage != null)
             {
                 var usage = new MullaiUsage(
@@ -78,12 +76,11 @@ public class MullaiAgent
         }
     }
 
-    public async Task<object> RunAsync(string userInput, AgentSession session, string? provider = null, string? model = null, CancellationToken cancellationToken = default)
+    public async Task<object> RunAsync(string userInput, AgentSession session, string? provider = null,
+        string? model = null, CancellationToken cancellationToken = default)
     {
         if (provider != null || model != null)
-        {
             MullaiRequestContext.Current = new MullaiRequestInfo { Provider = provider, Model = model };
-        }
 
         try
         {

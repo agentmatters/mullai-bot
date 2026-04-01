@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Mullai.TaskRuntime.Abstractions;
 using Mullai.TaskRuntime.Models;
 using Mullai.TaskRuntime.Options;
@@ -7,11 +6,11 @@ namespace Mullai.TaskRuntime.Services.Background;
 
 public class CronTaskSchedulerService : BackgroundService
 {
+    private readonly ILogger<CronTaskSchedulerService> _logger;
     private readonly IMullaiTaskQueue _queue;
-    private readonly IMullaiTaskStatusStore _statusStore;
     private readonly MullaiRecurringTaskOptions _recurringOptions;
     private readonly MullaiTaskRuntimeOptions _runtimeOptions;
-    private readonly ILogger<CronTaskSchedulerService> _logger;
+    private readonly IMullaiTaskStatusStore _statusStore;
 
     public CronTaskSchedulerService(
         IMullaiTaskQueue queue,
@@ -47,16 +46,11 @@ public class CronTaskSchedulerService : BackgroundService
 
     private async Task RunJobLoopAsync(MullaiRecurringTaskDefinition job, CancellationToken cancellationToken)
     {
-        if (job.RunOnStartup)
-        {
-            await EnqueueJobRunAsync(job, cancellationToken).ConfigureAwait(false);
-        }
+        if (job.RunOnStartup) await EnqueueJobRunAsync(job, cancellationToken).ConfigureAwait(false);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(Math.Max(1, job.IntervalSeconds)));
         while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
-        {
             await EnqueueJobRunAsync(job, cancellationToken).ConfigureAwait(false);
-        }
     }
 
     private async Task EnqueueJobRunAsync(MullaiRecurringTaskDefinition job, CancellationToken cancellationToken)

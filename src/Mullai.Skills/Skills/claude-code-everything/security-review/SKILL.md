@@ -23,12 +23,14 @@ This skill ensures all code follows security best practices and identifies poten
 ### 1. Secrets Management
 
 #### FAIL: NEVER Do This
+
 ```typescript
 const apiKey = "sk-proj-xxxxx"  // Hardcoded secret
 const dbPassword = "password123" // In source code
 ```
 
 #### PASS: ALWAYS Do This
+
 ```typescript
 const apiKey = process.env.OPENAI_API_KEY
 const dbUrl = process.env.DATABASE_URL
@@ -40,6 +42,7 @@ if (!apiKey) {
 ```
 
 #### Verification Steps
+
 - [ ] No hardcoded API keys, tokens, or passwords
 - [ ] All secrets in environment variables
 - [ ] `.env.local` in .gitignore
@@ -49,6 +52,7 @@ if (!apiKey) {
 ### 2. Input Validation
 
 #### Always Validate User Input
+
 ```typescript
 import { z } from 'zod'
 
@@ -74,6 +78,7 @@ export async function createUser(input: unknown) {
 ```
 
 #### File Upload Validation
+
 ```typescript
 function validateFileUpload(file: File) {
   // Size check (5MB max)
@@ -100,6 +105,7 @@ function validateFileUpload(file: File) {
 ```
 
 #### Verification Steps
+
 - [ ] All user inputs validated with schemas
 - [ ] File uploads restricted (size, type, extension)
 - [ ] No direct use of user input in queries
@@ -109,6 +115,7 @@ function validateFileUpload(file: File) {
 ### 3. SQL Injection Prevention
 
 #### FAIL: NEVER Concatenate SQL
+
 ```typescript
 // DANGEROUS - SQL Injection vulnerability
 const query = `SELECT * FROM users WHERE email = '${userEmail}'`
@@ -116,6 +123,7 @@ await db.query(query)
 ```
 
 #### PASS: ALWAYS Use Parameterized Queries
+
 ```typescript
 // Safe - parameterized query
 const { data } = await supabase
@@ -131,6 +139,7 @@ await db.query(
 ```
 
 #### Verification Steps
+
 - [ ] All database queries use parameterized queries
 - [ ] No string concatenation in SQL
 - [ ] ORM/query builder used correctly
@@ -139,6 +148,7 @@ await db.query(
 ### 4. Authentication & Authorization
 
 #### JWT Token Handling
+
 ```typescript
 // FAIL: WRONG: localStorage (vulnerable to XSS)
 localStorage.setItem('token', token)
@@ -149,6 +159,7 @@ res.setHeader('Set-Cookie',
 ```
 
 #### Authorization Checks
+
 ```typescript
 export async function deleteUser(userId: string, requesterId: string) {
   // ALWAYS verify authorization first
@@ -169,6 +180,7 @@ export async function deleteUser(userId: string, requesterId: string) {
 ```
 
 #### Row Level Security (Supabase)
+
 ```sql
 -- Enable RLS on all tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -185,6 +197,7 @@ CREATE POLICY "Users update own data"
 ```
 
 #### Verification Steps
+
 - [ ] Tokens stored in httpOnly cookies (not localStorage)
 - [ ] Authorization checks before sensitive operations
 - [ ] Row Level Security enabled in Supabase
@@ -194,6 +207,7 @@ CREATE POLICY "Users update own data"
 ### 5. XSS Prevention
 
 #### Sanitize HTML
+
 ```typescript
 import DOMPurify from 'isomorphic-dompurify'
 
@@ -208,6 +222,7 @@ function renderUserContent(html: string) {
 ```
 
 #### Content Security Policy
+
 ```typescript
 // next.config.js
 const securityHeaders = [
@@ -226,6 +241,7 @@ const securityHeaders = [
 ```
 
 #### Verification Steps
+
 - [ ] User-provided HTML sanitized
 - [ ] CSP headers configured
 - [ ] No unvalidated dynamic content rendering
@@ -234,6 +250,7 @@ const securityHeaders = [
 ### 6. CSRF Protection
 
 #### CSRF Tokens
+
 ```typescript
 import { csrf } from '@/lib/csrf'
 
@@ -252,12 +269,14 @@ export async function POST(request: Request) {
 ```
 
 #### SameSite Cookies
+
 ```typescript
 res.setHeader('Set-Cookie',
   `session=${sessionId}; HttpOnly; Secure; SameSite=Strict`)
 ```
 
 #### Verification Steps
+
 - [ ] CSRF tokens on state-changing operations
 - [ ] SameSite=Strict on all cookies
 - [ ] Double-submit cookie pattern implemented
@@ -265,6 +284,7 @@ res.setHeader('Set-Cookie',
 ### 7. Rate Limiting
 
 #### API Rate Limiting
+
 ```typescript
 import rateLimit from 'express-rate-limit'
 
@@ -279,6 +299,7 @@ app.use('/api/', limiter)
 ```
 
 #### Expensive Operations
+
 ```typescript
 // Aggressive rate limiting for searches
 const searchLimiter = rateLimit({
@@ -291,6 +312,7 @@ app.use('/api/search', searchLimiter)
 ```
 
 #### Verification Steps
+
 - [ ] Rate limiting on all API endpoints
 - [ ] Stricter limits on expensive operations
 - [ ] IP-based rate limiting
@@ -299,6 +321,7 @@ app.use('/api/search', searchLimiter)
 ### 8. Sensitive Data Exposure
 
 #### Logging
+
 ```typescript
 // FAIL: WRONG: Logging sensitive data
 console.log('User login:', { email, password })
@@ -310,6 +333,7 @@ console.log('Payment:', { last4: card.last4, userId })
 ```
 
 #### Error Messages
+
 ```typescript
 // FAIL: WRONG: Exposing internal details
 catch (error) {
@@ -330,6 +354,7 @@ catch (error) {
 ```
 
 #### Verification Steps
+
 - [ ] No passwords, tokens, or secrets in logs
 - [ ] Error messages generic for users
 - [ ] Detailed errors only in server logs
@@ -338,6 +363,7 @@ catch (error) {
 ### 9. Blockchain Security (Solana)
 
 #### Wallet Verification
+
 ```typescript
 import { verify } from '@solana/web3.js'
 
@@ -360,6 +386,7 @@ async function verifyWalletOwnership(
 ```
 
 #### Transaction Verification
+
 ```typescript
 async function verifyTransaction(transaction: Transaction) {
   // Verify recipient
@@ -383,6 +410,7 @@ async function verifyTransaction(transaction: Transaction) {
 ```
 
 #### Verification Steps
+
 - [ ] Wallet signatures verified
 - [ ] Transaction details validated
 - [ ] Balance checks before transactions
@@ -391,6 +419,7 @@ async function verifyTransaction(transaction: Transaction) {
 ### 10. Dependency Security
 
 #### Regular Updates
+
 ```bash
 # Check for vulnerabilities
 npm audit
@@ -406,6 +435,7 @@ npm outdated
 ```
 
 #### Lock Files
+
 ```bash
 # ALWAYS commit lock files
 git add package-lock.json
@@ -415,6 +445,7 @@ npm ci  # Instead of npm install
 ```
 
 #### Verification Steps
+
 - [ ] Dependencies up to date
 - [ ] No known vulnerabilities (npm audit clean)
 - [ ] Lock files committed
@@ -424,6 +455,7 @@ npm ci  # Instead of npm install
 ## Security Testing
 
 ### Automated Security Tests
+
 ```typescript
 // Test authentication
 test('requires authentication', async () => {
@@ -492,4 +524,5 @@ Before ANY production deployment:
 
 ---
 
-**Remember**: Security is not optional. One vulnerability can compromise the entire platform. When in doubt, err on the side of caution.
+**Remember**: Security is not optional. One vulnerability can compromise the entire platform. When in doubt, err on the
+side of caution.

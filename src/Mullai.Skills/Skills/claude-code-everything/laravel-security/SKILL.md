@@ -22,7 +22,8 @@ Comprehensive security guidance for Laravel applications to protect against comm
 - Guards and policies enforce access control (`auth:sanctum`, `$this->authorize`, policy middleware).
 - Form Requests validate and shape input (`UploadInvoiceRequest`) before it reaches services.
 - Rate limiting adds abuse protection (`RateLimiter::for('login')`) alongside auth controls.
-- Data safety comes from encrypted casts, mass-assignment guards, and signed routes (`URL::temporarySignedRoute` + `signed` middleware).
+- Data safety comes from encrypted casts, mass-assignment guards, and signed routes (`URL::temporarySignedRoute` +
+  `signed` middleware).
 
 ## Core Security Settings
 

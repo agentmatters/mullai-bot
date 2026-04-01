@@ -7,9 +7,11 @@ version: "1.0.0"
 
 # Healthcare Eval Harness — Patient Safety Verification
 
-Automated verification system for healthcare application deployments. A single CRITICAL failure blocks deployment. Patient safety is non-negotiable.
+Automated verification system for healthcare application deployments. A single CRITICAL failure blocks deployment.
+Patient safety is non-negotiable.
 
-> **Note:** Examples use Jest as the reference test runner. Adapt commands for your framework (Vitest, pytest, PHPUnit, etc.) — the test categories and pass thresholds are framework-agnostic.
+> **Note:** Examples use Jest as the reference test runner. Adapt commands for your framework (Vitest, pytest, PHPUnit,
+> etc.) — the test categories and pass thresholds are framework-agnostic.
 
 ## When to Use
 
@@ -22,15 +24,19 @@ Automated verification system for healthcare application deployments. A single C
 
 ## How It Works
 
-The eval harness runs five test categories in order. The first three (CDSS Accuracy, PHI Exposure, Data Integrity) are CRITICAL gates requiring 100% pass rate — a single failure blocks deployment. The remaining two (Clinical Workflow, Integration) are HIGH gates requiring 95%+ pass rate.
+The eval harness runs five test categories in order. The first three (CDSS Accuracy, PHI Exposure, Data Integrity) are
+CRITICAL gates requiring 100% pass rate — a single failure blocks deployment. The remaining two (Clinical Workflow,
+Integration) are HIGH gates requiring 95%+ pass rate.
 
-Each category maps to a Jest test path pattern. The CI pipeline runs CRITICAL gates with `--bail` (stop on first failure) and enforces coverage thresholds with `--coverage --coverageThreshold`.
+Each category maps to a Jest test path pattern. The CI pipeline runs CRITICAL gates with `--bail` (stop on first
+failure) and enforces coverage thresholds with `--coverage --coverageThreshold`.
 
 ### Eval Categories
 
 **1. CDSS Accuracy (CRITICAL — 100% required)**
 
-Tests all clinical decision support logic: drug interaction pairs (both directions), dose validation rules, clinical scoring vs published specs, no false negatives, no silent failures.
+Tests all clinical decision support logic: drug interaction pairs (both directions), dose validation rules, clinical
+scoring vs published specs, no false negatives, no silent failures.
 
 ```bash
 npx jest --testPathPattern='tests/cdss' --bail --ci --coverage
@@ -38,7 +44,8 @@ npx jest --testPathPattern='tests/cdss' --bail --ci --coverage
 
 **2. PHI Exposure (CRITICAL — 100% required)**
 
-Tests for protected health information leaks: API error responses, console output, URL parameters, browser storage, cross-facility isolation, unauthenticated access, service role key absence.
+Tests for protected health information leaks: API error responses, console output, URL parameters, browser storage,
+cross-facility isolation, unauthenticated access, service role key absence.
 
 ```bash
 npx jest --testPathPattern='tests/security/phi' --bail --ci
@@ -46,7 +53,8 @@ npx jest --testPathPattern='tests/security/phi' --bail --ci
 
 **3. Data Integrity (CRITICAL — 100% required)**
 
-Tests clinical data safety: locked encounters, audit trail entries, cascade delete protection, concurrent edit handling, no orphaned records.
+Tests clinical data safety: locked encounters, audit trail entries, cascade delete protection, concurrent edit handling,
+no orphaned records.
 
 ```bash
 npx jest --testPathPattern='tests/data-integrity' --bail --ci
@@ -54,7 +62,8 @@ npx jest --testPathPattern='tests/data-integrity' --bail --ci
 
 **4. Clinical Workflow (HIGH — 95%+ required)**
 
-Tests end-to-end flows: encounter lifecycle, template rendering, medication sets, drug/diagnosis search, prescription PDF, red flag alerts.
+Tests end-to-end flows: encounter lifecycle, template rendering, medication sets, drug/diagnosis search, prescription
+PDF, red flag alerts.
 
 ```bash
 tmp_json=$(mktemp)
@@ -88,13 +97,13 @@ echo "Integration pass rate: ${rate}% ($passed/$total)"
 
 ### Pass/Fail Matrix
 
-| Category | Threshold | On Failure |
-|----------|-----------|------------|
-| CDSS Accuracy | 100% | **BLOCK deployment** |
-| PHI Exposure | 100% | **BLOCK deployment** |
-| Data Integrity | 100% | **BLOCK deployment** |
-| Clinical Workflow | 95%+ | WARN, allow with review |
-| Integration | 95%+ | WARN, allow with review |
+| Category          | Threshold | On Failure              |
+|-------------------|-----------|-------------------------|
+| CDSS Accuracy     | 100%      | **BLOCK deployment**    |
+| PHI Exposure      | 100%      | **BLOCK deployment**    |
+| Data Integrity    | 100%      | **BLOCK deployment**    |
+| Clinical Workflow | 95%+      | WARN, allow with review |
+| Integration       | 95%+      | WARN, allow with review |
 
 ### CI/CD Integration
 

@@ -18,20 +18,17 @@ public class ChatOrchestrator
         _state = state;
     }
 
+    public string ModelName => _mullaiClient.ModelName;
+    public string ProviderName => _mullaiClient.ProviderName;
+
     public void RefreshClients()
     {
         _mullaiClient.RefreshClients();
     }
 
-    public string ModelName => _mullaiClient.ModelName;
-    public string ProviderName => _mullaiClient.ProviderName;
-
     public async Task InitialiseAsync()
     {
-        if (_isInitialised)
-        {
-            return;
-        }
+        if (_isInitialised) return;
 
         await _mullaiClient.InitialiseAsync();
         _isInitialised = true;
@@ -42,9 +39,7 @@ public class ChatOrchestrator
     private async Task PumpToolCallsAsync()
     {
         await foreach (var observation in ToolCallChannel.Instance.Reader.ReadAllAsync())
-        {
             _state.AddToolCall(observation);
-        }
     }
 
     public async Task HandleMessageAsync(string userInput)
@@ -56,7 +51,6 @@ public class ChatOrchestrator
         {
             var firstUpdate = true;
             await foreach (var update in _mullaiClient.RunStreamingAsync(userInput))
-            {
                 if (update is string text && !string.IsNullOrEmpty(text))
                 {
                     _state.AppendUpdate(text, firstUpdate);
@@ -66,7 +60,6 @@ public class ChatOrchestrator
                 {
                     // Optionally handle usage in CLI if desired, but for now just resolving the build error
                 }
-            }
         }
         catch (Exception ex)
         {

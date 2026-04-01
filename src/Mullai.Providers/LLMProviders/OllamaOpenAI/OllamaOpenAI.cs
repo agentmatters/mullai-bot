@@ -1,18 +1,14 @@
-using System.ClientModel;
-using System.ClientModel.Primitives;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Mullai.OpenTelemetry.OpenTelemetry;
-using OpenAI;
 
 namespace Mullai.Providers.LLMProviders.OllamaOpenAI;
 
 public static class OllamaOpenAI
 {
     public static IServiceCollection AddOllamaOpenAIChatClient(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration,
         ILoggerFactory loggerFactory,
         HttpClient httpClient
@@ -44,4 +40,8 @@ public static class OllamaOpenAI
         IConfiguration configuration,
         ILoggerFactory loggerFactory,
         HttpClient httpClient
-    ) => GetOllamaOpenAIChatClient(configuration, httpClient);}
+    )
+    {
+        return GetOllamaOpenAIChatClient(configuration, httpClient);
+    }
+}

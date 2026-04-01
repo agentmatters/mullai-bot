@@ -1,7 +1,12 @@
 namespace Mullai.CLI.State;
 
 /// <summary>Status of a single tool invocation.</summary>
-public enum ToolCallStatus { Running, Succeeded, Failed }
+public enum ToolCallStatus
+{
+    Running,
+    Succeeded,
+    Failed
+}
 
 /// <summary>A single captured tool call event emitted by the agent middleware.</summary>
 public record ToolCallEvent(
@@ -15,7 +20,7 @@ public record ToolCallEvent(
 {
     /// <summary>Elapsed time string, e.g. "1.3s".</summary>
     public string Elapsed =>
-        (StartedAt.HasValue && FinishedAt.HasValue)
+        StartedAt.HasValue && FinishedAt.HasValue
             ? $"{(FinishedAt.Value - StartedAt.Value).TotalSeconds:F1}s"
             : string.Empty;
 }

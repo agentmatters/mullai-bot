@@ -5,10 +5,10 @@ using Mullai.Tools.CliTool;
 using Mullai.Tools.CodeSearchTool;
 using Mullai.Tools.FileSystemTool;
 using Mullai.Tools.TodoTool;
-using Mullai.Tools.WebTool;
 using Mullai.Tools.WeatherTool;
-using Mullai.Tools.WorkflowTool;
+using Mullai.Tools.WebTool;
 using Mullai.Tools.WorkflowStateTool;
+using Mullai.Tools.WorkflowTool;
 using Mullai.Workflows.Abstractions;
 
 namespace Mullai.Agents;
@@ -34,7 +34,7 @@ public sealed class WorkflowToolsProvider : IWorkflowToolsProvider
             .. _serviceProvider.GetRequiredService<CodeSearchTool>().AsAITools(),
             .. _serviceProvider.GetRequiredService<FileSystemTool>().AsAITools(),
             .. _serviceProvider.GetRequiredService<WorkflowTool>().AsAITools(),
-            .. _serviceProvider.GetRequiredService<WorkflowStateTool>().AsAITools(),
+            .. _serviceProvider.GetRequiredService<WorkflowStateTool>().AsAITools()
         ];
     }
 }

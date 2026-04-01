@@ -6,20 +6,20 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-  <ItemGroup>
-      <PackageReference Include="Microsoft.Agents.AI" />
-      <PackageReference Include="Microsoft.Extensions.AI" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-      <PackageReference Include="Microsoft.Extensions.Http" />
-      <PackageReference Include="Open-XML-SDK" />
-      <PackageReference Include="ReverseMarkdown" />
-      <PackageReference Include="YamlDotNet" />
-      <PackageReference Include="ModelContextProtocol" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Agents.AI"/>
+        <PackageReference Include="Microsoft.Extensions.AI"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection"/>
+        <PackageReference Include="Microsoft.Extensions.Http"/>
+        <PackageReference Include="Open-XML-SDK"/>
+        <PackageReference Include="ReverseMarkdown"/>
+        <PackageReference Include="YamlDotNet"/>
+        <PackageReference Include="ModelContextProtocol"/>
+    </ItemGroup>
 
-  <ItemGroup>
-      <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj" />
-      <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Mullai.Workflows\Mullai.Workflows.csproj"/>
+        <ProjectReference Include="..\Mullai.Abstractions\Mullai.Abstractions.csproj"/>
+    </ItemGroup>
 
 </Project>

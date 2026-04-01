@@ -12,18 +12,20 @@ source_rule: <file path provided>
 version: "1.0"
 
 steps:
-  - id: <snake_case>
-    description: <what the agent should do>
-    required: true|false
-    detector:
-      description: <natural language description of what tool call to look for>
-      after_step: <step_id this must come after, optional — omit if not needed>
-      before_step: <step_id this must come before, optional — omit if not needed>
+
+- id: <snake_case>
+  description: <what the agent should do>
+  required: true|false
+  detector:
+  description: <natural language description of what tool call to look for>
+  after_step: <step_id this must come after, optional — omit if not needed>
+  before_step: <step_id this must come before, optional — omit if not needed>
 
 scoring:
-  threshold_promote_to_hook: 0.6
+threshold_promote_to_hook: 0.6
 
 Rules:
+
 - detector.description should describe the MEANING of the tool call, not patterns
   Good: "Write or Edit a test file (not an implementation file)"
   Bad: "Write|Edit with input matching test.*\\.py"

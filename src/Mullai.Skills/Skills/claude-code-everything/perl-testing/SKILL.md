@@ -310,7 +310,8 @@ subtest 'file processing' => sub {
 
 ### Shared Test Helpers
 
-Place reusable helpers in `t/lib/TestHelper.pm` and load with `use lib 't/lib'`. Export factory functions like `create_test_db()`, `create_temp_dir()`, and `fixture_path()` via `Exporter`.
+Place reusable helpers in `t/lib/TestHelper.pm` and load with `use lib 't/lib'`. Export factory functions like
+`create_test_db()`, `create_temp_dir()`, and `fixture_path()` via `Exporter`.
 
 ## Mocking
 
@@ -347,7 +348,8 @@ subtest 'mock external API' => sub {
 # *MyApp::API::fetch_user = sub { ... };  # NEVER — leaks across tests
 ```
 
-For lightweight mock objects, use `Test::MockObject` to create injectable test doubles with `->mock()` and verify calls with `->called_ok()`.
+For lightweight mock objects, use `Test::MockObject` to create injectable test doubles with `->mock()` and verify calls
+with `->called_ok()`.
 
 ## Coverage with Devel::Cover
 
@@ -423,19 +425,19 @@ done_testing;
 
 ## Quick Reference
 
-| Task | Command / Pattern |
-|---|---|
-| Run all tests | `prove -lr t/` |
-| Run one test verbose | `prove -lv t/unit/user.t` |
-| Parallel test run | `prove -lr -j8 t/` |
-| Coverage report | `cover -test && cover -report html` |
-| Test equality | `is($got, $expected, 'label')` |
-| Deep comparison | `is($got, hash { field k => 'v'; etc() }, 'label')` |
-| Test exception | `like(dies { ... }, qr/msg/, 'label')` |
-| Test no exception | `ok(lives { ... }, 'label')` |
-| Mock a method | `Test::MockModule->new('Pkg')->mock(m => sub { ... })` |
-| Skip tests | `SKIP: { skip 'reason', $count unless $cond; ... }` |
-| TODO tests | `TODO: { local $TODO = 'reason'; ... }` |
+| Task                 | Command / Pattern                                      |
+|----------------------|--------------------------------------------------------|
+| Run all tests        | `prove -lr t/`                                         |
+| Run one test verbose | `prove -lv t/unit/user.t`                              |
+| Parallel test run    | `prove -lr -j8 t/`                                     |
+| Coverage report      | `cover -test && cover -report html`                    |
+| Test equality        | `is($got, $expected, 'label')`                         |
+| Deep comparison      | `is($got, hash { field k => 'v'; etc() }, 'label')`    |
+| Test exception       | `like(dies { ... }, qr/msg/, 'label')`                 |
+| Test no exception    | `ok(lives { ... }, 'label')`                           |
+| Mock a method        | `Test::MockModule->new('Pkg')->mock(m => sub { ... })` |
+| Skip tests           | `SKIP: { skip 'reason', $count unless $cond; ... }`    |
+| TODO tests           | `TODO: { local $TODO = 'reason'; ... }`                |
 
 ## Common Pitfalls
 
@@ -466,10 +468,12 @@ prove -l t/unit/user.t
 
 ### Over-Mocking
 
-Mock the *dependency*, not the code under test. If your test only verifies that a mock returns what you told it to, it tests nothing.
+Mock the *dependency*, not the code under test. If your test only verifies that a mock returns what you told it to, it
+tests nothing.
 
 ### Test Pollution
 
 Use `my` variables inside subtests — never `our` — to prevent state leaking between tests.
 
-**Remember**: Tests are your safety net. Keep them fast, focused, and independent. Use Test2::V0 for new projects, prove for running, and Devel::Cover for accountability.
+**Remember**: Tests are your safety net. Keep them fast, focused, and independent. Use Test2::V0 for new projects, prove
+for running, and Devel::Cover for accountability.

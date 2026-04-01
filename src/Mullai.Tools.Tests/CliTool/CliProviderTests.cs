@@ -1,7 +1,5 @@
+using System.Runtime.InteropServices;
 using Mullai.Tools.CliTool;
-using Xunit;
-
-using System.Threading.Tasks;
 
 namespace Mullai.Tools.Tests.CliTool;
 
@@ -47,16 +45,16 @@ public class CliProviderTests
     {
         // Arrange
         var sessionId = _provider.CreateSession();
-        var testDirName = "mullai_test_session_dir_" + System.Guid.NewGuid().ToString("N");
-        
+        var testDirName = "mullai_test_session_dir_" + Guid.NewGuid().ToString("N");
+
         try
         {
             // Act
             await _provider.ExecuteSessionCommandAsync(sessionId, $"mkdir {testDirName}");
             await _provider.ExecuteSessionCommandAsync(sessionId, $"cd {testDirName}");
-            
+
             // Depending on OS, 'pwd' or 'cd' without args prints current directory
-            var pwdCmd = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? "cd" : "pwd";
+            var pwdCmd = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cd" : "pwd";
             var result = await _provider.ExecuteSessionCommandAsync(sessionId, pwdCmd);
 
             // Assert
@@ -64,12 +62,14 @@ public class CliProviderTests
         }
         finally
         {
-             // Cleanup test directory
+            // Cleanup test directory
             await _provider.ExecuteSessionCommandAsync(sessionId, "cd ..");
-            
-            var rmCmd = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows) ? $"rmdir /s /q {testDirName}" : $"rm -rf {testDirName}";
+
+            var rmCmd = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+                ? $"rmdir /s /q {testDirName}"
+                : $"rm -rf {testDirName}";
             await _provider.ExecuteSessionCommandAsync(sessionId, rmCmd);
-            
+
             _provider.CloseSession(sessionId);
         }
     }

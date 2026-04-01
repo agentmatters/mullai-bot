@@ -144,4 +144,5 @@ log.error("failed_fetch_market slug={}", slug, ex);
 - Mockito for mocking; avoid partial mocks where possible
 - Favor deterministic tests; no hidden sleeps
 
-**Remember**: Keep code intentional, typed, and observable. Optimize for maintainability over micro-optimizations unless proven necessary.
+**Remember**: Keep code intentional, typed, and observable. Optimize for maintainability over micro-optimizations unless
+proven necessary.

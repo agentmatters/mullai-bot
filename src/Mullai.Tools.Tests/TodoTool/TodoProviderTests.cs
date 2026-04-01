@@ -1,6 +1,4 @@
 using Mullai.Tools.TodoTool;
-using Mullai.Tools.TodoTool.Models;
-using Xunit;
 
 namespace Mullai.Tools.Tests.TodoTool;
 

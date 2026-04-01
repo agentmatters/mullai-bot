@@ -7,7 +7,8 @@ version: "1.0.0"
 
 # Healthcare EMR Development Patterns
 
-Patterns for building Electronic Medical Record (EMR) and Electronic Health Record (EHR) systems. Prioritizes patient safety, clinical accuracy, and practitioner efficiency.
+Patterns for building Electronic Medical Record (EMR) and Electronic Health Record (EHR) systems. Prioritizes patient
+safety, clinical accuracy, and practitioner efficiency.
 
 ## When to Use
 
@@ -79,26 +80,32 @@ User selects drug
   → Log all alerts and override reasons in audit trail
 ```
 
-Critical interactions **block prescribing by default**. The clinician must explicitly override with a documented reason stored in the audit trail. The system never silently allows a critical interaction.
+Critical interactions **block prescribing by default**. The clinician must explicitly override with a documented reason
+stored in the audit trail. The system never silently allows a critical interaction.
 
 ### Locked Encounter Pattern
 
 Once a clinical encounter is signed:
+
 - No edits allowed — only an addendum (a separate linked record)
 - Both original and addendum appear in the patient timeline
 - Audit trail captures who signed, when, and any addendum records
 
 ### UI Patterns for Clinical Data
 
-**Vitals Display:** Current values with normal range highlighting (green/yellow/red), trend arrows vs previous, clinical scoring auto-calculated (NEWS2, qSOFA), escalation guidance inline.
+**Vitals Display:** Current values with normal range highlighting (green/yellow/red), trend arrows vs previous, clinical
+scoring auto-calculated (NEWS2, qSOFA), escalation guidance inline.
 
-**Lab Results Display:** Normal range highlighting, previous value comparison, critical values with non-dismissable alert, collection/analysis timestamps, pending orders with expected turnaround.
+**Lab Results Display:** Normal range highlighting, previous value comparison, critical values with non-dismissable
+alert, collection/analysis timestamps, pending orders with expected turnaround.
 
-**Prescription PDF:** One-click generation with patient demographics, allergies, diagnosis, drug details (generic + brand, dose, route, frequency, duration), clinician signature block.
+**Prescription PDF:** One-click generation with patient demographics, allergies, diagnosis, drug details (generic +
+brand, dose, route, frequency, duration), clinician signature block.
 
 ### Accessibility for Healthcare
 
 Healthcare UIs have stricter requirements than typical web apps:
+
 - 4.5:1 minimum contrast (WCAG AA) — clinicians work in varied lighting
 - Large touch targets (44x44px minimum) — for gloved/rushed interaction
 - Keyboard navigation — for power users entering data rapidly

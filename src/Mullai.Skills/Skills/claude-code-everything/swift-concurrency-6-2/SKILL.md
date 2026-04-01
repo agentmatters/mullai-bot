@@ -5,7 +5,8 @@ description: Swift 6.2 Approachable Concurrency — single-threaded by default, 
 
 # Swift 6.2 Approachable Concurrency
 
-Patterns for adopting Swift 6.2's concurrency model where code runs single-threaded by default and concurrency is introduced explicitly. Eliminates common data-race errors without sacrificing performance.
+Patterns for adopting Swift 6.2's concurrency model where code runs single-threaded by default and concurrency is
+introduced explicitly. Eliminates common data-race errors without sacrificing performance.
 
 ## When to Activate
 
@@ -18,7 +19,8 @@ Patterns for adopting Swift 6.2's concurrency model where code runs single-threa
 
 ## Core Problem: Implicit Background Offloading
 
-In Swift 6.1 and earlier, async functions could be implicitly offloaded to background threads, causing data-race errors even in seemingly safe code:
+In Swift 6.1 and earlier, async functions could be implicitly offloaded to background threads, causing data-race errors
+even in seemingly safe code:
 
 ```swift
 // Swift 6.1: ERROR
@@ -136,7 +138,9 @@ This mode is opt-in and recommended for apps, scripts, and other executable targ
 
 When you need actual parallelism, explicitly offload with `@concurrent`:
 
-> **Important:** This example requires Approachable Concurrency build settings — SE-0466 (MainActor default isolation) and SE-0461 (NonisolatedNonsendingByDefault). With these enabled, `extractSticker` stays on the caller's actor, making mutable state access safe. **Without these settings, this code has a data race** — the compiler will flag it.
+> **Important:** This example requires Approachable Concurrency build settings — SE-0466 (MainActor default isolation)
+> and SE-0461 (NonisolatedNonsendingByDefault). With these enabled, `extractSticker` stays on the caller's actor, making
+> mutable state access safe. **Without these settings, this code has a data race** — the compiler will flag it.
 
 ```swift
 nonisolated final class PhotoProcessor {
@@ -163,6 +167,7 @@ processedPhotos[item.id] = await processor.extractSticker(data: data, with: item
 ```
 
 To use `@concurrent`:
+
 1. Mark the containing type as `nonisolated`
 2. Add `@concurrent` to the function
 3. Add `async` if not already asynchronous
@@ -170,14 +175,14 @@ To use `@concurrent`:
 
 ## Key Design Decisions
 
-| Decision | Rationale |
-|----------|-----------|
-| Single-threaded by default | Most natural code is data-race free; concurrency is opt-in |
-| Async stays on calling actor | Eliminates implicit offloading that caused data-race errors |
-| Isolated conformances | MainActor types can conform to protocols without unsafe workarounds |
+| Decision                      | Rationale                                                               |
+|-------------------------------|-------------------------------------------------------------------------|
+| Single-threaded by default    | Most natural code is data-race free; concurrency is opt-in              |
+| Async stays on calling actor  | Eliminates implicit offloading that caused data-race errors             |
+| Isolated conformances         | MainActor types can conform to protocols without unsafe workarounds     |
 | `@concurrent` explicit opt-in | Background execution is a deliberate performance choice, not accidental |
-| MainActor default inference | Reduces boilerplate `@MainActor` annotations for app targets |
-| Opt-in adoption | Non-breaking migration path — enable features incrementally |
+| MainActor default inference   | Reduces boilerplate `@MainActor` annotations for app targets            |
+| Opt-in adoption               | Non-breaking migration path — enable features incrementally             |
 
 ## Migration Steps
 
