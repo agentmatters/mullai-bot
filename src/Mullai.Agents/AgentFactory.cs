@@ -85,7 +85,7 @@ public class AgentFactory
         // the tool loop, wrapping them as ObservableAIFunction for middleware callback support
         var chatClientWithInjection = new ChatClientToolInjectionMiddleware(
             chatClient, agentTools, functionCallingMiddleware.InvokeAsync);
-
+        
         agent = chatClientWithInjection.AsAIAgent(
             new ChatClientAgentOptions()
             {
@@ -93,11 +93,12 @@ public class AgentFactory
                 {
                     Instructions = agentDef.Instructions,
                     Tools = agentTools,
-                    AllowMultipleToolCalls = true
+                    AllowMultipleToolCalls = true,
                 },
                 Name = agentDef.Name,
                 AIContextProviders = [
                     _serviceProvider.GetRequiredService<CurrentFolderContext>(),
+                    _serviceProvider.GetRequiredService<AgentSkillsProvider>()
                 ],
             },
             _serviceProvider.GetRequiredService<ILoggerFactory>())

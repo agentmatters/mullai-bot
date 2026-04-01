@@ -11,11 +11,11 @@ public static class SkillExtension
     /// </summary>
     public static IServiceCollection AddMullaiSkills(this IServiceCollection services)
     {
-        // services.AddSingleton(sp =>
-        //     new FileAgentSkillsProvider(
-        //         skillPath: Path.Combine(AppContext.BaseDirectory, "Skills"),
-        //         loggerFactory: sp.GetRequiredService<ILoggerFactory>()));
-
+        services.AddSingleton(sp => 
+            new AgentSkillsProvider(
+            skillPath: Path.Combine(AppContext.BaseDirectory, "skills"),
+            loggerFactory: sp.GetRequiredService<ILoggerFactory>()));
+        
         return services;
     }
 }
