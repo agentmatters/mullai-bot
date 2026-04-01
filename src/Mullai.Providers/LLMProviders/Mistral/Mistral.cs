@@ -37,10 +37,12 @@ public static class Mistral
 
         var endpoint = configuration["Mistral:Endpoint"] ?? "https://api.mistral.ai/v1/chat/completions";
         
-        return new MistralChatClient(httpClient, new Uri(endpoint))
+        var client = new MistralChatClient(httpClient, new Uri(endpoint))
         {
             OnBeforeRequest = req => req.Headers.Add("Authorization", $"Bearer {apiKey}")
         };
+
+        return new MistralChatMessageInterceptor(client);
     }
 
     [Obsolete("Use GetMistralChatClient(configuration, httpClient, modelId) instead.")]

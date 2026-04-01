@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.AI;
@@ -20,8 +21,8 @@ public class MistralChatMessageInterceptor : DelegatingChatClient
         ChatOptions? options = null, 
         CancellationToken cancellationToken = default)
     {
-        ProcessMessages(chatMessages);
-        return base.GetResponseAsync(chatMessages, options, cancellationToken);
+        var messages = ProcessMessages(chatMessages, options);
+        return base.GetResponseAsync(messages, options, cancellationToken);
     }
 
     public override IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
@@ -29,19 +30,30 @@ public class MistralChatMessageInterceptor : DelegatingChatClient
         ChatOptions? options = null, 
         CancellationToken cancellationToken = default)
     {
-        ProcessMessages(chatMessages);
-        return base.GetStreamingResponseAsync(chatMessages, options, cancellationToken);
+        var messages = ProcessMessages(chatMessages, options);
+        return base.GetStreamingResponseAsync(messages, options, cancellationToken);
     }
 
-    private void ProcessMessages(IEnumerable<ChatMessage> chatMessages)
+    private IEnumerable<ChatMessage> ProcessMessages(IEnumerable<ChatMessage> chatMessages, ChatOptions? options)
     {
-        if (chatMessages == null) return;
+        if (chatMessages == null) return Enumerable.Empty<ChatMessage>();
+
+        var messages = chatMessages;
+
+        // Mistral API requires instructions (if any) to be passed as a system prompt in the messages.
+        if (!string.IsNullOrEmpty(options?.Instructions))
+        {
+            var instructionsMessage = new ChatMessage(ChatRole.System, options.Instructions);
+            messages = new[] { instructionsMessage }.Concat(chatMessages);
+        }
         
-        foreach (var message in chatMessages)
+        foreach (var message in messages)
         {
             // Mistral API does not support the 'name' property (AuthorName in Microsoft.Extensions.AI).
             // It will throw a validation error if this property is sent in the payload.
             message.AuthorName = null;
         }
+
+        return messages;
     }
 }
