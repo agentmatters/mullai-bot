@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Mullai.Abstractions.Configuration;
 using Mullai.Agents;
+using Mullai.Agents.AgentAsTools;
 using Mullai.LocalMcp;
 using Mullai.Logging.LLMRequestLogging;
 using Mullai.Memory;
@@ -88,6 +89,7 @@ public static class ServiceConfiguration
             })
             .AddSingleton<IChatClient>(sp => sp.GetRequiredService<IMullaiChatClient>())
             .AddSingleton<AgentFactory>()
+            .AddKeyedSingleton<MullaiAgent>("SkillAgent", (sp, key) => SkillAgent.Create(sp))
             .AddSingleton<FunctionCallingMiddleware>()
             .AddWeatherTool()
             .AddCliTool()

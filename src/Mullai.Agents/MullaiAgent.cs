@@ -97,4 +97,9 @@ public class MullaiAgent
     {
         refreshAction?.Invoke();
     }
+
+    public AIFunction AsAIFunction()
+    {
+        return _agent.AsAIFunction();
+    }
 }

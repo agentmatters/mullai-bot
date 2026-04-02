@@ -11,10 +11,29 @@ public static class SkillExtension
     /// </summary>
     public static IServiceCollection AddMullaiSkills(this IServiceCollection services)
     {
-        services.AddSingleton(sp =>
-            new AgentSkillsProvider(
+        // services.AddKeyedSingleton<AgentSkillsProvider>("skill-no-advertise", (sp, key) =>
+        // {
+        //     AgentSkillsProviderOptions providerOptions = new()
+        //     {
+        //         SkillsInstructionPrompt = ""
+        //     };
+        //
+        //     var skillProvider = new AgentSkillsProvider(
+        //         Path.Combine(AppContext.BaseDirectory, "skills"),
+        //         options:  providerOptions,
+        //         loggerFactory: sp.GetRequiredService<ILoggerFactory>());
+        //
+        //     return skillProvider;
+        // });
+        
+        services.AddKeyedSingleton<AgentSkillsProvider>("skill-advertise", (sp, key) =>
+        {
+            var skillProvider = new AgentSkillsProvider(
                 Path.Combine(AppContext.BaseDirectory, "skills"),
-                loggerFactory: sp.GetRequiredService<ILoggerFactory>()));
+                loggerFactory: sp.GetRequiredService<ILoggerFactory>());
+    
+            return skillProvider;
+        });
 
         return services;
     }

@@ -71,6 +71,10 @@ public class AgentFactory
             agentTools.AddRange(tools);
         }
 
+        var skillAgent = _serviceProvider.GetRequiredKeyedService<MullaiAgent>("SkillAgent");
+        
+        agentTools.AddRange(skillAgent.AsAIFunction());
+        
         var functionCallingMiddleware = _serviceProvider.GetRequiredService<FunctionCallingMiddleware>();
 
         // IChatClient-level middleware: merges newly loaded tools on each LLM call within
@@ -91,7 +95,6 @@ public class AgentFactory
                     AIContextProviders =
                     [
                         _serviceProvider.GetRequiredService<CurrentFolderContext>(),
-                        _serviceProvider.GetRequiredService<AgentSkillsProvider>()
                     ]
                 },
                 _serviceProvider.GetRequiredService<ILoggerFactory>())
